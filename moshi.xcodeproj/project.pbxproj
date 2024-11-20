@@ -12,6 +12,18 @@
 		4D40191C2CEE17CD00953487 /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = 4D40191B2CEE17CD00953487 /* MLXFast */; };
 		4D40191E2CEE17CD00953487 /* MLXLinalg in Frameworks */ = {isa = PBXBuildFile; productRef = 4D40191D2CEE17CD00953487 /* MLXLinalg */; };
 		4D4019202CEE17CD00953487 /* MLXNN in Frameworks */ = {isa = PBXBuildFile; productRef = 4D40191F2CEE17CD00953487 /* MLXNN */; };
+		4D40193B2CEE1DDE00953487 /* moshi_lib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* moshi_lib.framework */; };
+		4D4019462CEE1DDE00953487 /* moshi_lib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* moshi_lib.framework */; };
+		4D4019472CEE1DDE00953487 /* moshi_lib.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* moshi_lib.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4D4019522CEE1DFB00953487 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 4D4019512CEE1DFB00953487 /* MLX */; };
+		4D4019542CEE1DFB00953487 /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = 4D4019532CEE1DFB00953487 /* MLXFast */; };
+		4D4019562CEE1DFB00953487 /* MLXFFT in Frameworks */ = {isa = PBXBuildFile; productRef = 4D4019552CEE1DFB00953487 /* MLXFFT */; };
+		4D4019582CEE1DFB00953487 /* MLXLinalg in Frameworks */ = {isa = PBXBuildFile; productRef = 4D4019572CEE1DFB00953487 /* MLXLinalg */; };
+		4D40195A2CEE1DFB00953487 /* MLXNN in Frameworks */ = {isa = PBXBuildFile; productRef = 4D4019592CEE1DFB00953487 /* MLXNN */; };
+		4D40195C2CEE1DFB00953487 /* MLXOptimizers in Frameworks */ = {isa = PBXBuildFile; productRef = 4D40195B2CEE1DFB00953487 /* MLXOptimizers */; };
+		4D40195E2CEE1DFB00953487 /* MLXRandom in Frameworks */ = {isa = PBXBuildFile; productRef = 4D40195D2CEE1DFB00953487 /* MLXRandom */; };
+		4D40195F2CEE1DFB00953487 /* moshi_lib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* moshi_lib.framework */; };
+		4D4019602CEE1DFB00953487 /* moshi_lib.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* moshi_lib.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,13 +41,88 @@
 			remoteGlobalIDString = 4D4018E72CEE15B100953487;
 			remoteInfo = moshi;
 		};
+		4D40193C2CEE1DDE00953487 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4D4018E02CEE15B100953487 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D4019302CEE1DDD00953487;
+			remoteInfo = "moshi-lib";
+		};
+		4D40193E2CEE1DDE00953487 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4D4018E02CEE15B100953487 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D4018E72CEE15B100953487;
+			remoteInfo = moshi;
+		};
+		4D4019442CEE1DDE00953487 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4D4018E02CEE15B100953487 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D4019302CEE1DDD00953487;
+			remoteInfo = "moshi-lib";
+		};
+		4D4019612CEE1DFB00953487 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4D4018E02CEE15B100953487 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D4019302CEE1DDD00953487;
+			remoteInfo = "moshi-lib";
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		4D4019232CEE1D8F00953487 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		4D40194C2CEE1DDE00953487 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				4D4019472CEE1DDE00953487 /* moshi_lib.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D4019632CEE1DFB00953487 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				4D4019602CEE1DFB00953487 /* moshi_lib.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		4D4018E82CEE15B100953487 /* moshi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = moshi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D4018F92CEE15B300953487 /* moshiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = moshiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D4019032CEE15B300953487 /* moshiUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = moshiUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D4019252CEE1D8F00953487 /* moshi-cli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "moshi-cli"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D4019312CEE1DDD00953487 /* moshi_lib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = moshi_lib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D40193A2CEE1DDE00953487 /* moshi-libTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "moshi-libTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		4D4019482CEE1DDE00953487 /* Exceptions for "moshi-lib" folder in "moshi-lib" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			publicHeaders = (
+				moshi_lib.h,
+			);
+			target = 4D4019302CEE1DDD00953487 /* moshi-lib */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4D4018EA2CEE15B100953487 /* moshi */ = {
@@ -53,6 +140,24 @@
 			path = moshiUITests;
 			sourceTree = "<group>";
 		};
+		4D4019262CEE1D8F00953487 /* moshi-cli */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "moshi-cli";
+			sourceTree = "<group>";
+		};
+		4D4019322CEE1DDD00953487 /* moshi-lib */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				4D4019482CEE1DDE00953487 /* Exceptions for "moshi-lib" folder in "moshi-lib" target */,
+			);
+			path = "moshi-lib";
+			sourceTree = "<group>";
+		};
+		4D4019402CEE1DDE00953487 /* moshi-libTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "moshi-libTests";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +170,7 @@
 				4D4019182CEE17CD00953487 /* MLX in Frameworks */,
 				4D4019202CEE17CD00953487 /* MLXNN in Frameworks */,
 				4D40191A2CEE17CD00953487 /* MLXFFT in Frameworks */,
+				4D4019462CEE1DDE00953487 /* moshi_lib.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -82,6 +188,36 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4D4019222CEE1D8F00953487 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D40195C2CEE1DFB00953487 /* MLXOptimizers in Frameworks */,
+				4D4019542CEE1DFB00953487 /* MLXFast in Frameworks */,
+				4D4019582CEE1DFB00953487 /* MLXLinalg in Frameworks */,
+				4D4019522CEE1DFB00953487 /* MLX in Frameworks */,
+				4D40195A2CEE1DFB00953487 /* MLXNN in Frameworks */,
+				4D40195F2CEE1DFB00953487 /* moshi_lib.framework in Frameworks */,
+				4D4019562CEE1DFB00953487 /* MLXFFT in Frameworks */,
+				4D40195E2CEE1DFB00953487 /* MLXRandom in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D40192E2CEE1DDD00953487 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D4019372CEE1DDE00953487 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D40193B2CEE1DDE00953487 /* moshi_lib.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -91,6 +227,10 @@
 				4D4018EA2CEE15B100953487 /* moshi */,
 				4D4018FC2CEE15B300953487 /* moshiTests */,
 				4D4019062CEE15B300953487 /* moshiUITests */,
+				4D4019262CEE1D8F00953487 /* moshi-cli */,
+				4D4019322CEE1DDD00953487 /* moshi-lib */,
+				4D4019402CEE1DDE00953487 /* moshi-libTests */,
+				4D4019502CEE1DFB00953487 /* Frameworks */,
 				4D4018E92CEE15B100953487 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -101,11 +241,31 @@
 				4D4018E82CEE15B100953487 /* moshi.app */,
 				4D4018F92CEE15B300953487 /* moshiTests.xctest */,
 				4D4019032CEE15B300953487 /* moshiUITests.xctest */,
+				4D4019252CEE1D8F00953487 /* moshi-cli */,
+				4D4019312CEE1DDD00953487 /* moshi_lib.framework */,
+				4D40193A2CEE1DDE00953487 /* moshi-libTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
+		4D4019502CEE1DFB00953487 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		4D40192C2CEE1DDD00953487 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
 		4D4018E72CEE15B100953487 /* moshi */ = {
@@ -115,10 +275,12 @@
 				4D4018E42CEE15B100953487 /* Sources */,
 				4D4018E52CEE15B100953487 /* Frameworks */,
 				4D4018E62CEE15B100953487 /* Resources */,
+				4D40194C2CEE1DDE00953487 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				4D4019452CEE1DDE00953487 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				4D4018EA2CEE15B100953487 /* moshi */,
@@ -181,6 +343,84 @@
 			productReference = 4D4019032CEE15B300953487 /* moshiUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		4D4019242CEE1D8F00953487 /* moshi-cli */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D4019292CEE1D8F00953487 /* Build configuration list for PBXNativeTarget "moshi-cli" */;
+			buildPhases = (
+				4D4019212CEE1D8F00953487 /* Sources */,
+				4D4019222CEE1D8F00953487 /* Frameworks */,
+				4D4019232CEE1D8F00953487 /* CopyFiles */,
+				4D4019632CEE1DFB00953487 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4D4019622CEE1DFB00953487 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4D4019262CEE1D8F00953487 /* moshi-cli */,
+			);
+			name = "moshi-cli";
+			packageProductDependencies = (
+				4D4019512CEE1DFB00953487 /* MLX */,
+				4D4019532CEE1DFB00953487 /* MLXFast */,
+				4D4019552CEE1DFB00953487 /* MLXFFT */,
+				4D4019572CEE1DFB00953487 /* MLXLinalg */,
+				4D4019592CEE1DFB00953487 /* MLXNN */,
+				4D40195B2CEE1DFB00953487 /* MLXOptimizers */,
+				4D40195D2CEE1DFB00953487 /* MLXRandom */,
+			);
+			productName = "moshi-cli";
+			productReference = 4D4019252CEE1D8F00953487 /* moshi-cli */;
+			productType = "com.apple.product-type.tool";
+		};
+		4D4019302CEE1DDD00953487 /* moshi-lib */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D4019492CEE1DDE00953487 /* Build configuration list for PBXNativeTarget "moshi-lib" */;
+			buildPhases = (
+				4D40192C2CEE1DDD00953487 /* Headers */,
+				4D40192D2CEE1DDD00953487 /* Sources */,
+				4D40192E2CEE1DDD00953487 /* Frameworks */,
+				4D40192F2CEE1DDD00953487 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4D4019322CEE1DDD00953487 /* moshi-lib */,
+			);
+			name = "moshi-lib";
+			packageProductDependencies = (
+			);
+			productName = "moshi-lib";
+			productReference = 4D4019312CEE1DDD00953487 /* moshi_lib.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		4D4019392CEE1DDE00953487 /* moshi-libTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D40194D2CEE1DDE00953487 /* Build configuration list for PBXNativeTarget "moshi-libTests" */;
+			buildPhases = (
+				4D4019362CEE1DDE00953487 /* Sources */,
+				4D4019372CEE1DDE00953487 /* Frameworks */,
+				4D4019382CEE1DDE00953487 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4D40193D2CEE1DDE00953487 /* PBXTargetDependency */,
+				4D40193F2CEE1DDE00953487 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4D4019402CEE1DDE00953487 /* moshi-libTests */,
+			);
+			name = "moshi-libTests";
+			packageProductDependencies = (
+			);
+			productName = "moshi-libTests";
+			productReference = 4D40193A2CEE1DDE00953487 /* moshi-libTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -199,6 +439,16 @@
 						TestTargetID = 4D4018E72CEE15B100953487;
 					};
 					4D4019022CEE15B300953487 = {
+						CreatedOnToolsVersion = 16.1;
+						TestTargetID = 4D4018E72CEE15B100953487;
+					};
+					4D4019242CEE1D8F00953487 = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					4D4019302CEE1DDD00953487 = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					4D4019392CEE1DDE00953487 = {
 						CreatedOnToolsVersion = 16.1;
 						TestTargetID = 4D4018E72CEE15B100953487;
 					};
@@ -224,6 +474,9 @@
 				4D4018E72CEE15B100953487 /* moshi */,
 				4D4018F82CEE15B300953487 /* moshiTests */,
 				4D4019022CEE15B300953487 /* moshiUITests */,
+				4D4019242CEE1D8F00953487 /* moshi-cli */,
+				4D4019302CEE1DDD00953487 /* moshi-lib */,
+				4D4019392CEE1DDE00953487 /* moshi-libTests */,
 			);
 		};
 /* End PBXProject section */
@@ -244,6 +497,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4D4019012CEE15B300953487 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D40192F2CEE1DDD00953487 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D4019382CEE1DDE00953487 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -274,6 +541,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4D4019212CEE1D8F00953487 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D40192D2CEE1DDD00953487 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D4019362CEE1DDE00953487 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -286,6 +574,26 @@
 			isa = PBXTargetDependency;
 			target = 4D4018E72CEE15B100953487 /* moshi */;
 			targetProxy = 4D4019042CEE15B300953487 /* PBXContainerItemProxy */;
+		};
+		4D40193D2CEE1DDE00953487 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D4019302CEE1DDD00953487 /* moshi-lib */;
+			targetProxy = 4D40193C2CEE1DDE00953487 /* PBXContainerItemProxy */;
+		};
+		4D40193F2CEE1DDE00953487 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D4018E72CEE15B100953487 /* moshi */;
+			targetProxy = 4D40193E2CEE1DDE00953487 /* PBXContainerItemProxy */;
+		};
+		4D4019452CEE1DDE00953487 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D4019302CEE1DDD00953487 /* moshi-lib */;
+			targetProxy = 4D4019442CEE1DDE00953487 /* PBXContainerItemProxy */;
+		};
+		4D4019622CEE1DFB00953487 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D4019302CEE1DDD00953487 /* moshi-lib */;
+			targetProxy = 4D4019612CEE1DFB00953487 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -572,6 +880,166 @@
 			};
 			name = Release;
 		};
+		4D40192A2CEE1D8F00953487 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 97MZTT3Z24;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4D40192B2CEE1D8F00953487 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 97MZTT3Z24;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		4D40194A2CEE1DDE00953487 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = 97MZTT3Z24;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.kyutai.moshi-lib";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+				XROS_DEPLOYMENT_TARGET = 2.1;
+			};
+			name = Debug;
+		};
+		4D40194B2CEE1DDE00953487 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = 97MZTT3Z24;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.kyutai.moshi-lib";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+				XROS_DEPLOYMENT_TARGET = 2.1;
+			};
+			name = Release;
+		};
+		4D40194E2CEE1DDE00953487 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 97MZTT3Z24;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "org.kyutai.moshi-libTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/moshi.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/moshi";
+				XROS_DEPLOYMENT_TARGET = 2.1;
+			};
+			name = Debug;
+		};
+		4D40194F2CEE1DDE00953487 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 97MZTT3Z24;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "org.kyutai.moshi-libTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/moshi.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/moshi";
+				XROS_DEPLOYMENT_TARGET = 2.1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -607,6 +1075,33 @@
 			buildConfigurations = (
 				4D4019142CEE15B300953487 /* Debug */,
 				4D4019152CEE15B300953487 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4D4019292CEE1D8F00953487 /* Build configuration list for PBXNativeTarget "moshi-cli" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D40192A2CEE1D8F00953487 /* Debug */,
+				4D40192B2CEE1D8F00953487 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4D4019492CEE1DDE00953487 /* Build configuration list for PBXNativeTarget "moshi-lib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D40194A2CEE1DDE00953487 /* Debug */,
+				4D40194B2CEE1DDE00953487 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4D40194D2CEE1DDE00953487 /* Build configuration list for PBXNativeTarget "moshi-libTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D40194E2CEE1DDE00953487 /* Debug */,
+				4D40194F2CEE1DDE00953487 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -649,6 +1144,41 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
 			productName = MLXNN;
+		};
+		4D4019512CEE1DFB00953487 /* MLX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLX;
+		};
+		4D4019532CEE1DFB00953487 /* MLXFast */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLXFast;
+		};
+		4D4019552CEE1DFB00953487 /* MLXFFT */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLXFFT;
+		};
+		4D4019572CEE1DFB00953487 /* MLXLinalg */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLXLinalg;
+		};
+		4D4019592CEE1DFB00953487 /* MLXNN */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLXNN;
+		};
+		4D40195B2CEE1DFB00953487 /* MLXOptimizers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLXOptimizers;
+		};
+		4D40195D2CEE1DFB00953487 /* MLXRandom */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLXRandom;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

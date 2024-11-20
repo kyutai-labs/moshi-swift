@@ -6,6 +6,9 @@
 //
 
 import SwiftUI
+import MLX
+import MLXRandom
+import Metal
 
 struct ContentView: View {
     var body: some View {
