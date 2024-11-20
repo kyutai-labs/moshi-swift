@@ -1,0 +1,11 @@
+.helix
+.vscode
+*.dylib
+*.so
+*.swp
+*.swo
+trace-*.json
+.DS_Store
+.idea/*
+__pycache__
+build
