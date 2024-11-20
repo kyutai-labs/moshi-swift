@@ -6,6 +6,21 @@
 //
 
 import Foundation
+import MLX
 
 print("Hello, World!")
+
+let arr = MLXArray(stride(from: Int32(2), through: 8, by: 2), [2, 2])
+
+print(arr)
+print(arr.dtype)
+print(arr.shape)
+print(arr.ndim)
+print(arr.asType(.int64))
+
+// print a row
+print(arr[1])
+
+// print a value
+print(arr[0, 1].item(Int32.self))
 
