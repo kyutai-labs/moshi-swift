@@ -12,9 +12,9 @@
 		4D40191C2CEE17CD00953487 /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = 4D40191B2CEE17CD00953487 /* MLXFast */; };
 		4D40191E2CEE17CD00953487 /* MLXLinalg in Frameworks */ = {isa = PBXBuildFile; productRef = 4D40191D2CEE17CD00953487 /* MLXLinalg */; };
 		4D4019202CEE17CD00953487 /* MLXNN in Frameworks */ = {isa = PBXBuildFile; productRef = 4D40191F2CEE17CD00953487 /* MLXNN */; };
-		4D40193B2CEE1DDE00953487 /* moshi_lib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* moshi_lib.framework */; };
-		4D4019462CEE1DDE00953487 /* moshi_lib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* moshi_lib.framework */; };
-		4D4019472CEE1DDE00953487 /* moshi_lib.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* moshi_lib.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4D40193B2CEE1DDE00953487 /* MoshiLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* MoshiLib.framework */; };
+		4D4019462CEE1DDE00953487 /* MoshiLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* MoshiLib.framework */; };
+		4D4019472CEE1DDE00953487 /* MoshiLib.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* MoshiLib.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4D4019522CEE1DFB00953487 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 4D4019512CEE1DFB00953487 /* MLX */; };
 		4D4019542CEE1DFB00953487 /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = 4D4019532CEE1DFB00953487 /* MLXFast */; };
 		4D4019562CEE1DFB00953487 /* MLXFFT in Frameworks */ = {isa = PBXBuildFile; productRef = 4D4019552CEE1DFB00953487 /* MLXFFT */; };
@@ -22,8 +22,8 @@
 		4D40195A2CEE1DFB00953487 /* MLXNN in Frameworks */ = {isa = PBXBuildFile; productRef = 4D4019592CEE1DFB00953487 /* MLXNN */; };
 		4D40195C2CEE1DFB00953487 /* MLXOptimizers in Frameworks */ = {isa = PBXBuildFile; productRef = 4D40195B2CEE1DFB00953487 /* MLXOptimizers */; };
 		4D40195E2CEE1DFB00953487 /* MLXRandom in Frameworks */ = {isa = PBXBuildFile; productRef = 4D40195D2CEE1DFB00953487 /* MLXRandom */; };
-		4D40195F2CEE1DFB00953487 /* moshi_lib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* moshi_lib.framework */; };
-		4D4019602CEE1DFB00953487 /* moshi_lib.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* moshi_lib.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4D40195F2CEE1DFB00953487 /* MoshiLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* MoshiLib.framework */; };
+		4D4019602CEE1DFB00953487 /* MoshiLib.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* MoshiLib.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -87,7 +87,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				4D4019472CEE1DDE00953487 /* moshi_lib.framework in Embed Frameworks */,
+				4D4019472CEE1DDE00953487 /* MoshiLib.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -98,7 +98,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				4D4019602CEE1DFB00953487 /* moshi_lib.framework in Embed Frameworks */,
+				4D4019602CEE1DFB00953487 /* MoshiLib.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -106,56 +106,56 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		4D4018E82CEE15B100953487 /* moshi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = moshi.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		4D4018F92CEE15B300953487 /* moshiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = moshiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		4D4019032CEE15B300953487 /* moshiUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = moshiUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		4D4019252CEE1D8F00953487 /* moshi-cli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "moshi-cli"; sourceTree = BUILT_PRODUCTS_DIR; };
-		4D4019312CEE1DDD00953487 /* moshi_lib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = moshi_lib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		4D40193A2CEE1DDE00953487 /* moshi-libTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "moshi-libTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D4018E82CEE15B100953487 /* Moshi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Moshi.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D4018F92CEE15B300953487 /* MoshiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MoshiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D4019032CEE15B300953487 /* MoshiUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MoshiUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D4019252CEE1D8F00953487 /* MoshiCLI */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = MoshiCLI; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D4019312CEE1DDD00953487 /* MoshiLib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MoshiLib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D40193A2CEE1DDE00953487 /* MoshiLibTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MoshiLibTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		4D4019482CEE1DDE00953487 /* Exceptions for "moshi-lib" folder in "moshi-lib" target */ = {
+		4D4019482CEE1DDE00953487 /* Exceptions for "MoshiLib" folder in "MoshiLib" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			publicHeaders = (
-				moshi_lib.h,
+				MoshiLib.h,
 			);
-			target = 4D4019302CEE1DDD00953487 /* moshi-lib */;
+			target = 4D4019302CEE1DDD00953487 /* MoshiLib */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4D4018EA2CEE15B100953487 /* moshi */ = {
+		4D4018EA2CEE15B100953487 /* Moshi */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = moshi;
+			path = Moshi;
 			sourceTree = "<group>";
 		};
-		4D4018FC2CEE15B300953487 /* moshiTests */ = {
+		4D4018FC2CEE15B300953487 /* MoshiTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = moshiTests;
+			path = MoshiTests;
 			sourceTree = "<group>";
 		};
-		4D4019062CEE15B300953487 /* moshiUITests */ = {
+		4D4019062CEE15B300953487 /* MoshiUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = moshiUITests;
+			path = MoshiUITests;
 			sourceTree = "<group>";
 		};
-		4D4019262CEE1D8F00953487 /* moshi-cli */ = {
+		4D4019262CEE1D8F00953487 /* MoshiCLI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "moshi-cli";
+			path = MoshiCLI;
 			sourceTree = "<group>";
 		};
-		4D4019322CEE1DDD00953487 /* moshi-lib */ = {
+		4D4019322CEE1DDD00953487 /* MoshiLib */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				4D4019482CEE1DDE00953487 /* Exceptions for "moshi-lib" folder in "moshi-lib" target */,
+				4D4019482CEE1DDE00953487 /* Exceptions for "MoshiLib" folder in "MoshiLib" target */,
 			);
-			path = "moshi-lib";
+			path = MoshiLib;
 			sourceTree = "<group>";
 		};
-		4D4019402CEE1DDE00953487 /* moshi-libTests */ = {
+		4D4019402CEE1DDE00953487 /* MoshiLibTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "moshi-libTests";
+			path = MoshiLibTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -170,7 +170,7 @@
 				4D4019182CEE17CD00953487 /* MLX in Frameworks */,
 				4D4019202CEE17CD00953487 /* MLXNN in Frameworks */,
 				4D40191A2CEE17CD00953487 /* MLXFFT in Frameworks */,
-				4D4019462CEE1DDE00953487 /* moshi_lib.framework in Frameworks */,
+				4D4019462CEE1DDE00953487 /* MoshiLib.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -197,7 +197,7 @@
 				4D4019582CEE1DFB00953487 /* MLXLinalg in Frameworks */,
 				4D4019522CEE1DFB00953487 /* MLX in Frameworks */,
 				4D40195A2CEE1DFB00953487 /* MLXNN in Frameworks */,
-				4D40195F2CEE1DFB00953487 /* moshi_lib.framework in Frameworks */,
+				4D40195F2CEE1DFB00953487 /* MoshiLib.framework in Frameworks */,
 				4D4019562CEE1DFB00953487 /* MLXFFT in Frameworks */,
 				4D40195E2CEE1DFB00953487 /* MLXRandom in Frameworks */,
 			);
@@ -214,7 +214,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4D40193B2CEE1DDE00953487 /* moshi_lib.framework in Frameworks */,
+				4D40193B2CEE1DDE00953487 /* MoshiLib.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -224,12 +224,12 @@
 		4D4018DF2CEE15B100953487 = {
 			isa = PBXGroup;
 			children = (
-				4D4018EA2CEE15B100953487 /* moshi */,
-				4D4018FC2CEE15B300953487 /* moshiTests */,
-				4D4019062CEE15B300953487 /* moshiUITests */,
-				4D4019262CEE1D8F00953487 /* moshi-cli */,
-				4D4019322CEE1DDD00953487 /* moshi-lib */,
-				4D4019402CEE1DDE00953487 /* moshi-libTests */,
+				4D4018EA2CEE15B100953487 /* Moshi */,
+				4D4018FC2CEE15B300953487 /* MoshiTests */,
+				4D4019062CEE15B300953487 /* MoshiUITests */,
+				4D4019262CEE1D8F00953487 /* MoshiCLI */,
+				4D4019322CEE1DDD00953487 /* MoshiLib */,
+				4D4019402CEE1DDE00953487 /* MoshiLibTests */,
 				4D4019502CEE1DFB00953487 /* Frameworks */,
 				4D4018E92CEE15B100953487 /* Products */,
 			);
@@ -238,12 +238,12 @@
 		4D4018E92CEE15B100953487 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4D4018E82CEE15B100953487 /* moshi.app */,
-				4D4018F92CEE15B300953487 /* moshiTests.xctest */,
-				4D4019032CEE15B300953487 /* moshiUITests.xctest */,
-				4D4019252CEE1D8F00953487 /* moshi-cli */,
-				4D4019312CEE1DDD00953487 /* moshi_lib.framework */,
-				4D40193A2CEE1DDE00953487 /* moshi-libTests.xctest */,
+				4D4018E82CEE15B100953487 /* Moshi.app */,
+				4D4018F92CEE15B300953487 /* MoshiTests.xctest */,
+				4D4019032CEE15B300953487 /* MoshiUITests.xctest */,
+				4D4019252CEE1D8F00953487 /* MoshiCLI */,
+				4D4019312CEE1DDD00953487 /* MoshiLib.framework */,
+				4D40193A2CEE1DDE00953487 /* MoshiLibTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -268,9 +268,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		4D4018E72CEE15B100953487 /* moshi */ = {
+		4D4018E72CEE15B100953487 /* Moshi */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4D40190D2CEE15B300953487 /* Build configuration list for PBXNativeTarget "moshi" */;
+			buildConfigurationList = 4D40190D2CEE15B300953487 /* Build configuration list for PBXNativeTarget "Moshi" */;
 			buildPhases = (
 				4D4018E42CEE15B100953487 /* Sources */,
 				4D4018E52CEE15B100953487 /* Frameworks */,
@@ -283,9 +283,9 @@
 				4D4019452CEE1DDE00953487 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				4D4018EA2CEE15B100953487 /* moshi */,
+				4D4018EA2CEE15B100953487 /* Moshi */,
 			);
-			name = moshi;
+			name = Moshi;
 			packageProductDependencies = (
 				4D4019172CEE17CD00953487 /* MLX */,
 				4D4019192CEE17CD00953487 /* MLXFFT */,
@@ -294,12 +294,12 @@
 				4D40191F2CEE17CD00953487 /* MLXNN */,
 			);
 			productName = moshi;
-			productReference = 4D4018E82CEE15B100953487 /* moshi.app */;
+			productReference = 4D4018E82CEE15B100953487 /* Moshi.app */;
 			productType = "com.apple.product-type.application";
 		};
-		4D4018F82CEE15B300953487 /* moshiTests */ = {
+		4D4018F82CEE15B300953487 /* MoshiTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4D4019102CEE15B300953487 /* Build configuration list for PBXNativeTarget "moshiTests" */;
+			buildConfigurationList = 4D4019102CEE15B300953487 /* Build configuration list for PBXNativeTarget "MoshiTests" */;
 			buildPhases = (
 				4D4018F52CEE15B300953487 /* Sources */,
 				4D4018F62CEE15B300953487 /* Frameworks */,
@@ -311,18 +311,18 @@
 				4D4018FB2CEE15B300953487 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				4D4018FC2CEE15B300953487 /* moshiTests */,
+				4D4018FC2CEE15B300953487 /* MoshiTests */,
 			);
-			name = moshiTests;
+			name = MoshiTests;
 			packageProductDependencies = (
 			);
 			productName = moshiTests;
-			productReference = 4D4018F92CEE15B300953487 /* moshiTests.xctest */;
+			productReference = 4D4018F92CEE15B300953487 /* MoshiTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		4D4019022CEE15B300953487 /* moshiUITests */ = {
+		4D4019022CEE15B300953487 /* MoshiUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4D4019132CEE15B300953487 /* Build configuration list for PBXNativeTarget "moshiUITests" */;
+			buildConfigurationList = 4D4019132CEE15B300953487 /* Build configuration list for PBXNativeTarget "MoshiUITests" */;
 			buildPhases = (
 				4D4018FF2CEE15B300953487 /* Sources */,
 				4D4019002CEE15B300953487 /* Frameworks */,
@@ -334,18 +334,18 @@
 				4D4019052CEE15B300953487 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				4D4019062CEE15B300953487 /* moshiUITests */,
+				4D4019062CEE15B300953487 /* MoshiUITests */,
 			);
-			name = moshiUITests;
+			name = MoshiUITests;
 			packageProductDependencies = (
 			);
 			productName = moshiUITests;
-			productReference = 4D4019032CEE15B300953487 /* moshiUITests.xctest */;
+			productReference = 4D4019032CEE15B300953487 /* MoshiUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
-		4D4019242CEE1D8F00953487 /* moshi-cli */ = {
+		4D4019242CEE1D8F00953487 /* MoshiCLI */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4D4019292CEE1D8F00953487 /* Build configuration list for PBXNativeTarget "moshi-cli" */;
+			buildConfigurationList = 4D4019292CEE1D8F00953487 /* Build configuration list for PBXNativeTarget "MoshiCLI" */;
 			buildPhases = (
 				4D4019212CEE1D8F00953487 /* Sources */,
 				4D4019222CEE1D8F00953487 /* Frameworks */,
@@ -358,9 +358,9 @@
 				4D4019622CEE1DFB00953487 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				4D4019262CEE1D8F00953487 /* moshi-cli */,
+				4D4019262CEE1D8F00953487 /* MoshiCLI */,
 			);
-			name = "moshi-cli";
+			name = MoshiCLI;
 			packageProductDependencies = (
 				4D4019512CEE1DFB00953487 /* MLX */,
 				4D4019532CEE1DFB00953487 /* MLXFast */,
@@ -371,12 +371,12 @@
 				4D40195D2CEE1DFB00953487 /* MLXRandom */,
 			);
 			productName = "moshi-cli";
-			productReference = 4D4019252CEE1D8F00953487 /* moshi-cli */;
+			productReference = 4D4019252CEE1D8F00953487 /* MoshiCLI */;
 			productType = "com.apple.product-type.tool";
 		};
-		4D4019302CEE1DDD00953487 /* moshi-lib */ = {
+		4D4019302CEE1DDD00953487 /* MoshiLib */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4D4019492CEE1DDE00953487 /* Build configuration list for PBXNativeTarget "moshi-lib" */;
+			buildConfigurationList = 4D4019492CEE1DDE00953487 /* Build configuration list for PBXNativeTarget "MoshiLib" */;
 			buildPhases = (
 				4D40192C2CEE1DDD00953487 /* Headers */,
 				4D40192D2CEE1DDD00953487 /* Sources */,
@@ -388,18 +388,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				4D4019322CEE1DDD00953487 /* moshi-lib */,
+				4D4019322CEE1DDD00953487 /* MoshiLib */,
 			);
-			name = "moshi-lib";
+			name = MoshiLib;
 			packageProductDependencies = (
 			);
 			productName = "moshi-lib";
-			productReference = 4D4019312CEE1DDD00953487 /* moshi_lib.framework */;
+			productReference = 4D4019312CEE1DDD00953487 /* MoshiLib.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		4D4019392CEE1DDE00953487 /* moshi-libTests */ = {
+		4D4019392CEE1DDE00953487 /* MoshiLibTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4D40194D2CEE1DDE00953487 /* Build configuration list for PBXNativeTarget "moshi-libTests" */;
+			buildConfigurationList = 4D40194D2CEE1DDE00953487 /* Build configuration list for PBXNativeTarget "MoshiLibTests" */;
 			buildPhases = (
 				4D4019362CEE1DDE00953487 /* Sources */,
 				4D4019372CEE1DDE00953487 /* Frameworks */,
@@ -412,13 +412,13 @@
 				4D40193F2CEE1DDE00953487 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				4D4019402CEE1DDE00953487 /* moshi-libTests */,
+				4D4019402CEE1DDE00953487 /* MoshiLibTests */,
 			);
-			name = "moshi-libTests";
+			name = MoshiLibTests;
 			packageProductDependencies = (
 			);
 			productName = "moshi-libTests";
-			productReference = 4D40193A2CEE1DDE00953487 /* moshi-libTests.xctest */;
+			productReference = 4D40193A2CEE1DDE00953487 /* MoshiLibTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -471,12 +471,12 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				4D4018E72CEE15B100953487 /* moshi */,
-				4D4018F82CEE15B300953487 /* moshiTests */,
-				4D4019022CEE15B300953487 /* moshiUITests */,
-				4D4019242CEE1D8F00953487 /* moshi-cli */,
-				4D4019302CEE1DDD00953487 /* moshi-lib */,
-				4D4019392CEE1DDE00953487 /* moshi-libTests */,
+				4D4018E72CEE15B100953487 /* Moshi */,
+				4D4018F82CEE15B300953487 /* MoshiTests */,
+				4D4019022CEE15B300953487 /* MoshiUITests */,
+				4D4019242CEE1D8F00953487 /* MoshiCLI */,
+				4D4019302CEE1DDD00953487 /* MoshiLib */,
+				4D4019392CEE1DDE00953487 /* MoshiLibTests */,
 			);
 		};
 /* End PBXProject section */
@@ -567,32 +567,32 @@
 /* Begin PBXTargetDependency section */
 		4D4018FB2CEE15B300953487 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4D4018E72CEE15B100953487 /* moshi */;
+			target = 4D4018E72CEE15B100953487 /* Moshi */;
 			targetProxy = 4D4018FA2CEE15B300953487 /* PBXContainerItemProxy */;
 		};
 		4D4019052CEE15B300953487 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4D4018E72CEE15B100953487 /* moshi */;
+			target = 4D4018E72CEE15B100953487 /* Moshi */;
 			targetProxy = 4D4019042CEE15B300953487 /* PBXContainerItemProxy */;
 		};
 		4D40193D2CEE1DDE00953487 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4D4019302CEE1DDD00953487 /* moshi-lib */;
+			target = 4D4019302CEE1DDD00953487 /* MoshiLib */;
 			targetProxy = 4D40193C2CEE1DDE00953487 /* PBXContainerItemProxy */;
 		};
 		4D40193F2CEE1DDE00953487 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4D4018E72CEE15B100953487 /* moshi */;
+			target = 4D4018E72CEE15B100953487 /* Moshi */;
 			targetProxy = 4D40193E2CEE1DDE00953487 /* PBXContainerItemProxy */;
 		};
 		4D4019452CEE1DDE00953487 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4D4019302CEE1DDD00953487 /* moshi-lib */;
+			target = 4D4019302CEE1DDD00953487 /* MoshiLib */;
 			targetProxy = 4D4019442CEE1DDE00953487 /* PBXContainerItemProxy */;
 		};
 		4D4019622CEE1DFB00953487 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 4D4019302CEE1DDD00953487 /* moshi-lib */;
+			target = 4D4019302CEE1DDD00953487 /* MoshiLib */;
 			targetProxy = 4D4019612CEE1DFB00953487 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -1054,7 +1054,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4D40190D2CEE15B300953487 /* Build configuration list for PBXNativeTarget "moshi" */ = {
+		4D40190D2CEE15B300953487 /* Build configuration list for PBXNativeTarget "Moshi" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4D40190E2CEE15B300953487 /* Debug */,
@@ -1063,7 +1063,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4D4019102CEE15B300953487 /* Build configuration list for PBXNativeTarget "moshiTests" */ = {
+		4D4019102CEE15B300953487 /* Build configuration list for PBXNativeTarget "MoshiTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4D4019112CEE15B300953487 /* Debug */,
@@ -1072,7 +1072,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4D4019132CEE15B300953487 /* Build configuration list for PBXNativeTarget "moshiUITests" */ = {
+		4D4019132CEE15B300953487 /* Build configuration list for PBXNativeTarget "MoshiUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4D4019142CEE15B300953487 /* Debug */,
@@ -1081,7 +1081,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4D4019292CEE1D8F00953487 /* Build configuration list for PBXNativeTarget "moshi-cli" */ = {
+		4D4019292CEE1D8F00953487 /* Build configuration list for PBXNativeTarget "MoshiCLI" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4D40192A2CEE1D8F00953487 /* Debug */,
@@ -1090,7 +1090,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4D4019492CEE1DDE00953487 /* Build configuration list for PBXNativeTarget "moshi-lib" */ = {
+		4D4019492CEE1DDE00953487 /* Build configuration list for PBXNativeTarget "MoshiLib" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4D40194A2CEE1DDE00953487 /* Debug */,
@@ -1099,7 +1099,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4D40194D2CEE1DDE00953487 /* Build configuration list for PBXNativeTarget "moshi-libTests" */ = {
+		4D40194D2CEE1DDE00953487 /* Build configuration list for PBXNativeTarget "MoshiLibTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4D40194E2CEE1DDE00953487 /* Debug */,

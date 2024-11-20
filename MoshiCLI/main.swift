@@ -7,6 +7,7 @@
 
 import Foundation
 import MLX
+import MoshiLib
 
 print("Hello, World!")
 
