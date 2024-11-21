@@ -25,14 +25,10 @@ class DepformerSlice: Module {
         self._linearOut.wrappedValue = Linear(cfg.dModel, outVocabSize, bias: false)
         self._transformer.wrappedValue = Transformer(cfg)
     }
-
-    func callAsFunction(_ x: MLXArray) -> MLXArray {
-        // TODO
-        x
-    }
 }
 
 class Depformer: Module {
+    let transformerCache: [KVCache]
     let slices: [DepformerSlice]
 
     public init(_ cfg: LmConfig) {
@@ -43,11 +39,26 @@ class Depformer: Module {
                 mainTransformerDim: cfg.transformer.dModel,
                 cfg: cfg.depformer.transformer)
         }
+        self.transformerCache = self.slices[0].transformer.makeCache()
     }
 
-    func callAsFunction(_ x: MLXArray) -> MLXArray {
-        // TODO
-        x
+    public func sample(
+        mainTransformerOut: MLXArray, stepIdx: Int, sampler: Sampler, textToken: MLXArray
+    ) -> MLXArray {
+        for _ in self.transformerCache {
+            // TODO: Reset the cache
+        }
+        var lastToken = textToken
+        var tokens: [MLXArray] = []
+        for (sliceIdx, slice) in slices.enumerated() {
+            // TODO: Apply the delay, defaulting to 2048
+            var xs = slice.linearIn(mainTransformerOut) + slice.emb(lastToken)
+            xs = slice.transformer(xs, cache: self.transformerCache)
+            let logits = slice.linearOut(xs)
+            (lastToken, _) = sampler(logits: logits[0])
+            tokens.append(lastToken)
+        }
+        return concatenated(tokens)
     }
 }
 
@@ -80,7 +91,6 @@ public struct LmConfig {
                     biasFF: false,
                     biasAttn: false,
                     layerScale: nil,
-                    // TODO: Use proper types rather than strings here.
                     positionalEmbedding: .none,
                     useConvBias: false,
                     gating: true,
@@ -105,10 +115,11 @@ public struct LmConfig {
 }
 
 public class LM: Module {
+    let transformerCache: [KVCache]
     @ModuleInfo(key: "depformer") var depformer: Depformer
     @ModuleInfo(key: "transformer") public var transformer: Transformer
     @ModuleInfo(key: "text_emb") var textEmb: Embedding
-    @ModuleInfo(key: "out_norm") var outNorm: Module
+    @ModuleInfo(key: "out_norm") var outNorm: UnaryLayer
     @ModuleInfo(key: "text_linear") var textLinear: Linear
     @ModuleInfo(key: "audio_embs") var audioEmbs: [Embedding]
 
@@ -128,11 +139,13 @@ public class LM: Module {
         self._audioEmbs.wrappedValue = (0..<cfg.audioCodebooks).map { _ in
             Embedding(embeddingCount: cfg.audioVocabSize, dimensions: cfg.transformer.dModel)
         }
+        self.transformerCache = self._transformer.wrappedValue.makeCache()
 
     }
 
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
-        // TODO
-        x
+        var x = textEmb(x)
+        x = transformer(x, cache: self.transformerCache)
+        return textLinear(outNorm(x))
     }
 }
