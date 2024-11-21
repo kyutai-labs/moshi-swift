@@ -25,3 +25,6 @@ print(arr[1])
 // print a value
 print(arr[0, 1].item(Int32.self))
 
+let cfg = TransformerConfig.v0_1()
+let model = Transformer(cfg)
+print(model)
