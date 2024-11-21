@@ -9,3 +9,5 @@ trace-*.json
 .idea/*
 __pycache__
 build
+buildServer.json
+xcuserdata
