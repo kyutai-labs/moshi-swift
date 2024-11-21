@@ -6,57 +6,49 @@ import MLX
 import MLXFast
 import MLXNN
 
-public struct TransformerConfig {
-    var dModel: Int
-    var numHeads: Int
-    var numLayers: Int
-    var causal: Bool
-    var normFirst: Bool
-    var biasFF: Bool
-    var biasAttn: Bool
-    var layerScale: Float?
-    var positionalEmbedding: String
-    var useConvBias: Bool
-    var gating: Bool
-    var norm: String
-    var context: Int
-    var maxPeriod: Int
-    var maxSeqLen: Int
-    var kvRepeat: Int
-    var dimFeedForward: Int
-    var convLayout: Bool
-
-    func headDim() -> Int {
-        self.dModel / self.numHeads
-    }
-
-    public static func v0_1() -> TransformerConfig {
-        TransformerConfig(
-            dModel: 4096,
-            numHeads: 32,
-            numLayers: 32,
-            causal: true,
-            normFirst: true,
-            biasFF: false,
-            biasAttn: false,
-            layerScale: nil,
-            positionalEmbedding: "rope",
-            useConvBias: false,
-            gating: true,
-            norm: "rms_norm",
-            context: 3000,
-            maxPeriod: 10000,
-            maxSeqLen: 4096,
-            kvRepeat: 1,
-            dimFeedForward: 4096 * 4,
-            convLayout: false
-        )
-    }
-}
-
 public struct DepformerConfig {
     var transformer: TransformerConfig
     var numSlices: Int
+}
+
+class DepformerSlice: Module {
+    @ModuleInfo(key: "emb") var emb: Embedding
+    @ModuleInfo(key: "linear_in") var linearIn: Linear
+    @ModuleInfo(key: "linear_out") var linearOut: Linear
+    @ModuleInfo(key: "transformer") var transformer: Transformer
+
+    public init(
+        inVocabSize: Int, outVocabSize: Int, mainTransformerDim: Int, cfg: TransformerConfig
+    ) {
+        self._emb.wrappedValue = Embedding(embeddingCount: inVocabSize, dimensions: cfg.dModel)
+        self._linearIn.wrappedValue = Linear(mainTransformerDim, cfg.dModel, bias: false)
+        self._linearOut.wrappedValue = Linear(cfg.dModel, outVocabSize, bias: false)
+        self._transformer.wrappedValue = Transformer(cfg)
+    }
+
+    func callAsFunction(_ x: MLXArray) -> MLXArray {
+        // TODO
+        x
+    }
+}
+
+class Depformer: Module {
+    let slices: [DepformerSlice]
+
+    public init(_ cfg: LmConfig) {
+        self.slices = (0..<cfg.depformer.numSlices).map { idx in
+            DepformerSlice(
+                inVocabSize: idx == 0 ? cfg.textInVocabSize : cfg.audioVocabSize,
+                outVocabSize: cfg.audioVocabSize - 1,
+                mainTransformerDim: cfg.transformer.dModel,
+                cfg: cfg.depformer.transformer)
+        }
+    }
+
+    func callAsFunction(_ x: MLXArray) -> MLXArray {
+        // TODO
+        x
+    }
 }
 
 public struct LmConfig {
@@ -75,93 +67,66 @@ public struct LmConfig {
     func audioPaddingToken() -> Int {
         self.audioVocabSize - 1
     }
-}
 
-private class MlpGating: Module, UnaryLayer {
-    @ModuleInfo(key: "linear_in") var linear_in: Linear
-    @ModuleInfo(key: "linear_out") var linear_out: Linear
-
-    init(_ cfg: TransformerConfig) {
-        let hidden =
-            cfg.dimFeedForward == 4 * cfg.dModel ? 11 * cfg.dModel / 4 : 2 * cfg.dimFeedForward / 3
-        self._linear_in.wrappedValue = Linear(cfg.dModel, 2 * hidden, bias: cfg.biasFF)
-        self._linear_out.wrappedValue = Linear(hidden, cfg.dModel, bias: cfg.biasFF)
-    }
-
-    func callAsFunction(_ x: MLXArray) -> MLXArray {
-        let x = linear_in(x)
-        let (B, T) = (x.dim(0), x.dim(1))
-        let x_reshaped = x.reshaped(B, T, 2, -1)
-        return linear_out(silu(x_reshaped[0..., 0..., 0]) * x_reshaped[0..., 0..., 1])
-    }
-}
-
-private class MlpNoGating: Module, UnaryLayer {
-    @ModuleInfo(key: "linear1") var linear1: Linear
-    @ModuleInfo(key: "linear2") var linear2: Linear
-
-    init(_ cfg: TransformerConfig) {
-        self._linear1.wrappedValue = Linear(cfg.dModel, cfg.dimFeedForward, bias: cfg.biasFF)
-        self._linear2.wrappedValue = Linear(cfg.dimFeedForward, cfg.dModel, bias: cfg.biasFF)
-    }
-
-    func callAsFunction(_ x: MLXArray) -> MLXArray {
-        linear2(geluApproximate(linear1(x)))
-    }
-}
-
-private class Attention: Module {
-    let cfg: TransformerConfig
-    let scale: Float
-
-    @ModuleInfo(key: "in_proj") var in_proj: Linear
-    @ModuleInfo(key: "out_proj") var out_proj: Linear
-
-    init(_ cfg: TransformerConfig) {
-        self.cfg = cfg
-        self.scale = 1.0 / sqrt(Float(cfg.headDim()))
-        let numKV = cfg.numHeads / cfg.kvRepeat
-        let outDim = cfg.dModel + 2 * numKV * cfg.dModel / cfg.numHeads
-        self._in_proj.wrappedValue = Linear(cfg.dModel, outDim, bias: cfg.biasAttn)
-        self._out_proj.wrappedValue = Linear(cfg.dModel, cfg.dModel, bias: cfg.biasAttn)
-    }
-
-    func callAsFunction(_ x: MLXArray) -> MLXArray {
-        // TODO
-        x
+    public static func v0_1() -> LmConfig {
+        let depformer = DepformerConfig(
+            transformer:
+                TransformerConfig(
+                    dModel: 1024,
+                    numHeads: 16,
+                    numLayers: 6,
+                    causal: true,
+                    normFirst: true,
+                    biasFF: false,
+                    biasAttn: false,
+                    layerScale: nil,
+                    // TODO: Use proper types rather than strings here.
+                    positionalEmbedding: "none",
+                    useConvBias: false,
+                    gating: true,
+                    norm: "rms_norm",
+                    context: 8,
+                    maxPeriod: 10000,
+                    maxSeqLen: 4096,
+                    kvRepeat: 1,
+                    dimFeedForward: 1024 * 4,
+                    convLayout: false
+                ), numSlices: 8)
+        return LmConfig(
+            transformer: TransformerConfig.v1_7b(),
+            depformer: depformer,
+            textInVocabSize: 32001,
+            textOutVocabSize: 32000,
+            audioVocabSize: 2049,
+            audioCodebooks: 16,
+            audioDelays: [0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1]
+        )
     }
 }
 
-private class TransformerLayer: Module {
-    @ModuleInfo(key: "gating") var gating: UnaryLayer
-    @ModuleInfo(key: "norm1") var norm1: UnaryLayer
-    @ModuleInfo(key: "norm2") var norm2: UnaryLayer
-    @ModuleInfo(key: "self_attn") var selfAttn: Attention
+public class LM: Module {
+    @ModuleInfo(key: "depformer") var depformer: Depformer
+    @ModuleInfo(key: "transformer") var transformer: Transformer
+    @ModuleInfo(key: "text_emb") var textEmb: Embedding
+    @ModuleInfo(key: "out_norm") var outNorm: Module
+    @ModuleInfo(key: "text_linear") var textLinear: Linear
+    @ModuleInfo(key: "audio_embs") var audioEmbs: [Embedding]
 
-    init(_ cfg: TransformerConfig) {
-        self._gating.wrappedValue = cfg.gating ? MlpGating(cfg) : MlpNoGating(cfg)
-        self._norm1.wrappedValue =
-            cfg.norm == "layer_norm"
-            ? LayerNorm(dimensions: cfg.dModel, eps: 1e-5)
-            : RMSNorm(dimensions: cfg.dModel, eps: 1e-8)
-        self._norm2.wrappedValue =
-            cfg.norm == "layer_norm"
-            ? LayerNorm(dimensions: cfg.dModel, eps: 1e-5)
-            : RMSNorm(dimensions: cfg.dModel, eps: 1e-8)
-        self._selfAttn.wrappedValue = Attention(cfg)
-    }
+    public init(_ cfg: LmConfig) {
+        self._transformer.wrappedValue = Transformer(cfg.transformer)
+        self._depformer.wrappedValue = Depformer(cfg)
+        self._textEmb.wrappedValue = Embedding(
+            embeddingCount: cfg.textInVocabSize, dimensions: cfg.transformer.dModel)
+        self._outNorm.wrappedValue =
+            cfg.transformer.norm == "layer_norm"
+            ? LayerNorm(dimensions: cfg.transformer.dModel, eps: 1e-5)
+            : RMSNorm(dimensions: cfg.transformer.dModel, eps: 1e-8)
+        self._textLinear.wrappedValue = Linear(
+            cfg.transformer.dModel, cfg.textOutVocabSize, bias: false)
+        self._audioEmbs.wrappedValue = (0..<cfg.audioCodebooks).map { _ in
+            Embedding(embeddingCount: cfg.audioVocabSize, dimensions: cfg.transformer.dModel)
+        }
 
-    func callAsFunction(_ x: MLXArray) -> MLXArray {
-        // TODO
-        x
-    }
-}
-
-public class Transformer: Module {
-    private let layers: [TransformerLayer]
-
-    public init(_ cfg: TransformerConfig) {
-        self.layers = (0..<cfg.numLayers).map { _ in TransformerLayer(cfg) }
     }
 
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
