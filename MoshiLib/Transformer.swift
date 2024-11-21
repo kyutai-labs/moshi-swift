@@ -101,21 +101,39 @@ private class Attention: Module {
     let cfg: TransformerConfig
     let scale: Float
 
-    @ModuleInfo(key: "in_proj") var in_proj: Linear
-    @ModuleInfo(key: "out_proj") var out_proj: Linear
+    @ModuleInfo(key: "in_proj") var inProj: Linear
+    @ModuleInfo(key: "out_proj") var outProj: Linear
 
     init(_ cfg: TransformerConfig) {
         self.cfg = cfg
         self.scale = 1.0 / sqrt(Float(cfg.headDim()))
         let numKV = cfg.numHeads / cfg.kvRepeat
         let outDim = cfg.dModel + 2 * numKV * cfg.dModel / cfg.numHeads
-        self._in_proj.wrappedValue = Linear(cfg.dModel, outDim, bias: cfg.biasAttn)
-        self._out_proj.wrappedValue = Linear(cfg.dModel, cfg.dModel, bias: cfg.biasAttn)
+        self._inProj.wrappedValue = Linear(cfg.dModel, outDim, bias: cfg.biasAttn)
+        self._outProj.wrappedValue = Linear(cfg.dModel, cfg.dModel, bias: cfg.biasAttn)
     }
 
-    func callAsFunction(_ x: MLXArray) -> MLXArray {
-        // TODO
-        x
+    func callAsFunction(_ x: MLXArray, mask: MLXArray?, cache: KVCache?) -> MLXArray {
+        let (B, T, H) = (x.dim(0), x.dim(1), x.dim(2))
+        let qkv = inProj(x).reshaped(B, T, 3, cfg.numHeads, cfg.headDim())
+        let q = qkv[0..., 0..., 0].transposed(0, 2, 1, 3)
+        var k = qkv[0..., 0..., 1].transposed(0, 2, 1, 3)
+        var v = qkv[0..., 0..., 2].transposed(0, 2, 1, 3)
+        // TODO: rope
+        if let cache {
+            (k, v) = cache.update(keys: k, values: v)
+        }
+        let k_len = k.dim(2)
+        let k_target_len = T + min(self.cfg.context, k_len - T)
+        if k_target_len < k_len {
+            let offset = k_len - k_target_len
+            k = k[0..., 0..., offset...]
+            v = v[0..., 0..., offset...]
+        }
+        let x = MLXFast.scaledDotProductAttention(
+            queries: q, keys: k, values: v, scale: self.scale, mask: mask
+        ).transposed(0, 2, 1, 3).reshaped(B, T, H)
+        return outProj(x)
     }
 }
 
@@ -142,9 +160,9 @@ private class TransformerLayer: Module {
         self._selfAttn.wrappedValue = Attention(cfg)
     }
 
-    func callAsFunction(_ x: MLXArray) -> MLXArray {
-        // TODO
-        x
+    func callAsFunction(_ x: MLXArray, mask: MLXArray?, cache: KVCache) -> MLXArray {
+        let x = x + selfAttn(norm1(x), mask: mask, cache: cache)
+        return x + gating(norm2(x))
     }
 }
 
@@ -155,8 +173,12 @@ public class Transformer: Module {
         self.layers = (0..<cfg.numLayers).map { _ in TransformerLayer(cfg) }
     }
 
-    public func callAsFunction(_ x: MLXArray) -> MLXArray {
-        // TODO
-        x
+    public func callAsFunction(_ x: MLXArray, cache: [KVCache]) -> MLXArray {
+        var x = x
+        let mask = createAttentionMask(h: x, cache: cache)
+        for (layer, c) in zip(self.layers, cache) {
+            x = layer(x, mask: mask, cache: c)
+        }
+        return x
     }
 }
