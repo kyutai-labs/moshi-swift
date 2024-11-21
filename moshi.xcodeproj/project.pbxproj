@@ -24,6 +24,20 @@
 		4D40195E2CEE1DFB00953487 /* MLXRandom in Frameworks */ = {isa = PBXBuildFile; productRef = 4D40195D2CEE1DFB00953487 /* MLXRandom */; };
 		4D40195F2CEE1DFB00953487 /* MoshiLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* MoshiLib.framework */; };
 		4D4019602CEE1DFB00953487 /* MoshiLib.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* MoshiLib.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4DA4FF5B2CEF13A00039339E /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF5A2CEF13A00039339E /* MLX */; };
+		4DA4FF5D2CEF13A00039339E /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF5C2CEF13A00039339E /* MLXFast */; };
+		4DA4FF5F2CEF13A00039339E /* MLXFFT in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF5E2CEF13A00039339E /* MLXFFT */; };
+		4DA4FF612CEF13A00039339E /* MLXLinalg in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF602CEF13A00039339E /* MLXLinalg */; };
+		4DA4FF632CEF13A00039339E /* MLXNN in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF622CEF13A00039339E /* MLXNN */; };
+		4DA4FF652CEF13A00039339E /* MLXOptimizers in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF642CEF13A00039339E /* MLXOptimizers */; };
+		4DA4FF672CEF13A00039339E /* MLXRandom in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF662CEF13A00039339E /* MLXRandom */; };
+		4DA4FF692CEF162C0039339E /* ComplexModule in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF682CEF162C0039339E /* ComplexModule */; };
+		4DA4FF6B2CEF162C0039339E /* Numerics in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF6A2CEF162C0039339E /* Numerics */; };
+		4DA4FF6D2CEF162C0039339E /* RealModule in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF6C2CEF162C0039339E /* RealModule */; };
+		4DA4FF6F2CEF17DA0039339E /* Numerics in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF6E2CEF17DA0039339E /* Numerics */; };
+		4DA4FF712CEF183C0039339E /* ComplexModule in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF702CEF183C0039339E /* ComplexModule */; };
+		4DA4FF732CEF18400039339E /* RealModule in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF722CEF18400039339E /* RealModule */; };
+		4DA4FF762CEF199C0039339E /* Transformers in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF752CEF199C0039339E /* Transformers */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -193,10 +207,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				4D40195C2CEE1DFB00953487 /* MLXOptimizers in Frameworks */,
+				4DA4FF692CEF162C0039339E /* ComplexModule in Frameworks */,
 				4D4019542CEE1DFB00953487 /* MLXFast in Frameworks */,
 				4D4019582CEE1DFB00953487 /* MLXLinalg in Frameworks */,
+				4DA4FF6B2CEF162C0039339E /* Numerics in Frameworks */,
 				4D4019522CEE1DFB00953487 /* MLX in Frameworks */,
 				4D40195A2CEE1DFB00953487 /* MLXNN in Frameworks */,
+				4DA4FF6D2CEF162C0039339E /* RealModule in Frameworks */,
 				4D40195F2CEE1DFB00953487 /* MoshiLib.framework in Frameworks */,
 				4D4019562CEE1DFB00953487 /* MLXFFT in Frameworks */,
 				4D40195E2CEE1DFB00953487 /* MLXRandom in Frameworks */,
@@ -207,6 +224,17 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4DA4FF5B2CEF13A00039339E /* MLX in Frameworks */,
+				4DA4FF712CEF183C0039339E /* ComplexModule in Frameworks */,
+				4DA4FF612CEF13A00039339E /* MLXLinalg in Frameworks */,
+				4DA4FF632CEF13A00039339E /* MLXNN in Frameworks */,
+				4DA4FF672CEF13A00039339E /* MLXRandom in Frameworks */,
+				4DA4FF5D2CEF13A00039339E /* MLXFast in Frameworks */,
+				4DA4FF652CEF13A00039339E /* MLXOptimizers in Frameworks */,
+				4DA4FF762CEF199C0039339E /* Transformers in Frameworks */,
+				4DA4FF6F2CEF17DA0039339E /* Numerics in Frameworks */,
+				4DA4FF732CEF18400039339E /* RealModule in Frameworks */,
+				4DA4FF5F2CEF13A00039339E /* MLXFFT in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -369,6 +397,9 @@
 				4D4019592CEE1DFB00953487 /* MLXNN */,
 				4D40195B2CEE1DFB00953487 /* MLXOptimizers */,
 				4D40195D2CEE1DFB00953487 /* MLXRandom */,
+				4DA4FF682CEF162C0039339E /* ComplexModule */,
+				4DA4FF6A2CEF162C0039339E /* Numerics */,
+				4DA4FF6C2CEF162C0039339E /* RealModule */,
 			);
 			productName = "moshi-cli";
 			productReference = 4D4019252CEE1D8F00953487 /* MoshiCLI */;
@@ -392,6 +423,17 @@
 			);
 			name = MoshiLib;
 			packageProductDependencies = (
+				4DA4FF5A2CEF13A00039339E /* MLX */,
+				4DA4FF5C2CEF13A00039339E /* MLXFast */,
+				4DA4FF5E2CEF13A00039339E /* MLXFFT */,
+				4DA4FF602CEF13A00039339E /* MLXLinalg */,
+				4DA4FF622CEF13A00039339E /* MLXNN */,
+				4DA4FF642CEF13A00039339E /* MLXOptimizers */,
+				4DA4FF662CEF13A00039339E /* MLXRandom */,
+				4DA4FF6E2CEF17DA0039339E /* Numerics */,
+				4DA4FF702CEF183C0039339E /* ComplexModule */,
+				4DA4FF722CEF18400039339E /* RealModule */,
+				4DA4FF752CEF199C0039339E /* Transformers */,
 			);
 			productName = "moshi-lib";
 			productReference = 4D4019312CEE1DDD00953487 /* MoshiLib.framework */;
@@ -465,6 +507,8 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */,
+				4DA4FF532CEF13740039339E /* XCRemoteSwiftPackageReference "swift-numerics" */,
+				4DA4FF742CEF199C0039339E /* XCRemoteSwiftPackageReference "swift-transformers" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4D4018E92CEE15B100953487 /* Products */;
@@ -915,6 +959,7 @@
 			buildSettings = {
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
 				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
@@ -935,10 +980,12 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
+				MACH_O_TYPE = staticlib;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				"OTHER_SWIFT_FLAGS[arch=*]" = "-no-verify-emitted-module-interface";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.kyutai.moshi-lib";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = auto;
@@ -959,6 +1006,7 @@
 			buildSettings = {
 				ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES;
 				BUILD_LIBRARY_FOR_DISTRIBUTION = YES;
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
@@ -979,10 +1027,12 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
+				MACH_O_TYPE = staticlib;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+				"OTHER_SWIFT_FLAGS[arch=*]" = "-no-verify-emitted-module-interface";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.kyutai.moshi-lib";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = auto;
@@ -1121,6 +1171,22 @@
 				minimumVersion = 0.18.1;
 			};
 		};
+		4DA4FF532CEF13740039339E /* XCRemoteSwiftPackageReference "swift-numerics" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-numerics.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.2;
+			};
+		};
+		4DA4FF742CEF199C0039339E /* XCRemoteSwiftPackageReference "swift-transformers" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/huggingface/swift-transformers";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.14;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1183,6 +1249,76 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
 			productName = MLXRandom;
+		};
+		4DA4FF5A2CEF13A00039339E /* MLX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLX;
+		};
+		4DA4FF5C2CEF13A00039339E /* MLXFast */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLXFast;
+		};
+		4DA4FF5E2CEF13A00039339E /* MLXFFT */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLXFFT;
+		};
+		4DA4FF602CEF13A00039339E /* MLXLinalg */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLXLinalg;
+		};
+		4DA4FF622CEF13A00039339E /* MLXNN */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLXNN;
+		};
+		4DA4FF642CEF13A00039339E /* MLXOptimizers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLXOptimizers;
+		};
+		4DA4FF662CEF13A00039339E /* MLXRandom */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLXRandom;
+		};
+		4DA4FF682CEF162C0039339E /* ComplexModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DA4FF532CEF13740039339E /* XCRemoteSwiftPackageReference "swift-numerics" */;
+			productName = ComplexModule;
+		};
+		4DA4FF6A2CEF162C0039339E /* Numerics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DA4FF532CEF13740039339E /* XCRemoteSwiftPackageReference "swift-numerics" */;
+			productName = Numerics;
+		};
+		4DA4FF6C2CEF162C0039339E /* RealModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DA4FF532CEF13740039339E /* XCRemoteSwiftPackageReference "swift-numerics" */;
+			productName = RealModule;
+		};
+		4DA4FF6E2CEF17DA0039339E /* Numerics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DA4FF532CEF13740039339E /* XCRemoteSwiftPackageReference "swift-numerics" */;
+			productName = Numerics;
+		};
+		4DA4FF702CEF183C0039339E /* ComplexModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DA4FF532CEF13740039339E /* XCRemoteSwiftPackageReference "swift-numerics" */;
+			productName = ComplexModule;
+		};
+		4DA4FF722CEF18400039339E /* RealModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DA4FF532CEF13740039339E /* XCRemoteSwiftPackageReference "swift-numerics" */;
+			productName = RealModule;
+		};
+		4DA4FF752CEF199C0039339E /* Transformers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DA4FF742CEF199C0039339E /* XCRemoteSwiftPackageReference "swift-transformers" */;
+			productName = Transformers;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

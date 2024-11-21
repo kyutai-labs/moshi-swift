@@ -12,3 +12,6 @@ When running on the command line via ssh, this may require unlocking the keychai
 ```
 security unlock-keychain
 ```
+
+Added to `OTHER_SWIFT_FLAGS` `-no-verify-emitter-module-interface`,
+as per [github issue](https://github.com/swiftlang/swift/issues/64669).
