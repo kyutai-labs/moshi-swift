@@ -100,6 +100,7 @@ private class MlpNoGating: Module, UnaryLayer {
 private class Attention: Module {
     let cfg: TransformerConfig
     let scale: Float
+    let rope: RoPE?
 
     @ModuleInfo(key: "in_proj") var inProj: Linear
     @ModuleInfo(key: "out_proj") var outProj: Linear
@@ -111,15 +112,25 @@ private class Attention: Module {
         let outDim = cfg.dModel + 2 * numKV * cfg.dModel / cfg.numHeads
         self._inProj.wrappedValue = Linear(cfg.dModel, outDim, bias: cfg.biasAttn)
         self._outProj.wrappedValue = Linear(cfg.dModel, cfg.dModel, bias: cfg.biasAttn)
+        self.rope =
+            switch cfg.positionalEmbedding {
+            case .none: nil
+            case .rope:
+                RoPE(dimensions: cfg.headDim(), traditional: true, base: Float(cfg.maxPeriod))
+            }
     }
 
     func callAsFunction(_ x: MLXArray, mask: MLXArray?, cache: KVCache?) -> MLXArray {
         let (B, T, H) = (x.dim(0), x.dim(1), x.dim(2))
         let qkv = inProj(x).reshaped(B, T, 3, cfg.numHeads, cfg.headDim())
-        let q = qkv[0..., 0..., 0].transposed(0, 2, 1, 3)
+        var q = qkv[0..., 0..., 0].transposed(0, 2, 1, 3)
         var k = qkv[0..., 0..., 1].transposed(0, 2, 1, 3)
         var v = qkv[0..., 0..., 2].transposed(0, 2, 1, 3)
-        // TODO: rope
+        if let rope {
+            let offset = cache?.offset ?? 0
+            q = rope(q, offset: offset)
+            k = rope(k, offset: offset)
+        }
         if let cache {
             (k, v) = cache.update(keys: k, values: v)
         }
