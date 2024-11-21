@@ -81,10 +81,10 @@ public struct LmConfig {
                     biasAttn: false,
                     layerScale: nil,
                     // TODO: Use proper types rather than strings here.
-                    positionalEmbedding: "none",
+                    positionalEmbedding: .none,
                     useConvBias: false,
                     gating: true,
-                    norm: "rms_norm",
+                    norm: .rmsNorm,
                     context: 8,
                     maxPeriod: 10000,
                     maxSeqLen: 4096,
@@ -118,9 +118,11 @@ public class LM: Module {
         self._textEmb.wrappedValue = Embedding(
             embeddingCount: cfg.textInVocabSize, dimensions: cfg.transformer.dModel)
         self._outNorm.wrappedValue =
-            cfg.transformer.norm == "layer_norm"
-            ? LayerNorm(dimensions: cfg.transformer.dModel, eps: 1e-5)
-            : RMSNorm(dimensions: cfg.transformer.dModel, eps: 1e-8)
+            switch cfg.transformer.norm {
+            case .layerNorm:
+                LayerNorm(dimensions: cfg.transformer.dModel, eps: 1e-5)
+            case .rmsNorm: RMSNorm(dimensions: cfg.transformer.dModel, eps: 1e-8)
+            }
         self._textLinear.wrappedValue = Linear(
             cfg.transformer.dModel, cfg.textOutVocabSize, bias: false)
         self._audioEmbs.wrappedValue = (0..<cfg.audioCodebooks).map { _ in

@@ -6,6 +6,16 @@ import MLX
 import MLXFast
 import MLXNN
 
+public enum Norm {
+    case layerNorm
+    case rmsNorm
+}
+
+public enum PositionalEmbedding {
+    case none
+    case rope
+}
+
 public struct TransformerConfig {
     var dModel: Int
     var numHeads: Int
@@ -15,10 +25,10 @@ public struct TransformerConfig {
     var biasFF: Bool
     var biasAttn: Bool
     var layerScale: Float?
-    var positionalEmbedding: String
+    var positionalEmbedding: PositionalEmbedding
     var useConvBias: Bool
     var gating: Bool
-    var norm: String
+    var norm: Norm
     var context: Int
     var maxPeriod: Int
     var maxSeqLen: Int
@@ -40,11 +50,10 @@ public struct TransformerConfig {
             biasFF: false,
             biasAttn: false,
             layerScale: nil,
-            // TODO: Use proper types rather than strings here.
-            positionalEmbedding: "rope",
+            positionalEmbedding: .rope,
             useConvBias: false,
             gating: true,
-            norm: "rms_norm",
+            norm: .rmsNorm,
             context: 3000,
             maxPeriod: 10000,
             maxSeqLen: 4096,
@@ -119,13 +128,17 @@ private class TransformerLayer: Module {
     init(_ cfg: TransformerConfig) {
         self._gating.wrappedValue = cfg.gating ? MlpGating(cfg) : MlpNoGating(cfg)
         self._norm1.wrappedValue =
-            cfg.norm == "layer_norm"
-            ? LayerNorm(dimensions: cfg.dModel, eps: 1e-5)
-            : RMSNorm(dimensions: cfg.dModel, eps: 1e-8)
+            switch cfg.norm {
+            case .layerNorm:
+                LayerNorm(dimensions: cfg.dModel, eps: 1e-5)
+            case .rmsNorm: RMSNorm(dimensions: cfg.dModel, eps: 1e-8)
+            }
         self._norm2.wrappedValue =
-            cfg.norm == "layer_norm"
-            ? LayerNorm(dimensions: cfg.dModel, eps: 1e-5)
-            : RMSNorm(dimensions: cfg.dModel, eps: 1e-8)
+            switch cfg.norm {
+            case .layerNorm:
+                LayerNorm(dimensions: cfg.dModel, eps: 1e-5)
+            case .rmsNorm: RMSNorm(dimensions: cfg.dModel, eps: 1e-8)
+            }
         self._selfAttn.wrappedValue = Attention(cfg)
     }
 
