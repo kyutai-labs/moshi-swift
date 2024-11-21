@@ -17,26 +17,26 @@ public enum PositionalEmbedding {
 }
 
 public struct TransformerConfig {
-    var dModel: Int
-    var numHeads: Int
-    var numLayers: Int
-    var causal: Bool
-    var normFirst: Bool
-    var biasFF: Bool
-    var biasAttn: Bool
-    var layerScale: Float?
-    var positionalEmbedding: PositionalEmbedding
-    var useConvBias: Bool
-    var gating: Bool
-    var norm: Norm
-    var context: Int
-    var maxPeriod: Int
-    var maxSeqLen: Int
-    var kvRepeat: Int
-    var dimFeedForward: Int
-    var convLayout: Bool
+    public var dModel: Int
+    public var numHeads: Int
+    public var numLayers: Int
+    public var causal: Bool
+    public var normFirst: Bool
+    public var biasFF: Bool
+    public var biasAttn: Bool
+    public var layerScale: Float?
+    public var positionalEmbedding: PositionalEmbedding
+    public var useConvBias: Bool
+    public var gating: Bool
+    public var norm: Norm
+    public var context: Int
+    public var maxPeriod: Int
+    public var maxSeqLen: Int
+    public var kvRepeat: Int
+    public var dimFeedForward: Int
+    public var convLayout: Bool
 
-    func headDim() -> Int {
+    public func headDim() -> Int {
         self.dModel / self.numHeads
     }
 
@@ -178,9 +178,11 @@ private class TransformerLayer: Module {
 }
 
 public class Transformer: Module {
+    let cfg: TransformerConfig
     private let layers: [TransformerLayer]
 
     public init(_ cfg: TransformerConfig) {
+        self.cfg = cfg
         self.layers = (0..<cfg.numLayers).map { _ in TransformerLayer(cfg) }
     }
 
@@ -191,5 +193,12 @@ public class Transformer: Module {
             x = layer(x, mask: mask, cache: c)
         }
         return x
+    }
+
+    public func makeCache() -> [KVCache] {
+        let kvHeads = cfg.numHeads / cfg.kvRepeat
+        return (0..<cfg.numLayers).map { _ in
+            KVCacheSimple(headDim: .init(cfg.headDim()), kvHeads: kvHeads)
+        }
     }
 }

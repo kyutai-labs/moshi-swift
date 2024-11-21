@@ -52,13 +52,13 @@ class Depformer: Module {
 }
 
 public struct LmConfig {
-    var transformer: TransformerConfig
-    var depformer: DepformerConfig
-    var textInVocabSize: Int
-    var textOutVocabSize: Int
-    var audioVocabSize: Int
-    var audioCodebooks: Int
-    var audioDelays: [Int]
+    public var transformer: TransformerConfig
+    public var depformer: DepformerConfig
+    public var textInVocabSize: Int
+    public var textOutVocabSize: Int
+    public var audioVocabSize: Int
+    public var audioCodebooks: Int
+    public var audioDelays: [Int]
 
     func audioEOSToken() -> Int {
         self.audioVocabSize - 2
@@ -106,7 +106,7 @@ public struct LmConfig {
 
 public class LM: Module {
     @ModuleInfo(key: "depformer") var depformer: Depformer
-    @ModuleInfo(key: "transformer") var transformer: Transformer
+    @ModuleInfo(key: "transformer") public var transformer: Transformer
     @ModuleInfo(key: "text_emb") var textEmb: Embedding
     @ModuleInfo(key: "out_norm") var outNorm: Module
     @ModuleInfo(key: "text_linear") var textLinear: Linear
