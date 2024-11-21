@@ -7,6 +7,7 @@
 
 import Foundation
 import MLX
+import MLXNN
 import MoshiLib
 
 print("Hello, World!")
@@ -25,6 +26,10 @@ print(arr[1])
 // print a value
 print(arr[0, 1].item(Int32.self))
 
+let weights = try loadArrays(url: URL(fileURLWithPath: "model.safetensors"))
+let parameters = ModuleParameters.unflattened(weights)
 let cfg = TransformerConfig.v0_1()
 let model = Transformer(cfg)
+try model.update(parameters: parameters, verify: [.all])
+eval(model)
 print(model)

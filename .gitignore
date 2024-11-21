@@ -11,3 +11,4 @@ __pycache__
 build
 buildServer.json
 xcuserdata
+model.safetensors
