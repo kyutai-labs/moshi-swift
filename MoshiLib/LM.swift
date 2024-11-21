@@ -28,10 +28,12 @@ class DepformerSlice: Module {
 }
 
 class Depformer: Module {
+    let cfg: LmConfig
     let transformerCache: [KVCache]
     let slices: [DepformerSlice]
 
     public init(_ cfg: LmConfig) {
+        self.cfg = cfg
         self.slices = (0..<cfg.depformer.numSlices).map { idx in
             DepformerSlice(
                 inVocabSize: idx == 0 ? cfg.textInVocabSize : cfg.audioVocabSize,
@@ -45,13 +47,15 @@ class Depformer: Module {
     public func sample(
         mainTransformerOut: MLXArray, stepIdx: Int, sampler: Sampler, textToken: MLXArray
     ) -> MLXArray {
-        for _ in self.transformerCache {
-            // TODO: Reset the cache
+        for c in self.transformerCache {
+            c.reset()
         }
         var lastToken = textToken
         var tokens: [MLXArray] = []
         for (sliceIdx, slice) in slices.enumerated() {
-            // TODO: Apply the delay, defaulting to 2048
+            if sliceIdx == 0 || stepIdx < self.cfg.audioDelays[sliceIdx - 1] {
+                lastToken = MLXArray([self.cfg.audioPaddingToken()])
+            }
             var xs = slice.linearIn(mainTransformerOut) + slice.emb(lastToken)
             xs = slice.transformer(xs, cache: self.transformerCache)
             let logits = slice.linearOut(xs)

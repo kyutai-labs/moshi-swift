@@ -13,6 +13,7 @@ public protocol KVCache: Evaluatable {
     var offset: Int { get }
 
     func update(keys: MLXArray, values: MLXArray) -> (MLXArray, MLXArray)
+    func reset()
 }
 
 func createAdditiveCausalMask(n: Int, offset: Int) -> MLXArray {
@@ -55,6 +56,13 @@ class KVCacheSimple: KVCache, Evaluatable {
         self.kHeadDim = headDim.first
         self.vHeadDim = headDim.second
         self.kvHeads = kvHeads
+    }
+
+    public func reset() {
+        self.keys = nil
+        self.values = nil
+        self.offset = 0
+        self.step = 256
     }
 
     public func innerState() -> [MLXArray] {

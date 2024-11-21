@@ -8,7 +8,7 @@ import MLXNN
 import MLXRandom
 
 func minPSampling(logits: MLXArray, minP: Float, minTokensToKeep: Int, temp: Float) -> MLXArray {
-    fatalError("min-p sampling is not implemented yet")
+    fatalError("TODO: min-p sampling is not implemented yet")
 }
 
 func topPSampling(logits: MLXArray, topP: Float, temp: Float) -> MLXArray {
