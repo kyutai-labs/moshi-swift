@@ -106,10 +106,22 @@ class ResidualVectorQuantization: Module {
     }
 
     func encode(_ x: MLXArray) -> MLXArray {
-        fatalError("todo")
+        var codes: [MLXArray] = []
+        var residual = x
+        for layer in self.layers {
+            let indices = layer.encode(residual)
+            let quantized = layer.decode(indices)
+            residual = residual - quantized
+            codes.append(indices)
+        }
+        return stacked(codes, axis: 0)
     }
 
     func decode(_ indexes: MLXArray) -> MLXArray {
+        var quantized = self.layers[0].decode(indexes[0])
+        for (i, layer) in self.layers[1...].enumerated() {
+            quantized = quantized + layer.decode(indexes[i + 1])
+        }
         fatalError("todo")
     }
 }
