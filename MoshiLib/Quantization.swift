@@ -122,7 +122,7 @@ class ResidualVectorQuantization: Module {
         for (i, layer) in self.layers[1...].enumerated() {
             quantized = quantized + layer.decode(indexes[i + 1])
         }
-        fatalError("todo")
+        return quantized
     }
 }
 
@@ -151,11 +151,20 @@ class ResidualVectorQuantizer: Module {
     }
 
     func encode(_ x: MLXArray) -> MLXArray {
-        fatalError("todo")
+        var x = x
+        if let inputProj = self.inputProj {
+            x = inputProj(x)
+        }
+        return self.vq.encode(x).swappedAxes(0, 1)
     }
 
-    func decode(_ indexes: MLXArray) -> MLXArray {
-        fatalError("todo")
+    func decode(_ codes: MLXArray) -> MLXArray {
+        let codes = codes.swappedAxes(0, 1)
+        var quantized = self.vq.decode(codes)
+        if let outputProj = self.outputProj {
+            quantized = outputProj(quantized)
+        }
+        return quantized
     }
 }
 
@@ -175,10 +184,19 @@ class SplitResidualVectorQuantizer: Module {
     }
 
     func encode(_ x: MLXArray) -> MLXArray {
-        fatalError("todo")
+        var codes = self.rvqFirst.encode(x)
+        if self.nQ > 1 {
+            let restCodes = self.rvqRest.encode(x)
+            codes = concatenated([codes, restCodes], axis: 1)
+        }
+        return codes
     }
 
-    func decode(_ indexes: MLXArray) -> MLXArray {
-        fatalError("todo")
+    func decode(_ codes: MLXArray) -> MLXArray {
+        var quantized = self.rvqFirst.decode(codes[0..., ...1])
+        if self.nQ > 1 {
+            quantized = quantized + self.rvqRest.decode(codes[0..., 1...])
+        }
+        return quantized
     }
 }
