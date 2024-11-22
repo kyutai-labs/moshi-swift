@@ -83,7 +83,7 @@ public struct LmConfig {
         self.audioVocabSize - 1
     }
 
-    public static func v0_1() -> LmConfig {
+    public static func moshi_v0_1() -> LmConfig {
         let depformer = DepformerConfig(
             transformer:
                 TransformerConfig(
