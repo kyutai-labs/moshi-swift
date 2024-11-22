@@ -6,7 +6,7 @@ import MLX
 import MLXFast
 import MLXNN
 
-class EuclideanCodebook {
+class EuclideanCodebook: Module {
     let epsilon: Float
     let dim: Int
     var embedding: MLXArray? = nil
@@ -58,5 +58,115 @@ class EuclideanCodebook {
         let indexes = indexes.flattened()
         let (embedding, _) = self.embeddingAndC2()
         return embedding.take(indexes, axis: 0).reshaped(finalDims)
+    }
+}
+
+class VectorQuantization: Module {
+    @ModuleInfo(key: "project_in") var projectIn: Linear?
+    @ModuleInfo(key: "project_out") var projectOut: Linear?
+    @ModuleInfo(key: "codebook") var codebook: EuclideanCodebook
+
+    init(dim: Int, codebookSize: Int, codebookDim: Int? = nil) {
+        let codebookDim = codebookDim ?? dim
+        if codebookDim == dim {
+            self._projectIn.wrappedValue = nil
+            self._projectOut.wrappedValue = nil
+        } else {
+            self._projectIn.wrappedValue = Linear(dim, codebookDim)
+            self._projectOut.wrappedValue = Linear(codebookDim, dim)
+        }
+        self._codebook.wrappedValue = EuclideanCodebook(
+            dim: codebookDim, codebookSize: codebookSize)
+    }
+
+    func encode(_ x: MLXArray) -> MLXArray {
+        var x = x.transposed()
+        if let projectIn = self.projectIn {
+            x = projectIn(x)
+        }
+        return self.codebook.encode(x)
+    }
+
+    func decode(_ indexes: MLXArray) -> MLXArray {
+        var quantized = self.codebook.decode(indexes)
+        if let projectOut = self.projectOut {
+            quantized = projectOut(quantized)
+        }
+        return quantized
+    }
+}
+
+class ResidualVectorQuantization: Module {
+    @ModuleInfo(key: "layers") var layers: [VectorQuantization]
+
+    init(nQ: Int, dim: Int, codebookSize: Int, codebookDim: Int? = nil) {
+        self._layers.wrappedValue = (0..<nQ).map { _ in
+            VectorQuantization(dim: dim, codebookSize: codebookSize, codebookDim: codebookDim)
+        }
+    }
+
+    func encode(_ x: MLXArray) -> MLXArray {
+        fatalError("todo")
+    }
+
+    func decode(_ indexes: MLXArray) -> MLXArray {
+        fatalError("todo")
+    }
+}
+
+class ResidualVectorQuantizer: Module {
+    @ModuleInfo(key: "vq") var vq: ResidualVectorQuantization
+    @ModuleInfo(key: "input_proj") var inputProj: Conv1d?
+    @ModuleInfo(key: "output_proj") var outputProj: Conv1d?
+
+    init(dim: Int, inputDim: Int?, outputDim: Int?, nQ: Int, bins: Int, forceProjection: Bool) {
+        let inputDim = inputDim ?? dim
+        let outputDim = outputDim ?? dim
+        if inputDim == dim && !forceProjection {
+            self._inputProj.wrappedValue = nil
+        } else {
+            self._inputProj.wrappedValue = Conv1d(
+                inputChannels: inputDim, outputChannels: dim, kernelSize: 1, bias: false)
+        }
+        if outputDim == dim && !forceProjection {
+            self._outputProj.wrappedValue = nil
+        } else {
+            self._outputProj.wrappedValue = Conv1d(
+                inputChannels: dim, outputChannels: outputDim, kernelSize: 1, bias: false)
+        }
+        self._vq.wrappedValue = ResidualVectorQuantization(
+            nQ: nQ, dim: dim, codebookSize: outputDim, codebookDim: nil)
+    }
+
+    func encode(_ x: MLXArray) -> MLXArray {
+        fatalError("todo")
+    }
+
+    func decode(_ indexes: MLXArray) -> MLXArray {
+        fatalError("todo")
+    }
+}
+
+class SplitResidualVectorQuantizer: Module {
+    let nQ: Int
+    @ModuleInfo(key: "rvq_first") var rvqFirst: ResidualVectorQuantizer
+    @ModuleInfo(key: "rvq_rest") var rvqRest: ResidualVectorQuantizer
+
+    init(dim: Int, inputDim: Int?, outputDim: Int?, nQ: Int, bins: Int) {
+        self.nQ = nQ
+        self._rvqFirst.wrappedValue = ResidualVectorQuantizer(
+            dim: dim, inputDim: inputDim, outputDim: outputDim, nQ: 1, bins: bins,
+            forceProjection: true)
+        self._rvqRest.wrappedValue = ResidualVectorQuantizer(
+            dim: dim, inputDim: inputDim, outputDim: outputDim, nQ: nQ - 1, bins: bins,
+            forceProjection: true)
+    }
+
+    func encode(_ x: MLXArray) -> MLXArray {
+        fatalError("todo")
+    }
+
+    func decode(_ indexes: MLXArray) -> MLXArray {
+        fatalError("todo")
     }
 }
