@@ -202,3 +202,15 @@ public class Transformer: Module {
         }
     }
 }
+
+public class ProjectedTransformer: Module {
+    let convLayout: Bool
+    @ModuleInfo(key: "transformer") var transformer: Transformer
+    @ModuleInfo(key: "input_proj") var inputProj: Linear?
+    @ModuleInfo(key: "output_proj") var outputProjs: [Linear]
+
+    init(_ cfg: TransformerConfig, inputDim: Int, outputDims: [Int]) {
+        self.convLayout = cfg.convLayout
+        self._transformer.wrappedValue = Transformer(cfg)
+    }
+}

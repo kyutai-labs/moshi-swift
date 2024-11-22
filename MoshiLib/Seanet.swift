@@ -92,9 +92,9 @@ class DecoderLayer: Module, UnaryLayer {
     // TODO: Streaming implementation.
 }
 
-class SeanetEncoder {
+class SeanetDecoder {
     @ModuleInfo(key: "init_conv1d") var initConv1d: StreamableConv1d
-    @ModuleInfo(key: "layers") var layers: [EncoderLayer]
+    @ModuleInfo(key: "layers") var layers: [DecoderLayer]
     @ModuleInfo(key: "final_conv1d") var finalConv1d: StreamableConv1d
 
     init(_ cfg: SeanetConfig) {
