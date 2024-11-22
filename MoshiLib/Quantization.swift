@@ -193,7 +193,7 @@ class SplitResidualVectorQuantizer: Module {
     }
 
     func decode(_ codes: MLXArray) -> MLXArray {
-        var quantized = self.rvqFirst.decode(codes[0..., ...1])
+        var quantized = self.rvqFirst.decode(codes[0..., ..<1])
         if self.nQ > 1 {
             quantized = quantized + self.rvqRest.decode(codes[0..., 1...])
         }
