@@ -35,7 +35,7 @@ public struct SeanetConfig {
     }
 }
 
-class SeanetResnetBlock: Module, UnaryLayer {
+class SeanetResnetBlock: Module, UnaryLayer, StreamingLayer {
     @ModuleInfo(key: "block") var block: [StreamableConv1d]
     @ModuleInfo(key: "shortcut") var shortcut: StreamableConv1d?
 
@@ -46,10 +46,21 @@ class SeanetResnetBlock: Module, UnaryLayer {
         fatalError("TODO")
     }
 
-    // TODO: Streaming implementation.
+    func resetState() {
+        for b in self.block {
+            b.resetState()
+        }
+        if let s = self.shortcut {
+            s.resetState()
+        }
+    }
+
+    func step(_ x: StreamArray) -> StreamArray {
+        fatalError("TODO")
+    }
 }
 
-class EncoderLayer: Module, UnaryLayer {
+class EncoderLayer: Module, UnaryLayer, StreamingLayer {
     @ModuleInfo(key: "residuals") var residuals: [SeanetResnetBlock]
     @ModuleInfo(key: "downsample") var downsample: StreamableConv1d
 
@@ -60,10 +71,19 @@ class EncoderLayer: Module, UnaryLayer {
         fatalError("TODO")
     }
 
-    // TODO: Streaming implementation.
+    func resetState() {
+        for r in self.residuals {
+            r.resetState()
+        }
+        self.downsample.resetState()
+    }
+
+    func step(_ x: StreamArray) -> StreamArray {
+        fatalError("TODO")
+    }
 }
 
-class SeanetEncoder {
+class SeanetEncoder: Module, StreamingLayer {
     @ModuleInfo(key: "init_conv1d") var initConv1d: StreamableConv1d
     @ModuleInfo(key: "layers") var layers: [EncoderLayer]
     @ModuleInfo(key: "final_conv1d") var finalConv1d: StreamableConv1d
@@ -75,10 +95,20 @@ class SeanetEncoder {
         fatalError("TODO")
     }
 
-    // TODO: Streaming implementation.
+    func resetState() {
+        self.initConv1d.resetState()
+        self.finalConv1d.resetState()
+        for l in self.layers {
+            l.resetState()
+        }
+    }
+
+    func step(_ x: StreamArray) -> StreamArray {
+        fatalError("TODO")
+    }
 }
 
-class DecoderLayer: Module, UnaryLayer {
+class DecoderLayer: Module, UnaryLayer, StreamingLayer {
     @ModuleInfo(key: "upsample") var upsample: StreamableConvTranspose1d
     @ModuleInfo(key: "residuals") var residuals: [SeanetResnetBlock]
 
@@ -89,10 +119,19 @@ class DecoderLayer: Module, UnaryLayer {
         fatalError("TODO")
     }
 
-    // TODO: Streaming implementation.
+    func resetState() {
+        self.upsample.resetState()
+        for r in self.residuals {
+            r.resetState()
+        }
+    }
+
+    func step(_ x: StreamArray) -> StreamArray {
+        fatalError("TODO")
+    }
 }
 
-class SeanetDecoder {
+class SeanetDecoder: Module, StreamingLayer {
     @ModuleInfo(key: "init_conv1d") var initConv1d: StreamableConv1d
     @ModuleInfo(key: "layers") var layers: [DecoderLayer]
     @ModuleInfo(key: "final_conv1d") var finalConv1d: StreamableConv1d
@@ -104,5 +143,15 @@ class SeanetDecoder {
         fatalError("TODO")
     }
 
-    // TODO: Streaming implementation.
+    func resetState() {
+        self.initConv1d.resetState()
+        self.finalConv1d.resetState()
+        for l in self.layers {
+            l.resetState()
+        }
+    }
+
+    func step(_ x: StreamArray) -> StreamArray {
+        fatalError("TODO")
+    }
 }
