@@ -237,7 +237,10 @@ public class ProjectedTransformer: Module {
         x = self.transformer(x, cache: cache)
         var outs: [MLXArray] = []
         for outputProj in self.outputProjs {
-            let out = outputProj?(x) ?? x
+            var out = outputProj?(x) ?? x
+            if self.convLayout {
+                out = out.swappedAxes(1, 2)
+            }
             outs.append(out)
         }
         return outs
