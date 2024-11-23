@@ -60,9 +60,13 @@ public class StreamArray {
     }
 
     public func elu() -> StreamArray {
+        self.map { MLXNN.elu($0, alpha: 1.0) }
+    }
+
+    public func map(_ f: (MLXArray) -> MLXArray) -> StreamArray {
         switch self.inner {
         case .none: StreamArray()
-        case .some(let x): StreamArray(MLXNN.elu(x, alpha: 1.0))
+        case .some(let x): StreamArray(f(x))
         }
     }
 }
@@ -70,18 +74,6 @@ public class StreamArray {
 public protocol StreamingLayer {
     func resetState()
     func step(_ x: StreamArray) -> StreamArray
-}
-
-extension UnaryLayer {
-    func resetState() {
-    }
-
-    func step(_ x: StreamArray) -> StreamArray {
-        switch x.inner {
-        case .none: StreamArray()
-        case .some(let x): StreamArray(self(x))
-        }
-    }
 }
 
 public class StreamingBinOp {
@@ -133,5 +125,4 @@ public class StreamingBinOp {
         case _: fatalError("internal error")
         }
     }
-
 }

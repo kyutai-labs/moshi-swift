@@ -242,4 +242,8 @@ public class ProjectedTransformer: Module {
         }
         return outs
     }
+
+    public func makeCache() -> [KVCache] {
+        self.transformer.makeCache()
+    }
 }
