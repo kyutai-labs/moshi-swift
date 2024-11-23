@@ -207,10 +207,39 @@ public class ProjectedTransformer: Module {
     let convLayout: Bool
     @ModuleInfo(key: "transformer") var transformer: Transformer
     @ModuleInfo(key: "input_proj") var inputProj: Linear?
-    @ModuleInfo(key: "output_proj") var outputProjs: [Linear]
+    @ModuleInfo(key: "output_proj") var outputProjs: [Linear?]
 
     init(_ cfg: TransformerConfig, inputDim: Int, outputDims: [Int]) {
         self.convLayout = cfg.convLayout
         self._transformer.wrappedValue = Transformer(cfg)
+        if inputDim == cfg.dModel {
+            self._inputProj.wrappedValue = nil
+        } else {
+            self._inputProj.wrappedValue = Linear(inputDim, cfg.dModel, bias: false)
+        }
+        var outputProjs: [Linear?] = []
+        for outputDim in outputDims {
+            let outputProj =
+                outputDim != cfg.dModel ? Linear(cfg.dModel, outputDim, bias: false) : nil
+            outputProjs.append(outputProj)
+        }
+        self._outputProjs.wrappedValue = outputProjs
+    }
+
+    public func callAsFunction(_ x: MLXArray, cache: [KVCache]) -> [MLXArray] {
+        var x = x
+        if self.convLayout {
+            x = x.swappedAxes(1, 2)
+        }
+        if let inputProj = self.inputProj {
+            x = inputProj(x)
+        }
+        x = self.transformer(x, cache: cache)
+        var outs: [MLXArray] = []
+        for outputProj in self.outputProjs {
+            let out = outputProj?(x) ?? x
+            outs.append(out)
+        }
+        return outs
     }
 }
