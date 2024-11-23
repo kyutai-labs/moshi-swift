@@ -49,7 +49,7 @@ class EuclideanCodebook: Module {
         let (embedding, c2) = self.embeddingAndC2()
         let targetShape = x.shape
         let x = x.flattened(start: -2)
-        let dotProd = x.matmul(embedding.transposed())
+        let dotProd = x.matmul(embedding.swappedAxes(-1, -2))
         return (c2 - dotProd).argMax(axis: -1).reshaped(targetShape)
     }
 
@@ -80,7 +80,7 @@ class VectorQuantization: Module {
     }
 
     func encode(_ x: MLXArray) -> MLXArray {
-        var x = x.transposed()
+        var x = x.swappedAxes(-1, -2)
         if let projectIn = self.projectIn {
             x = projectIn(x)
         }

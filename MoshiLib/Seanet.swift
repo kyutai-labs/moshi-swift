@@ -155,7 +155,7 @@ class SeanetEncoder: Module, StreamingLayer {
     init(_ cfg: SeanetConfig) {
         var mult = 1
         let initConv1d = StreamableConv1d(
-            inC: cfg.channels, outC: mult * cfg.channels, kSize: cfg.kernelSize, stride: 1,
+            inC: cfg.channels, outC: mult * cfg.nFilters, kSize: cfg.kernelSize, stride: 1,
             dilation: 1, groups: 1, bias: true, causal: cfg.causal,
             padMode: cfg.padMode)
         var layers: [EncoderLayer] = []

@@ -38,12 +38,15 @@ class Conv1d: Module, UnaryLayer {
     }
 
     func callAsFunction(_ x: MLXArray) -> MLXArray {
+        // MLX uses NLC whereas pytorch/candle use NCL
         var y = conv1d(
-            x, weight, stride: stride, padding: padding, dilation: dilation, groups: groups)
+            x.swappedAxes(-1, -2), weight, stride: stride, padding: padding, dilation: dilation,
+            groups: groups
+        )
         if let bias {
             y = y + bias
         }
-        return y
+        return y.swappedAxes(-1, -2)
     }
 }
 
@@ -76,11 +79,13 @@ class ConvTransposed1d: Module, UnaryLayer {
     }
 
     open func callAsFunction(_ x: MLXArray) -> MLXArray {
-        var y = convTransposed1d(x, weight, stride: stride, padding: padding, groups: groups)
+        var y = convTransposed1d(
+            x.swappedAxes(-1, -2), weight, stride: stride, padding: padding, groups: groups
+        )
         if let bias {
             y = y + bias
         }
-        return y
+        return y.swappedAxes(-1, -2)
     }
 }
 
@@ -168,13 +173,15 @@ class StreamableConv1d: Module, UnaryLayer, StreamingLayer {
         let extraPadding = getExtraPaddingForConv1d(
             x, kSize: kSize, stride: self.conv.conv.stride, paddingTotal: paddingTotal)
         var pd: MLXArray
+        let z = IntOrPair.init((0, 0))
         if self.causal {
-            pd = padded(x, width: IntOrPair((paddingTotal, extraPadding)), mode: self.padMode)
+            let widths = [z, z, IntOrPair((paddingTotal, extraPadding))]
+            pd = padded(x, widths: widths, mode: self.padMode)
         } else {
             let paddingRight = paddingTotal / 2
             let paddingLeft = paddingTotal - paddingRight
-            pd = padded(
-                x, width: IntOrPair((paddingLeft, paddingRight + extraPadding)), mode: self.padMode)
+            let widths = [z, z, IntOrPair((paddingLeft, paddingRight + extraPadding))]
+            pd = padded(x, widths: widths, mode: self.padMode)
         }
         return self.conv(pd)
     }

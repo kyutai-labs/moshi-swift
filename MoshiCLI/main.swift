@@ -24,6 +24,5 @@ func runTransformer() throws {
 
 let cfg = MimiConfig.v0_1()
 let model = Mimi(cfg)
-print(model)
 let input = MLXArray.zeros([1, 1, 24000], dtype: .float32)
 let out = model.encode(input)
