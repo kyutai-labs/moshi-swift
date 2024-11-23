@@ -58,6 +58,13 @@ public class StreamArray {
             return (StreamArray(), StreamArray())
         }
     }
+
+    public func elu() -> StreamArray {
+        switch self.inner {
+        case .none: StreamArray()
+        case .some(let x): StreamArray(MLXNN.elu(x, alpha: 1.0))
+        }
+    }
 }
 
 public protocol StreamingLayer {
