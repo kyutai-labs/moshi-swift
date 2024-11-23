@@ -14,29 +14,43 @@ public class StreamArray {
         self.inner = x
     }
 
-    public func len(dim: Int) -> Int {
+    public func dim(_ dim: Int) -> Int {
         self.inner?.dim(dim) ?? 0
     }
 
-    public func cat2(rhs: StreamArray, dim: Int) -> StreamArray {
+    public func cat2(_ rhs: StreamArray, axis: Int) -> StreamArray {
         switch (self.inner, rhs.inner) {
         case (.none, .none): StreamArray()
         case (.some(let lhs), .none): StreamArray(lhs)
         case (.none, .some(let rhs)): StreamArray(rhs)
-        case (.some(let lhs), .some(let rhs)): StreamArray(concatenated([lhs, rhs], axis: dim))
+        case (.some(let lhs), .some(let rhs)): StreamArray(concatenated([lhs, rhs], axis: axis))
         }
     }
 
-    public func split(lhsLen: Int, dim: Int) -> (StreamArray, StreamArray) {
+    public func narrow(_ offset: Int, _ len: Int, axis: Int) -> StreamArray {
+        if let inner = self.inner {
+            let totalLen = inner.dim(axis)
+            if len <= offset {
+                return StreamArray()
+            } else {
+                let t = inner.split(indices: [offset, min(totalLen, offset + len)], axis: axis)
+                return StreamArray(t[1])
+            }
+        } else {
+            return StreamArray()
+        }
+    }
+
+    public func split(lhsLen: Int, axis: Int) -> (StreamArray, StreamArray) {
         if let t = self.inner {
-            let len = t.dim(dim)
+            let len = t.dim(axis)
             let lhsLen = min(len, lhsLen)
             if lhsLen == 0 {
                 return (StreamArray(), StreamArray(t))
             } else if lhsLen == len {
                 return (StreamArray(t), StreamArray())
             } else {
-                let split = t.split(indices: [lhsLen], axis: dim)
+                let split = t.split(indices: [lhsLen], axis: axis)
                 return (StreamArray(split[0]), StreamArray(split[1]))
             }
         } else {
@@ -45,9 +59,9 @@ public class StreamArray {
     }
 }
 
-public protocol StreamingModel {
+public protocol StreamingLayer {
     func resetState()
-    func step(x: StreamArray) -> StreamArray
+    func step(_ x: StreamArray) -> StreamArray
 }
 
 public class StreamingBinOp {
@@ -61,13 +75,13 @@ public class StreamingBinOp {
     var prevLHS: StreamArray
     var prevRHS: StreamArray
     let op: BinOp
-    let dim: Int
+    let axis: Int
 
-    init(_ op: BinOp, dim: Int) {
+    init(_ op: BinOp, axis: Int) {
         self.prevLHS = StreamArray()
         self.prevRHS = StreamArray()
         self.op = op
-        self.dim = dim
+        self.axis = axis
     }
 
     public func resetState() {
@@ -75,14 +89,14 @@ public class StreamingBinOp {
         self.prevRHS = StreamArray()
     }
 
-    public func step(lhs: StreamArray, rhs: StreamArray) -> StreamArray {
-        let lhs = self.prevLHS.cat2(rhs: lhs, dim: self.dim)
-        let rhs = self.prevRHS.cat2(rhs: rhs, dim: self.dim)
-        let lhsLen = lhs.len(dim: self.dim)
-        let rhsLen = rhs.len(dim: self.dim)
+    public func step(_ lhs: StreamArray, _ rhs: StreamArray) -> StreamArray {
+        let lhs = self.prevLHS.cat2(lhs, axis: self.axis)
+        let rhs = self.prevRHS.cat2(rhs, axis: self.axis)
+        let lhsLen = lhs.dim(self.axis)
+        let rhsLen = rhs.dim(self.axis)
         let commonLen = min(lhsLen, rhsLen)
-        let (lhs_, prevLHS) = lhs.split(lhsLen: commonLen, dim: self.dim)
-        let (rhs_, prevRHS) = rhs.split(lhsLen: commonLen, dim: self.dim)
+        let (lhs_, prevLHS) = lhs.split(lhsLen: commonLen, axis: self.axis)
+        let (rhs_, prevRHS) = rhs.split(lhsLen: commonLen, axis: self.axis)
         self.prevLHS = prevLHS
         self.prevRHS = prevRHS
         switch (lhs_.inner, rhs_.inner) {
@@ -99,4 +113,5 @@ public class StreamingBinOp {
         case _: fatalError("internal error")
         }
     }
+
 }

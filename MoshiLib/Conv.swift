@@ -141,10 +141,12 @@ func unpad1d(_ x: MLXArray, unpadL: Int, unpadR: Int) -> MLXArray {
     return x[.ellipsis, left..<right]
 }
 
-class StreamableConv1d: Module, UnaryLayer {
+class StreamableConv1d: Module, UnaryLayer, StreamingLayer {
     let padMode: PadMode
     let causal: Bool
     let kSize: Int
+    var leftPadApplied: Bool = false
+    var statePrevXs: StreamArray = StreamArray()
     @ModuleInfo(key: "conv") var conv: NormConv1d
 
     init(
@@ -177,12 +179,46 @@ class StreamableConv1d: Module, UnaryLayer {
         return self.conv(pd)
     }
 
-    // TODO: Streaming implementation.
+    func resetState() {
+        statePrevXs = StreamArray()
+        self.leftPadApplied = false
+    }
+
+    func step(_ x: StreamArray) -> StreamArray {
+        if let inner = x.inner {
+            if self.leftPadApplied {
+            }
+            let stride = self.conv.conv.stride
+            let dilation = self.conv.conv.dilation
+            let kernel = (self.kSize - 1) * dilation + 1
+            var x = StreamArray(inner)
+            x = self.statePrevXs.cat2(x, dim: -1)
+            let seqLen = x.dim(dim: -1)
+            let numFrames = max(seqLen + stride - kernel, 0) / stride
+            if numFrames > 0 {
+                let offset = numFrames * stride
+                self.statePrevXs = x.narrow(offset, seqLen - offset, dim: -1)
+                let inL = (numFrames - 1) * stride + kernel
+                x = x.narrow(0, inL, dim: -1)
+                if let x = x.inner {
+                    return StreamArray(self.conv.conv(x))
+                } else {
+                    return StreamArray()
+                }
+            } else {
+                self.statePrevXs = x
+                return StreamArray()
+            }
+        } else {
+            return StreamArray()
+        }
+    }
 }
 
-class StreamableConvTranspose1d: Module, UnaryLayer {
+class StreamableConvTranspose1d: Module, UnaryLayer, StreamingLayer {
     let causal: Bool
     let kSize: Int
+    var statePrevYs: StreamArray = StreamArray()
     @ModuleInfo(key: "convtr") var convtr: NormConvTranspose1d
 
     init(
@@ -208,10 +244,16 @@ class StreamableConvTranspose1d: Module, UnaryLayer {
         }
     }
 
-    // TODO: Streaming implementation.
+    func resetState() {
+        statePrevYs = StreamArray()
+    }
+
+    func step(_ x: StreamArray) -> StreamArray {
+        fatalError("TODO")
+    }
 }
 
-class ConvDownsample1d: Module, UnaryLayer {
+class ConvDownsample1d: Module, UnaryLayer, StreamingLayer {
     @ModuleInfo(key: "conv") var conv: StreamableConv1d
 
     init(stride: Int, dim: Int, causal: Bool) {
@@ -224,7 +266,13 @@ class ConvDownsample1d: Module, UnaryLayer {
         self.conv(x)
     }
 
-    // TODO: Streaming implementation.
+    func resetState() {
+        self.conv.resetState()
+    }
+
+    func step(_ x: StreamArray) -> StreamArray {
+        self.conv.step(x)
+    }
 }
 
 class ConvTrUpsample1d: Module, UnaryLayer {
@@ -240,5 +288,11 @@ class ConvTrUpsample1d: Module, UnaryLayer {
         self.convtr(x)
     }
 
-    // TODO: Streaming implementation.
+    func resetState() {
+        self.convtr.resetState()
+    }
+
+    func step(_ x: StreamArray) -> StreamArray {
+        self.convtr.step(x)
+    }
 }
