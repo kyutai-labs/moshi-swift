@@ -19,8 +19,8 @@ class EuclideanCodebook: Module {
         self.epsilon = 1e-5
         self.dim = dim
         self._initialized.wrappedValue = MLXArray.zeros([1], dtype: .float32)
-        self._embeddingSum.wrappedValue = MLXArray.zeros([codebookSize], dtype: .float32)
-        self._clusterUsage.wrappedValue = MLXArray.zeros([codebookSize, dim], dtype: .float32)
+        self._embeddingSum.wrappedValue = MLXArray.zeros([codebookSize, dim], dtype: .float32)
+        self._clusterUsage.wrappedValue = MLXArray.zeros([codebookSize], dtype: .float32)
     }
 
     // Precompute the embedding and c2 tensors
@@ -47,10 +47,10 @@ class EuclideanCodebook: Module {
 
     func encode(_ x: MLXArray) -> MLXArray {
         let (embedding, c2) = self.embeddingAndC2()
-        let targetShape = x.shape
-        let x = x.flattened(start: -2)
+        let targetShape = Array(x.shape.dropLast())
+        let x = x.flattened(end: -2)
         let dotProd = x.matmul(embedding.swappedAxes(-1, -2))
-        return (c2 - dotProd).argMax(axis: -1).reshaped(targetShape)
+        return (c2 - dotProd).argMin(axis: -1).reshaped(targetShape)
     }
 
     func decode(_ indexes: MLXArray) -> MLXArray {
@@ -92,7 +92,7 @@ class VectorQuantization: Module {
         if let projectOut = self.projectOut {
             quantized = projectOut(quantized)
         }
-        return quantized
+        return quantized.swappedAxes(-1, -2)
     }
 }
 

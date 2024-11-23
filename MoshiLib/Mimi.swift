@@ -72,14 +72,11 @@ public class Mimi: Module {
     public func encode(_ x: MLXArray) -> MLXArray {
         self.encoder.resetState()
         self.encoderCache.forEach { c in c.reset() }
-        print("II", x.shape)
         var x = self.encoder(x)
-        print("I2", x.shape)
         x = self.encoderTransformer(x, cache: self.encoderCache)[0]
-        print("I3", x.shape)
         x = self.downsample(x)
-        print("I4", x.shape)
-        return self.quantizer.encode(x)
+        let codes = self.quantizer.encode(x)
+        return codes
     }
 
     public func encode_step(_ x: StreamArray) -> StreamArray {
