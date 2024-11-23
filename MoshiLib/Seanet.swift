@@ -36,17 +36,49 @@ public struct SeanetConfig {
 }
 
 class SeanetResnetBlock: Module, UnaryLayer, StreamingLayer {
+    let skipOp: StreamingBinOp
     @ModuleInfo(key: "block") var block: [StreamableConv1d]
     @ModuleInfo(key: "shortcut") var shortcut: StreamableConv1d?
 
-    init(_ cfg: SeanetConfig) {
+    init(_ cfg: SeanetConfig, dim: Int, kSizesAndDilations: [(Int, Int)]) {
+        self.skipOp = StreamingBinOp(.add, axis: -1)
+        var block: [StreamableConv1d] = []
+        var shortcut: StreamableConv1d? = nil
+        let hidden = dim / cfg.compress
+
+        for (i, (kSize, dilation)) in kSizesAndDilations.enumerated() {
+            let inC = i == 0 ? dim : hidden
+            let outC = i == kSizesAndDilations.count - 1 ? dim : hidden
+            let c = StreamableConv1d(
+                inC: inC, outC: outC, kSize: kSize, stride: 1, dilation: dilation, groups: 1,
+                bias: true, causal: cfg.causal, padMode: cfg.padMode)
+            block.append(c)
+        }
+        if !cfg.trueSkip {
+            shortcut = StreamableConv1d(
+                inC: dim, outC: dim, kSize: 1, stride: 1, dilation: 1, groups: 1, bias: true,
+                causal: cfg.causal, padMode: cfg.padMode)
+        }
+
+        self._block.wrappedValue = block
+        self._shortcut.wrappedValue = shortcut
     }
 
     func callAsFunction(_ x: MLXArray) -> MLXArray {
-        fatalError("TODO")
+        let residual = x
+        var x = x
+        for b in self.block {
+            x = b(elu(x, alpha: 1.0))
+        }
+        if let shortcut = self.shortcut {
+            return x + shortcut(residual)
+        } else {
+            return x + residual
+        }
     }
 
     func resetState() {
+        self.skipOp.resetState()
         for b in self.block {
             b.resetState()
         }
@@ -56,7 +88,19 @@ class SeanetResnetBlock: Module, UnaryLayer, StreamingLayer {
     }
 
     func step(_ x: StreamArray) -> StreamArray {
-        fatalError("TODO")
+        let residual = x
+        var x = x
+        for b in self.block {
+            if let inner = x.inner {
+                x = StreamArray(elu(inner, alpha: 1.0))
+            }
+            x = b.step(x)
+        }
+        if let shortcut = self.shortcut {
+            return self.skipOp.step(x, shortcut.step(residual))
+        } else {
+            return self.skipOp.step(x, residual)
+        }
     }
 }
 
@@ -79,7 +123,12 @@ class EncoderLayer: Module, UnaryLayer, StreamingLayer {
     }
 
     func step(_ x: StreamArray) -> StreamArray {
-        fatalError("TODO")
+        // TODO: Add activations
+        var x = x
+        for r in self.residuals {
+            x = r.step(x)
+        }
+        return self.downsample.step(x)
     }
 }
 
@@ -104,7 +153,12 @@ class SeanetEncoder: Module, StreamingLayer {
     }
 
     func step(_ x: StreamArray) -> StreamArray {
-        fatalError("TODO")
+        // TODO: Add activations
+        var x = self.initConv1d.step(x)
+        for layer in self.layers {
+            x = layer.step(x)
+        }
+        return self.finalConv1d.step(x)
     }
 }
 
@@ -152,6 +206,10 @@ class SeanetDecoder: Module, StreamingLayer {
     }
 
     func step(_ x: StreamArray) -> StreamArray {
-        fatalError("TODO")
+        var x = self.initConv1d.step(x)
+        for layer in self.layers {
+            x = layer.step(x)
+        }
+        return self.finalConv1d.step(x)
     }
 }

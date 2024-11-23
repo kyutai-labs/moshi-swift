@@ -65,6 +65,18 @@ public protocol StreamingLayer {
     func step(_ x: StreamArray) -> StreamArray
 }
 
+extension UnaryLayer {
+    func resetState() {
+    }
+
+    func step(_ x: StreamArray) -> StreamArray {
+        switch x.inner {
+        case .none: StreamArray()
+        case .some(let x): StreamArray(self(x))
+        }
+    }
+}
+
 public class StreamingBinOp {
     enum BinOp {
         case add
