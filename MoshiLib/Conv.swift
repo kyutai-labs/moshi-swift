@@ -192,14 +192,14 @@ class StreamableConv1d: Module, UnaryLayer, StreamingLayer {
             let dilation = self.conv.conv.dilation
             let kernel = (self.kSize - 1) * dilation + 1
             var x = StreamArray(inner)
-            x = self.statePrevXs.cat2(x, dim: -1)
-            let seqLen = x.dim(dim: -1)
+            x = self.statePrevXs.cat2(x, axis: -1)
+            let seqLen = x.dim(-1)
             let numFrames = max(seqLen + stride - kernel, 0) / stride
             if numFrames > 0 {
                 let offset = numFrames * stride
-                self.statePrevXs = x.narrow(offset, seqLen - offset, dim: -1)
+                self.statePrevXs = x.narrow(offset, seqLen - offset, axis: -1)
                 let inL = (numFrames - 1) * stride + kernel
-                x = x.narrow(0, inL, dim: -1)
+                x = x.narrow(0, inL, axis: -1)
                 if let x = x.inner {
                     return StreamArray(self.conv.conv(x))
                 } else {
@@ -249,7 +249,26 @@ class StreamableConvTranspose1d: Module, UnaryLayer, StreamingLayer {
     }
 
     func step(_ x: StreamArray) -> StreamArray {
-        fatalError("TODO")
+        if let x = x.inner {
+            let stride = self.convtr.convtr.stride
+            var ys = self.convtr(x)
+            let ot = ys.dim(1)
+            if var prevYs = self.statePrevYs.inner {
+                let pt = prevYs.dim(-1)
+                if let bias = self.convtr.convtr.bias {
+                    prevYs = prevYs - bias
+                }
+                let ys1 = ys[.ellipsis, 0..<pt] + prevYs
+                let ys2 = ys[.ellipsis, pt...]
+                ys = concatenated([ys1, ys2], axis: -1)
+            }
+            let invalidSteps = self.kSize - stride
+            let (ys_, prevYs) = StreamArray(ys).split(lhsLen: ot - invalidSteps, axis: -1)
+            self.statePrevYs = prevYs
+            return ys_
+        } else {
+            return StreamArray()
+        }
     }
 }
 

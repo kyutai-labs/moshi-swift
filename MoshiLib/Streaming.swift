@@ -33,6 +33,7 @@ public class StreamArray {
             if len <= offset {
                 return StreamArray()
             } else {
+                // Not sure if there exists something closer to pytorch narrow
                 let t = inner.split(indices: [offset, min(totalLen, offset + len)], axis: axis)
                 return StreamArray(t[1])
             }
