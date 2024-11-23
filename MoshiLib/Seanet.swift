@@ -128,7 +128,8 @@ class EncoderLayer: Module, UnaryLayer, StreamingLayer {
         for r in self.residuals {
             x = r(x)
         }
-        return self.downsample(elu(x, alpha: 1.0))
+        let y = self.downsample(elu(x, alpha: 1.0))
+        return y
     }
 
     func resetState() {

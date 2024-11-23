@@ -46,7 +46,8 @@ class Conv1d: Module, UnaryLayer {
         if let bias {
             y = y + bias
         }
-        return y.swappedAxes(-1, -2)
+        y = y.swappedAxes(-1, -2)
+        return y
     }
 }
 
@@ -162,7 +163,7 @@ class StreamableConv1d: Module, UnaryLayer, StreamingLayer {
         self.padMode = padMode
         self.kSize = kSize
         self._conv.wrappedValue = NormConv1d(
-            inC: inC, outC: outC, kSize: kSize, groups: groups, dilation: dilation, bias: bias)
+            inC: inC, outC: outC, kSize: kSize, stride: stride, groups: groups, dilation: dilation, bias: bias)
     }
 
     func callAsFunction(_ x: MLXArray) -> MLXArray {
