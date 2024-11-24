@@ -59,6 +59,9 @@ class ConvTransposed1d: Module, UnaryLayer {
     let padding: Int
     let stride: Int
     let groups: Int
+    let inC: Int
+    let outC: Int
+    let kSize: Int
 
     init(
         inputChannels: Int,
@@ -72,14 +75,29 @@ class ConvTransposed1d: Module, UnaryLayer {
         let scale = sqrt(1 / Float(inputChannels * kernelSize))
 
         self.weight = uniform(
-            low: -scale, high: scale, [outputChannels, kernelSize, inputChannels])
+            low: -scale, high: scale, [outputChannels / groups, kernelSize, inputChannels])
         self.bias = bias ? MLXArray.zeros([outputChannels]) : nil
         self.padding = padding
         self.stride = stride
         self.groups = groups
+        self.inC = inputChannels
+        self.outC = outputChannels
+        self.kSize = kernelSize
     }
 
     open func callAsFunction(_ x: MLXArray) -> MLXArray {
+        var weight = self.weight
+        var groups = self.groups
+        // Groups are not supported in convTransposed1d as of 0.18.1 so we hack our way around it.
+        if groups == inC && groups == outC {
+            // TODO: Do not recompute this each time, maybe override the update function?
+            let eye = repeated(
+                eye(outC).asType(weight.dtype).reshaped([outC, 1, outC]), count: kSize, axis: 1)
+            weight = repeated(weight, count: groups, axis: 0) * eye
+            groups = 1
+        } else if groups > 1 {
+            fatalError("groups are not supported in ConvTranspose1d, \(groups), \(inC), \(outC)")
+        }
         var y = convTransposed1d(
             x.swappedAxes(-1, -2), weight, stride: stride, padding: padding, groups: groups
         )
@@ -163,7 +181,8 @@ class StreamableConv1d: Module, UnaryLayer, StreamingLayer {
         self.padMode = padMode
         self.kSize = kSize
         self._conv.wrappedValue = NormConv1d(
-            inC: inC, outC: outC, kSize: kSize, stride: stride, groups: groups, dilation: dilation, bias: bias)
+            inC: inC, outC: outC, kSize: kSize, stride: stride, groups: groups, dilation: dilation,
+            bias: bias)
     }
 
     func callAsFunction(_ x: MLXArray) -> MLXArray {
@@ -236,7 +255,7 @@ class StreamableConvTranspose1d: Module, UnaryLayer, StreamingLayer {
         self.causal = causal
         self.kSize = kSize
         self._convtr.wrappedValue = NormConvTranspose1d(
-            inC: inC, outC: outC, kSize: kSize, groups: groups, bias: bias)
+            inC: inC, outC: outC, kSize: kSize, stride: stride, groups: groups, bias: bias)
     }
 
     func callAsFunction(_ x: MLXArray) -> MLXArray {

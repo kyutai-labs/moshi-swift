@@ -89,8 +89,9 @@ public class Mimi: Module {
     public func decode(_ codes: MLXArray) -> MLXArray {
         self.decoder.resetState()
         self.decoderCache.forEach { c in c.reset() }
-        let emb = self.upsample(self.quantizer.decode(codes))
-        let outs = self.decoderTransformer(emb, cache: self.decoderCache)
+        let emb = self.quantizer.decode(codes)
+        let embUp = self.upsample(emb)
+        let outs = self.decoderTransformer(embUp, cache: self.decoderCache)
         return self.decoder(outs[0])
     }
 
