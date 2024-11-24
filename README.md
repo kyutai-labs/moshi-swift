@@ -1,6 +1,7 @@
 ## moshi-swift
 
 ```bash
+wget https://huggingface.co/kyutai/moshika-candle-bf16/resolve/main/tokenizer-e351c8d8-checkpoint125.safetensors
 xcodebuild -scheme moshi-cli -derivedDataPath ./build
 ./build/Build/Products/Debug/MoshiCLI
 ```

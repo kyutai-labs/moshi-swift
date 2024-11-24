@@ -64,7 +64,7 @@ class EuclideanCodebook: Module {
 class VectorQuantization: Module {
     @ModuleInfo(key: "project_in") var projectIn: Linear?
     @ModuleInfo(key: "project_out") var projectOut: Linear?
-    @ModuleInfo(key: "codebook") var codebook: EuclideanCodebook
+    @ModuleInfo(key: "_codebook") var codebook: EuclideanCodebook
 
     init(dim: Int, codebookSize: Int, codebookDim: Int? = nil) {
         let codebookDim = codebookDim ?? dim
@@ -147,7 +147,7 @@ class ResidualVectorQuantizer: Module {
                 inputChannels: dim, outputChannels: outputDim, kernelSize: 1, bias: false)
         }
         self._vq.wrappedValue = ResidualVectorQuantization(
-            nQ: nQ, dim: dim, codebookSize: outputDim, codebookDim: nil)
+            nQ: nQ, dim: dim, codebookSize: bins, codebookDim: nil)
     }
 
     func encode(_ x: MLXArray) -> MLXArray {
