@@ -9,8 +9,8 @@ import MLXRandom
 
 // Conv1d + dilation
 class Conv1d: Module, UnaryLayer {
-    let weight: MLXArray
-    let bias: MLXArray?
+    @ModuleInfo(key: "weight") var weight: MLXArray
+    @ModuleInfo(key: "bias") var bias: MLXArray?
     let padding: Int
     let groups: Int
     let stride: Int
@@ -28,9 +28,9 @@ class Conv1d: Module, UnaryLayer {
     ) {
         let scale = sqrt(1 / Float(inputChannels * kernelSize))
 
-        self.weight = uniform(
+        self._weight.wrappedValue = uniform(
             low: -scale, high: scale, [outputChannels, kernelSize, inputChannels / groups])
-        self.bias = bias ? MLXArray.zeros([outputChannels]) : nil
+        self._bias.wrappedValue = bias ? MLXArray.zeros([outputChannels]) : nil
         self.padding = padding
         self.groups = groups
         self.stride = stride
@@ -53,9 +53,8 @@ class Conv1d: Module, UnaryLayer {
 
 // ConvTranspose1d + groups
 class ConvTransposed1d: Module, UnaryLayer {
-
-    let weight: MLXArray
-    let bias: MLXArray?
+    @ModuleInfo(key: "weight") var weight: MLXArray
+    @ModuleInfo(key: "bias") var bias: MLXArray?
     let padding: Int
     let stride: Int
     let groups: Int
@@ -74,9 +73,9 @@ class ConvTransposed1d: Module, UnaryLayer {
     ) {
         let scale = sqrt(1 / Float(inputChannels * kernelSize))
 
-        self.weight = uniform(
+        self._weight.wrappedValue = uniform(
             low: -scale, high: scale, [outputChannels / groups, kernelSize, inputChannels])
-        self.bias = bias ? MLXArray.zeros([outputChannels]) : nil
+        self._bias.wrappedValue = bias ? MLXArray.zeros([outputChannels]) : nil
         self.padding = padding
         self.stride = stride
         self.groups = groups

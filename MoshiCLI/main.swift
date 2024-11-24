@@ -50,6 +50,23 @@ func runMimi() throws {
         if key.hasSuffix(".linear2.weight") {
             key.replace(".linear2.weight", with: ".gating.linear2.weight")
         }
+        // Awfully hardcoded matching between the pytorch layers and their mlx equivalent :(
+        for (layerIdx, decoderIdx) in [2, 5, 8, 11].enumerated() {
+            key.replace("decoder.\(decoderIdx).", with: "decoder.layers.\(layerIdx).upsample.")
+            key.replace(
+                "decoder.\(decoderIdx + 1).", with: "decoder.layers.\(layerIdx).residuals.0.")
+        }
+        for (layerIdx, encoderIdx) in [1, 4, 7, 10].enumerated() {
+            key.replace("encoder.\(encoderIdx).", with: "encoder.layers.\(layerIdx).residuals.0.")
+            key.replace(
+                "encoder.\(encoderIdx + 2).", with: "encoder.layers.\(layerIdx).downsample.")
+        }
+        key.replace("decoder.0.", with: "decoder.init_conv1d.")
+        key.replace("decoder.14.", with: "decoder.final_conv1d.")
+        key.replace("encoder.0.", with: "encoder.init_conv1d.")
+        key.replace("encoder.14.", with: "encoder.final_conv1d.")
+        key.replace(".block.1.", with: ".block.0.")
+        key.replace(".block.3.", with: ".block.1.")
         // PyTorch layout for conv weights is outC, inC, kSize, for MLX it's outC, kSize, inC
         if key.hasSuffix(".conv.weight") || key.hasSuffix(".output_proj.weight")
             || key.hasSuffix(".input_proj.weight")
