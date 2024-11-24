@@ -285,7 +285,7 @@ class StreamableConvTranspose1d: Module, UnaryLayer, StreamingLayer {
         if let x = x.inner {
             let stride = self.convtr.convtr.stride
             var ys = self.convtr(x)
-            let ot = ys.dim(1)
+            let ot = ys.dim(-1)
             if var prevYs = self.statePrevYs.inner {
                 let pt = prevYs.dim(-1)
                 if let bias = self.convtr.convtr.bias {
