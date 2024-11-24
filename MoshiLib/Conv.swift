@@ -202,7 +202,8 @@ class StreamableConv1d: Module, UnaryLayer, StreamingLayer {
             let widths = [z, z, IntOrPair((paddingLeft, paddingRight + extraPadding))]
             pd = padded(x, widths: widths, mode: self.padMode)
         }
-        return self.conv(pd)
+        let y = self.conv(pd)
+        return y
     }
 
     func resetState() {

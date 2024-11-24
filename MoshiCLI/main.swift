@@ -129,24 +129,18 @@ func runMimi() throws {
             weight = weight.transposed(axes: [1, 2, 0])
         }
 
-        print(key, weight.shape)
+        // print(key, weight.shape)
         weights[key] = weight
     }
     let parameters = ModuleParameters.unflattened(weights)
     try model.update(parameters: parameters, verify: [.all])
 
-    let input = MLXArray.zeros([1, 1, 24000], dtype: .float32)
-    let out = model.encode(input)
-    print("quantized", out.shape)
-    print(out)
-    let pcm = model.decode(out)
-    print("pcm", pcm.shape)
-    print(pcm)
-
     do {
         let pcm = readAudioToPCMArray(
-            fileURL: URL(fileURLWithPath: homeDirectory + "/tmp/bria-24khz.mp3"))!
+                fileURL: URL(fileURLWithPath: homeDirectory + "/tmp/bria-24khz.mp3"))!
         let pcmA = MLXArray(pcm)[.newAxis, .newAxis, 0..<240000]
+        // let data = try loadArrays(url: URL(fileURLWithPath: homeDirectory + "/tmp/bria-pcm.safetensors"))
+        // let pcmA = data["pcm"]![.ellipsis, 0..<24000]
         print("pcm loaded from file", pcmA.shape, pcmA.dtype)
         let out = model.encode(pcmA)
         print("quantized", out.shape)

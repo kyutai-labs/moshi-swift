@@ -108,11 +108,11 @@ class EncoderLayer: Module, UnaryLayer, StreamingLayer {
         var residuals: [SeanetResnetBlock] = []
         var dilation: Int = 1
         for _ in 0..<cfg.nResidualLayers {
-            dilation *= cfg.dilationBase
             let b = SeanetResnetBlock(
                 cfg, dim: mult * cfg.nFilters,
                 kSizesAndDilations: [(cfg.residualKernelSize, dilation), (1, 1)])
             residuals.append(b)
+            dilation *= cfg.dilationBase
         }
         let downsample = StreamableConv1d(
             inC: mult * cfg.nFilters, outC: mult * cfg.nFilters * 2, kSize: ratio * 2,
@@ -206,11 +206,11 @@ class DecoderLayer: Module, UnaryLayer, StreamingLayer {
         var residuals: [SeanetResnetBlock] = []
         var dilation = 1
         for _ in 0..<cfg.nResidualLayers {
-            dilation *= cfg.dilationBase
             let b = SeanetResnetBlock(
                 cfg, dim: mult * cfg.nFilters / 2,
                 kSizesAndDilations: [(cfg.residualKernelSize, dilation), (1, 1)])
             residuals.append(b)
+            dilation *= cfg.dilationBase
         }
 
         let upsample = StreamableConvTranspose1d(
