@@ -134,12 +134,23 @@ private class Attention: Module {
         if let cache {
             (k, v) = cache.update(keys: k, values: v)
         }
-        let k_len = k.dim(2)
-        let k_target_len = T + min(self.cfg.context, k_len - T)
-        if k_target_len < k_len {
-            let offset = k_len - k_target_len
+        let kLen = k.dim(2)
+        let kTargetLen = T + min(self.cfg.context, kLen - T)
+        if kTargetLen < kLen {
+            let offset = kLen - kTargetLen
             k = k[0..., 0..., offset...]
             v = v[0..., 0..., offset...]
+        }
+
+        // TODO: We should probably replace the KVCache with a rotating version that would handle
+        // the context and return the appropriate mask directly.
+        var mask = mask
+        if let m = mask {
+            let maskLen = m.dim(-1)
+            if k.dim(2) < maskLen {
+                let offset = maskLen - k.dim(2)
+                mask = m[0..., offset...]
+            }
         }
         let x = MLXFast.scaledDotProductAttention(
             queries: q, keys: k, values: v, scale: self.scale, mask: mask
