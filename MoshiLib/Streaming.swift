@@ -38,7 +38,7 @@ public class StreamArray {
     public func narrow(_ offset: Int, _ len: Int, axis: Int) -> StreamArray {
         if let inner = self.inner {
             let totalLen = inner.dim(axis)
-            if len <= offset {
+            if len <= 0 {
                 return StreamArray()
             } else {
                 // Not sure if there exists something closer to pytorch narrow
