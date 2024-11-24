@@ -27,6 +27,10 @@ public class StreamArray {
         }
     }
 
+    public func shape() -> [Int]? {
+        self.inner?.shape
+    }
+
     public func asArray() -> MLXArray? {
         self.inner
     }

@@ -97,7 +97,8 @@ public class Mimi: Module {
         var x = self.encoder.step(x)
         x = x.map { self.encoderTransformer($0, cache: self.encoderCache)[0] }
         x = self.downsample.step(x)
-        return x.map(self.quantizer.encode)
+        let codes = x.map(self.quantizer.encode)
+        return codes
     }
 
     public func decode(_ codes: MLXArray) -> MLXArray {

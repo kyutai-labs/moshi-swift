@@ -147,9 +147,9 @@ func runMimi() throws {
             let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
             print("pcm chunk", pcmA.shape, pcmA.dtype)
             let codes = model.encodeStep(StreamArray(pcmA))
-            print("encoded", codes.asArray()?.shape)
+            print("encoded", codes.shape())
             let pcmOut = model.decodeStep(codes)
-            print("decoded", pcmOut.asArray()?.shape)
+            print("decoded", pcmOut.shape())
             pcmOuts = pcmOuts.cat2(pcmOut, axis: -1)
         }
         let pcmOut = pcmOuts.asArray()!

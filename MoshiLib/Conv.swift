@@ -212,11 +212,17 @@ class StreamableConv1d: Module, UnaryLayer, StreamingLayer {
     }
 
     func step(_ x: StreamArray) -> StreamArray {
-        if let inner = x.inner {
-            if self.leftPadApplied {
-            }
+        if var inner = x.inner {
             let stride = self.conv.conv.stride
             let dilation = self.conv.conv.dilation
+            if !self.leftPadApplied {
+                self.leftPadApplied = true;
+                let kSize = (self.kSize - 1) * dilation + 1
+                let paddingTotal = kSize - stride
+                let z = IntOrPair.init((0, 0))
+                let widths = [z, z, IntOrPair((paddingTotal, 0))]
+                inner = padded(inner, widths: widths, mode: self.padMode)
+            }
             let kernel = (self.kSize - 1) * dilation + 1
             var x = StreamArray(inner)
             x = self.statePrevXs.cat2(x, axis: -1)
