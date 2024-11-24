@@ -148,10 +148,24 @@ private class Attention: Module {
     }
 }
 
+class LayerScale: Module, UnaryLayer {
+    @ModuleInfo(key: "scale") var scale: MLXArray
+
+    init(_ dModel: Int, initValue: Float) {
+        self._scale.wrappedValue = ones([dModel]) * initValue
+    }
+
+    func callAsFunction(_ x: MLXArray) -> MLXArray {
+        x * self.scale
+    }
+}
+
 private class TransformerLayer: Module {
     @ModuleInfo(key: "gating") var gating: UnaryLayer
     @ModuleInfo(key: "norm1") var norm1: UnaryLayer
     @ModuleInfo(key: "norm2") var norm2: UnaryLayer
+    @ModuleInfo(key: "layer_scale_1") var layerScale1: LayerScale?
+    @ModuleInfo(key: "layer_scale_2") var layerScale2: LayerScale?
     @ModuleInfo(key: "self_attn") var selfAttn: Attention
 
     init(_ cfg: TransformerConfig) {
@@ -169,11 +183,30 @@ private class TransformerLayer: Module {
             case .rmsNorm: RMSNorm(dimensions: cfg.dModel, eps: 1e-8)
             }
         self._selfAttn.wrappedValue = Attention(cfg)
+
+        if let scale = cfg.layerScale {
+            self._layerScale1.wrappedValue = LayerScale(cfg.dModel, initValue: scale)
+            self._layerScale2.wrappedValue = LayerScale(cfg.dModel, initValue: scale)
+        } else {
+            self._layerScale1.wrappedValue = nil
+            self._layerScale2.wrappedValue = nil
+        }
     }
 
     func callAsFunction(_ x: MLXArray, mask: MLXArray?, cache: KVCache) -> MLXArray {
-        let x = x + selfAttn(norm1(x), mask: mask, cache: cache)
-        return x + gating(norm2(x))
+        var residual = x
+        var x = x
+        x = selfAttn(norm1(x), mask: mask, cache: cache)
+        if let layerScale1 = self.layerScale1 {
+            x = layerScale1(x)
+        }
+        x = residual + x
+        residual = x
+        x = gating(norm2(x))
+        if let layerScale2 = self.layerScale2 {
+            x = layerScale2(x)
+        }
+        return residual + x
     }
 }
 

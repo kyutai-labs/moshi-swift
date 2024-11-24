@@ -22,10 +22,24 @@ public struct MimiConfig {
     public static func v0_1(numCodebooks: Int = 16) -> MimiConfig {
         let seanet = SeanetConfig.v0_1()
         let transformer = TransformerConfig(
-            dModel: seanet.dimension, numHeads: 8, numLayers: 8, causal: true, normFirst: true,
-            biasFF: false, biasAttn: false, positionalEmbedding: .rope, useConvBias: true,
-            gating: false, norm: .layerNorm, context: 250, maxPeriod: 10000, maxSeqLen: 8192,
-            kvRepeat: 1, dimFeedForward: 2048, convLayout: true
+            dModel: seanet.dimension,
+            numHeads: 8,
+            numLayers: 8,
+            causal: true,
+            normFirst: true,
+            biasFF: false,
+            biasAttn: false,
+            layerScale: 0.01,
+            positionalEmbedding: .rope,
+            useConvBias: true,
+            gating: false,
+            norm: .layerNorm,
+            context: 250,
+            maxPeriod: 10000,
+            maxSeqLen: 8192,
+            kvRepeat: 1,
+            dimFeedForward: 2048,
+            convLayout: true
         )
         return MimiConfig(
             channels: 1,
