@@ -27,6 +27,10 @@ public class StreamArray {
         }
     }
 
+    public func asArray() -> MLXArray? {
+        self.inner
+    }
+
     public func narrow(_ offset: Int, _ len: Int, axis: Int) -> StreamArray {
         if let inner = self.inner {
             let totalLen = inner.dim(axis)

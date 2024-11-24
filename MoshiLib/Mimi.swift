@@ -93,7 +93,7 @@ public class Mimi: Module {
         return codes
     }
 
-    public func encode_step(_ x: StreamArray) -> StreamArray {
+    public func encodeStep(_ x: StreamArray) -> StreamArray {
         var x = self.encoder.step(x)
         x = x.map { self.encoderTransformer($0, cache: self.encoderCache)[0] }
         x = self.downsample.step(x)
@@ -109,7 +109,7 @@ public class Mimi: Module {
         return self.decoder(outs[0])
     }
 
-    public func decode_step(_ codes: StreamArray) -> StreamArray {
+    public func decodeStep(_ codes: StreamArray) -> StreamArray {
         var emb = codes.map { self.quantizer.decode($0) }
         emb = self.upsample.step(emb)
         let out = emb.map { self.decoderTransformer($0, cache: self.decoderCache)[0] }

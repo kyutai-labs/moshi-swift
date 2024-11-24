@@ -135,12 +135,33 @@ func runMimi() throws {
     let parameters = ModuleParameters.unflattened(weights)
     try model.update(parameters: parameters, verify: [.all])
 
-    do {
+    let streaming = true
+
+    if streaming {
+        let pcm = readAudioToPCMArray(
+                fileURL: URL(fileURLWithPath: homeDirectory + "/tmp/bria-24khz.mp3"))!
+        let chunkSize = 1920
+        var pcmOuts = StreamArray()
+        for start in stride(from: 0, to: pcm.count, by: chunkSize) {
+            let end = min(start + chunkSize, pcm.count)
+            let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
+            print("pcm chunk", pcmA.shape, pcmA.dtype)
+            let codes = model.encodeStep(StreamArray(pcmA))
+            print("encoded", codes.asArray()?.shape)
+            let pcmOut = model.decodeStep(codes)
+            print("decoded", pcmOut.asArray()?.shape)
+            pcmOuts = pcmOuts.cat2(pcmOut, axis: -1)
+        }
+        let pcmOut = pcmOuts.asArray()!
+        let pcmOutA: [Float] = pcmOut[0, 0].asArray(Float.self)
+        try writeWAVFile(
+            pcmOutA,
+            sampleRate: 24000,
+            outputURL: URL(fileURLWithPath: homeDirectory + "/tmp/bria-out.wav"))
+    } else {
         let pcm = readAudioToPCMArray(
                 fileURL: URL(fileURLWithPath: homeDirectory + "/tmp/bria-24khz.mp3"))!
         let pcmA = MLXArray(pcm)[.newAxis, .newAxis, 0..<240000]
-        // let data = try loadArrays(url: URL(fileURLWithPath: homeDirectory + "/tmp/bria-pcm.safetensors"))
-        // let pcmA = data["pcm"]![.ellipsis, 0..<24000]
         print("pcm loaded from file", pcmA.shape, pcmA.dtype)
         let out = model.encode(pcmA)
         print("quantized", out.shape)
