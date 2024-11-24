@@ -289,7 +289,7 @@ class StreamableConvTranspose1d: Module, UnaryLayer, StreamingLayer {
             if var prevYs = self.statePrevYs.inner {
                 let pt = prevYs.dim(-1)
                 if let bias = self.convtr.convtr.bias {
-                    prevYs = prevYs - bias
+                    prevYs = prevYs - bias[.newAxis, 0..., .newAxis]
                 }
                 let ys1 = ys[.ellipsis, 0..<pt] + prevYs
                 let ys2 = ys[.ellipsis, pt...]
