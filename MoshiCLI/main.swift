@@ -150,6 +150,10 @@ func runMimi() throws {
         print("pcm loaded from file", pcmA.shape, pcmA.dtype)
         let out = model.encode(pcmA)
         print("quantized", out.shape)
+        try save(
+            arrays: ["codes": out],
+            url: URL(fileURLWithPath: homeDirectory + "/tmp/bria-codes.safetensors")
+        )
         print(out)
         let pcmOut = model.decode(out)
         print("pcm generated", pcmOut.shape)
