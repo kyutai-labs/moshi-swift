@@ -142,7 +142,10 @@ func runMimi() throws {
             fileURL: URL(fileURLWithPath: homeDirectory + "/tmp/bria-24khz.mp3"))!
         let chunkSize = 1920
         var pcmOuts: [[Float]] = []
+        var elapsedTimes: [Double] = []
+        var nSteps = 0
         for start in stride(from: 0, to: pcm.count, by: chunkSize) {
+            let startTime = CFAbsoluteTimeGetCurrent()
             let pct = 100 * start / pcm.count
             let end = min(start + chunkSize, pcm.count)
             let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
@@ -155,10 +158,23 @@ func runMimi() throws {
                 let p: [Float] = p[0, 0].asArray(Float.self)
                 pcmOuts.append(p)
             }
-            print("\rprocessing \(pct)%", terminator: "")
-            fflush(stdout)
+            let elapsedTime = CFAbsoluteTimeGetCurrent() - startTime
+            elapsedTimes.append(elapsedTime)
+            nSteps += 1
+            if nSteps % 10 == 0 {
+                print("\rprocessing \(pct)%", terminator: "")
+                fflush(stdout)
+            }
         }
-        print()
+        do {
+            let elapsedTimes = elapsedTimes[1...]
+            let avgTimeMs = elapsedTimes.reduce(0, +) / Double(elapsedTimes.count) * 1000.0
+            let minTimeMs = elapsedTimes.min()! * 1000.0
+            let maxTimeMs = elapsedTimes.max()! * 1000.0
+            print(
+                "\r\(nSteps) steps, avg time \(Int(avgTimeMs))ms, min \(Int(minTimeMs))ms, max \(Int(maxTimeMs))ms"
+            )
+        }
         try writeWAVFile(
             pcmOuts.flatMap { $0 },
             sampleRate: 24000,
