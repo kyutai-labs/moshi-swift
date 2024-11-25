@@ -1,3 +1,4 @@
+import json
 import os
 import sentencepiece
 
@@ -8,3 +9,8 @@ text_tokens = [1231, 3, 3, 2303, 36146, 447, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 text_tokens = [t for t in text_tokens if t not in [0, 3]]
 out = text_tokenizer.decode(text_tokens)
 print(out)
+vocab = {}
+for id in range(text_tokenizer.vocab_size()):
+    vocab[id] = text_tokenizer.id_to_piece(id)
+with open(home_dir + "/tmp/tokenizer_spm_48k_multi6_2.json", "w") as json_file:
+    json.dump(vocab, json_file)
