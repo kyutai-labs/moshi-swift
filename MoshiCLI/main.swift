@@ -139,28 +139,30 @@ func runMimi() throws {
 
     if streaming {
         let pcm = readAudioToPCMArray(
-                fileURL: URL(fileURLWithPath: homeDirectory + "/tmp/bria-24khz.mp3"))!
+            fileURL: URL(fileURLWithPath: homeDirectory + "/tmp/bria-24khz.mp3"))!
         let chunkSize = 1920
-        var pcmOuts = StreamArray()
+        var pcmOuts: [[Float]] = []
         for start in stride(from: 0, to: pcm.count, by: chunkSize) {
+            let pct = 100 * start / pcm.count
+            print("\rprocessing \(pct)%", terminator: "")
+            fflush(stdout)
             let end = min(start + chunkSize, pcm.count)
             let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
-            print("pcm chunk", pcmA.shape, pcmA.dtype)
             let codes = model.encodeStep(StreamArray(pcmA))
-            print("encoded", codes.shape())
             let pcmOut = model.decodeStep(codes)
-            print("decoded", pcmOut.shape())
-            pcmOuts = pcmOuts.cat2(pcmOut, axis: -1)
+            if let p = pcmOut.asArray() {
+                let p: [Float] = p[0, 0].asArray(Float.self)
+                pcmOuts.append(p)
+            }
         }
-        let pcmOut = pcmOuts.asArray()!
-        let pcmOutA: [Float] = pcmOut[0, 0].asArray(Float.self)
+        print()
         try writeWAVFile(
-            pcmOutA,
+            pcmOuts.flatMap { $0 },
             sampleRate: 24000,
             outputURL: URL(fileURLWithPath: homeDirectory + "/tmp/bria-out.wav"))
     } else {
         let pcm = readAudioToPCMArray(
-                fileURL: URL(fileURLWithPath: homeDirectory + "/tmp/bria-24khz.mp3"))!
+            fileURL: URL(fileURLWithPath: homeDirectory + "/tmp/bria-24khz.mp3"))!
         let pcmA = MLXArray(pcm)[.newAxis, .newAxis, 0..<240000]
         print("pcm loaded from file", pcmA.shape, pcmA.dtype)
         let out = model.encode(pcmA)
