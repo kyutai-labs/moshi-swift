@@ -116,6 +116,40 @@ public struct LmConfig {
             audioDelays: [0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1]
         )
     }
+
+    public static func asr1b() -> LmConfig {
+        let depformer = DepformerConfig(
+            transformer:
+                TransformerConfig(
+                    dModel: 1024,
+                    numHeads: 16,
+                    numLayers: 6,
+                    causal: true,
+                    normFirst: true,
+                    biasFF: false,
+                    biasAttn: false,
+                    layerScale: nil,
+                    positionalEmbedding: .none,
+                    useConvBias: false,
+                    gating: true,
+                    norm: .rmsNorm,
+                    context: 8,
+                    maxPeriod: 10000,
+                    maxSeqLen: 4096,
+                    kvRepeat: 1,
+                    dimFeedForward: 1024 * 4,
+                    convLayout: false
+                ), numSlices: 0)
+        return LmConfig(
+            transformer: TransformerConfig.v1_1b(),
+            depformer: depformer,
+            textInVocabSize: 48001,
+            textOutVocabSize: 48000,
+            audioVocabSize: 2049,
+            audioCodebooks: 16,
+            audioDelays: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        )
+    }
 }
 
 public class LM: Module {

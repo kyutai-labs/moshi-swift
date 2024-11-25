@@ -40,6 +40,30 @@ public struct TransformerConfig {
         self.dModel / self.numHeads
     }
 
+    // kyutai/neilz/mimi_exp/xps/8d2516b9/.hydra/config.yaml
+    public static func v1_1b() -> TransformerConfig {
+        TransformerConfig(
+            dModel: 2048,
+            numHeads: 16,
+            numLayers: 16,
+            causal: true,
+            normFirst: true,
+            biasFF: false,
+            biasAttn: false,
+            layerScale: nil,
+            positionalEmbedding: .rope,
+            useConvBias: false,
+            gating: true,
+            norm: .rmsNorm,
+            context: 750,
+            maxPeriod: 100000,
+            maxSeqLen: 4096,
+            kvRepeat: 1,
+            dimFeedForward: 2048 * 4,
+            convLayout: false
+        )
+    }
+
     public static func v1_7b() -> TransformerConfig {
         TransformerConfig(
             dModel: 4096,
