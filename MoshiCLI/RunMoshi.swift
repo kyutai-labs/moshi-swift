@@ -18,9 +18,17 @@ func makeMoshi(_ filename: String) throws -> LM {
     return model
 }
 
+func loadVocab(_ filename: String) throws -> [Int: String] {
+    let fileURL = URL(fileURLWithPath: filename)
+    let jsonData = try Data(contentsOf: fileURL)
+    let dictionary = try JSONDecoder().decode([Int: String].self, from: jsonData)
+    return dictionary
+}
+
 func runAsr(dir: String) throws {
     let mimi = try makeMimi(dir: dir)
     let moshi = try makeMoshi(dir + "/asr-1b-8d2516b9@150.safetensors")
+    let vocab = try loadVocab(dir + "/tokenizer_spm_48k_multi6_2.json")
     print("using device \(Device.defaultDevice().description)")
 
     let pcm = readAudioToPCMArray(
@@ -29,7 +37,6 @@ func runAsr(dir: String) throws {
     let sampler = Sampler()
     let codebooks = moshi.cfg.audioCodebooks
     var prevTextToken = moshi.cfg.textInVocabSize - 1
-    var textTokens: [Int] = []
     do {
         let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
         let audioIds = (0..<16).map { _ in MLXArray([moshi.cfg.audioPaddingToken()]) }
@@ -37,7 +44,6 @@ func runAsr(dir: String) throws {
         let (textToken, _) = sampler(logits: textLogits)
         let textTokenI: Int = textToken[0].item()
         print("sampled first", textTokenI)
-        textTokens.append(textTokenI)
         prevTextToken = textTokenI
     }
     for start in stride(from: 0, to: pcm.count, by: chunkSize) {
@@ -50,13 +56,20 @@ func runAsr(dir: String) throws {
                 let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
                 let audioIds = (0..<codebooks).map { codes[0..., $0, step] }
                 let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
+                // TODO: use argmax and make the temperature settable as an option.
                 let (textToken, _) = sampler(logits: textLogits)
                 let textTokenI: Int = textToken[0].item()
-                print("sampled", textTokenI)
-                textTokens.append(textTokenI)
+                // print("sampled", textTokenI, vocab[textTokenI])
+                if textTokenI != 0 && textTokenI != 3 {
+                    if var v = vocab[textTokenI] {
+                        v.replace("▁", with: " ")
+                        print(v, terminator: "")
+                        fflush(stdout)
+                    }
+                }
                 prevTextToken = textTokenI
             }
         }
     }
-    print(textTokens)
+    print()
 }
