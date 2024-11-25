@@ -144,16 +144,19 @@ func runMimi() throws {
         var pcmOuts: [[Float]] = []
         for start in stride(from: 0, to: pcm.count, by: chunkSize) {
             let pct = 100 * start / pcm.count
-            print("\rprocessing \(pct)%", terminator: "")
-            fflush(stdout)
             let end = min(start + chunkSize, pcm.count)
             let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
             let codes = model.encodeStep(StreamArray(pcmA))
+            if start == 0 {
+                print(codes.asArray()?[0, 0..., 0].asArray(Int.self), "\n", codes.shape)
+            }
             let pcmOut = model.decodeStep(codes)
             if let p = pcmOut.asArray() {
                 let p: [Float] = p[0, 0].asArray(Float.self)
                 pcmOuts.append(p)
             }
+            print("\rprocessing \(pct)%", terminator: "")
+            fflush(stdout)
         }
         print()
         try writeWAVFile(

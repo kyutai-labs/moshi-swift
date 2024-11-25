@@ -27,7 +27,7 @@ public class StreamArray {
         }
     }
 
-    public func shape() -> [Int]? {
+    public var shape: [Int]? {
         self.inner?.shape
     }
 
