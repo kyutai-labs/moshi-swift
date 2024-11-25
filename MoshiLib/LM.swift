@@ -153,8 +153,9 @@ public struct LmConfig {
 }
 
 public class LM: Module {
-    let transformerCache: [KVCache]
-    @ModuleInfo(key: "depformer") var depformer: Depformer
+    var transformerCache: [KVCache]
+    public let cfg: LmConfig
+    @ModuleInfo(key: "depformer") var depformer: Depformer?
     @ModuleInfo(key: "transformer") public var transformer: Transformer
     @ModuleInfo(key: "text_emb") var textEmb: Embedding
     @ModuleInfo(key: "out_norm") var outNorm: UnaryLayer
@@ -162,8 +163,13 @@ public class LM: Module {
     @ModuleInfo(key: "audio_embs") var audioEmbs: [Embedding]
 
     public init(_ cfg: LmConfig) {
+        self.cfg = cfg
         self._transformer.wrappedValue = Transformer(cfg.transformer)
-        self._depformer.wrappedValue = Depformer(cfg)
+        if cfg.depformer.numSlices > 0 {
+            self._depformer.wrappedValue = Depformer(cfg)
+        } else {
+            self._depformer.wrappedValue = nil
+        }
         self._textEmb.wrappedValue = Embedding(
             embeddingCount: cfg.textInVocabSize, dimensions: cfg.transformer.dModel)
         self._outNorm.wrappedValue =
@@ -178,7 +184,6 @@ public class LM: Module {
             Embedding(embeddingCount: cfg.audioVocabSize, dimensions: cfg.transformer.dModel)
         }
         self.transformerCache = self._transformer.wrappedValue.makeCache()
-
     }
 
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
@@ -186,4 +191,18 @@ public class LM: Module {
         x = transformer(x, cache: self.transformerCache)
         return textLinear(outNorm(x))
     }
+
+    public func resetCache() {
+        self.transformerCache = self._transformer.wrappedValue.makeCache()
+    }
+
+    public func stepMain(textIds: MLXArray, audioIds: [MLXArray]) -> (MLXArray, MLXArray) {
+        var x = textEmb(textIds)
+        for (a, emb) in zip(audioIds, self.audioEmbs) {
+            x = x + emb(a)
+        }
+        x = transformer(x, cache: self.transformerCache)
+        return (x, textLinear(outNorm(x)))
+    }
+
 }

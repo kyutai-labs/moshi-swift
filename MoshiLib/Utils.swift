@@ -31,6 +31,9 @@ public class Sampler {
     let minP: Float = 0.0
     let minTokensToKeep: Int = 1
 
+    public init() {
+    }
+
     public func callAsFunction(logits: MLXArray) -> (MLXArray, MLXArray) {
         let logProbs = logits - logits.logSumExp()
         var tokens: MLXArray
