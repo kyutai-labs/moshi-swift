@@ -58,7 +58,7 @@ func writeWAVFile(_ pcmData: [Float], sampleRate: Double, outputURL: URL) throws
     try audioFile.write(from: buffer)
 }
 
-func runMimi(dir: String) throws {
+func makeMimi(dir: String) throws -> Mimi {
     let cfg = MimiConfig.mimi_2024_07()
     let model = Mimi(cfg)
 
@@ -117,7 +117,11 @@ func runMimi(dir: String) throws {
     }
     let parameters = ModuleParameters.unflattened(weights)
     try model.update(parameters: parameters, verify: [.all])
+    return model
+}
 
+func runMimi(dir: String) throws {
+    let model = try makeMimi(dir: dir)
     let streaming = true
     print("using device \(Device.defaultDevice().description)")
 

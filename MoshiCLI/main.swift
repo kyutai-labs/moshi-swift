@@ -25,12 +25,32 @@ func runTransformer() throws {
     print(out.shape, out.dtype, out.ndim)
 }
 
-func runMic() {
-    // Example Usage
+func runMic(dir: String) throws {
+    let model = try makeMimi(dir: dir)
     let microphoneCapture = MicrophoneCapture()
     microphoneCapture.startCapturing()
-    sleep(100)
+
+    var allCodes: [MLXArray] = []
+    var cnt = 0
+    while let pcm = microphoneCapture.receive() {
+        print("received audio data", pcm.count)
+        let pcm = MLXArray(pcm)[.newAxis, .newAxis]
+        let codes = model.encodeStep(StreamArray(pcm))
+        if let codes = codes.asArray() {
+            codes.eval()
+            allCodes.append(codes)
+            print("converted to codes", codes.shape)
+            if allCodes.count % 100 == 0 {
+                let codes = concatenated(allCodes, axis: 2)
+                cnt += 1
+                try save(
+                    arrays: ["codes": codes],
+                    url: URL(fileURLWithPath: dir + "/mic-codes\(cnt).safetensors"))
+            }
+        }
+    }
     // Call `microphoneCapture.stopCapturing()` when you're done.
 }
 
-try runMimi(dir: homeDirectory + "/tmp")
+// try runMimi(dir: homeDirectory + "/tmp")
+try runMic(dir: homeDirectory + "/tmp")

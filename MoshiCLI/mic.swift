@@ -1,11 +1,35 @@
 import AVFoundation
+import Foundation
+
+class ThreadSafeChannel<T> {
+    private var buffer: [T] = []
+    private let queue = DispatchQueue(label: "tschannel", attributes: .concurrent)
+    private let semaphore = DispatchSemaphore(value: 0)
+
+    func send(_ value: T) {
+        queue.async(flags: .barrier) {
+            self.buffer.append(value)
+            self.semaphore.signal()
+        }
+    }
+
+    func receive() -> T? {
+        semaphore.wait()
+        return queue.sync {
+            guard !buffer.isEmpty else { return nil }
+            return buffer.removeFirst()
+        }
+    }
+}
 
 // The code below is probably macos specific and unlikely to work on ios.
 class MicrophoneCapture {
-    private var audioEngine: AVAudioEngine!
+    private let audioEngine: AVAudioEngine!
+    private let channel: ThreadSafeChannel<[Float]>
 
     init() {
         audioEngine = AVAudioEngine()
+        channel = ThreadSafeChannel()
     }
 
     func startCapturing() {
@@ -66,16 +90,19 @@ class MicrophoneCapture {
         guard let channelData = buffer.floatChannelData else { return }
         let frameCount = Int(buffer.frameLength)
 
-        // Get PCM data for the single channel
-        let pcmData = Array(UnsafeBufferPointer(start: channelData[0], count: frameCount))
-
-        // Print or process the PCM data (e.g., save to file, perform analysis, etc.)
-        print("PCM Data: \(pcmData)")
+        let pcmData = Array(UnsafeBufferPointer(start: channelData[0], count: frameCount)).map {
+            $0
+        }
+        channel.send(pcmData)
     }
 
     func stopCapturing() {
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
         print("Microphone capturing stopped")
+    }
+
+    func receive() -> [Float]? {
+        channel.receive()
     }
 }
