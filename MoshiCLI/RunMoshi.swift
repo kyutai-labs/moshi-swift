@@ -29,6 +29,7 @@ func runAsr(dir: String) throws {
     let sampler = Sampler()
     let codebooks = moshi.cfg.audioCodebooks
     var prevTextToken = moshi.cfg.textInVocabSize - 1
+    var textTokens: [Int] = []
     do {
         let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
         let audioIds = (0..<16).map { _ in MLXArray([moshi.cfg.audioPaddingToken()]) }
@@ -36,6 +37,7 @@ func runAsr(dir: String) throws {
         let (textToken, _) = sampler(logits: textLogits)
         let textTokenI: Int = textToken[0].item()
         print("sampled first", textTokenI)
+        textTokens.append(textTokenI)
         prevTextToken = textTokenI
     }
     for start in stride(from: 0, to: pcm.count, by: chunkSize) {
@@ -51,8 +53,10 @@ func runAsr(dir: String) throws {
                 let (textToken, _) = sampler(logits: textLogits)
                 let textTokenI: Int = textToken[0].item()
                 print("sampled", textTokenI)
+                textTokens.append(textTokenI)
                 prevTextToken = textTokenI
             }
         }
     }
+    print(textTokens)
 }
