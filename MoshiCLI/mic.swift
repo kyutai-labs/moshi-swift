@@ -1,5 +1,6 @@
 import AVFoundation
 
+// The code below is probably macos specific and unlikely to work on ios.
 class MicrophoneCapture {
     private var audioEngine: AVAudioEngine!
 
