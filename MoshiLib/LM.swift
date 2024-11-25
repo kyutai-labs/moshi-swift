@@ -202,7 +202,8 @@ public class LM: Module {
             x = x + emb(a)
         }
         x = transformer(x, cache: self.transformerCache)
-        return (x, textLinear(outNorm(x)))
+        let logits = textLinear(outNorm(x[0..., -1, 0...]))
+        return (x, logits)
     }
 
 }

@@ -32,16 +32,16 @@ func runAsr(dir: String) throws {
         let end = min(start + chunkSize, pcm.count)
         let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
         let codes = mimi.encodeStep(StreamArray(pcmA))
-        print("codes", codes.shape)
         if let codes = codes.asArray() {
             let (_, codebooks, steps) = codes.shape3
             for step in 0..<steps {
                 let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
                 let audioIds = (0..<codebooks).map { codes[0..., $0, step] }
                 let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
-                let textToken = sampler(logits: textLogits)
-                print(textToken)
-                // prevTextToken = textToken
+                let (textToken, _) = sampler(logits: textLogits)
+                let textTokenI: Int = textToken[0].item()
+                print("sampled", textTokenI)
+                prevTextToken = textTokenI
             }
         }
     }

@@ -35,6 +35,9 @@ public class Sampler {
     }
 
     public func callAsFunction(logits: MLXArray) -> (MLXArray, MLXArray) {
+        if logits.shape.count != 2 {
+            fatalError("expected a two dimensions logits array, got \(logits.shape)")
+        }
         let logProbs = logits - logits.logSumExp()
         var tokens: MLXArray
         if temp <= 0.0 {
