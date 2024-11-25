@@ -31,9 +31,11 @@ func runMic(dir: String) throws {
     microphoneCapture.startCapturing()
 
     var allCodes: [MLXArray] = []
+    var allPcms: [[Float]] = []
     var cnt = 0
     while let pcm = microphoneCapture.receive() {
         print("received audio data", pcm.count)
+        allPcms.append(pcm)
         let pcm = MLXArray(pcm)[.newAxis, .newAxis]
         let codes = model.encodeStep(StreamArray(pcm))
         if let codes = codes.asArray() {
@@ -46,6 +48,11 @@ func runMic(dir: String) throws {
                 try save(
                     arrays: ["codes": codes],
                     url: URL(fileURLWithPath: dir + "/mic-codes\(cnt).safetensors"))
+                let pcm = allPcms.flatMap { $0 }
+                try writeWAVFile(
+                    pcm,
+                    sampleRate: 24000.0,
+                    outputURL: URL(fileURLWithPath: dir + "/mic-pcm\(cnt).wav"))
             }
         }
     }
