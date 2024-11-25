@@ -55,11 +55,12 @@ class MicrophoneCapture {
 
         // Resample the buffer to match the desired format
         let converter = AVAudioConverter(from: inputFormat, to: mono24kHzFormat)
-        let convertedBuffer = AVAudioPCMBuffer(
-            pcmFormat: mono24kHzFormat, frameCapacity: AVAudioFrameCount(24000))!
 
         // Install a tap to capture audio and resample to the target format
         inputNode.installTap(onBus: 0, bufferSize: 1920, format: inputFormat) { buffer, _ in
+            let targetLen = Int(buffer.frameLength) * 24000 / Int(inputFormat.sampleRate)
+            let convertedBuffer = AVAudioPCMBuffer(
+                pcmFormat: mono24kHzFormat, frameCapacity: AVAudioFrameCount(targetLen))!
             var error: NSError? = nil
             let inputBlock: AVAudioConverterInputBlock = { inNumPackets, outStatus in
                 outStatus.pointee = .haveData
