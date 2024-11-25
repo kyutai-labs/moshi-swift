@@ -25,4 +25,9 @@ func runTransformer() throws {
     print(out.shape, out.dtype, out.ndim)
 }
 
-try runMimi(dir: homeDirectory + "/tmp")
+// Example Usage
+let microphoneCapture = MicrophoneCapture()
+microphoneCapture.startCapturing()
+// Call `microphoneCapture.stopCapturing()` when you're done.
+
+// try runMimi(dir: homeDirectory + "/tmp")
