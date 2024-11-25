@@ -48,6 +48,8 @@ func runAsr(dir: String) throws {
                 let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
                 let audioIds = (0..<codebooks).map { codes[0..., $0, step] }
                 let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
+                print(textLogits)
+                fatalError("here")
                 let (textToken, _) = sampler(logits: textLogits)
                 let textTokenI: Int = textToken[0].item()
                 print("sampled", textTokenI)
