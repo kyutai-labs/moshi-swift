@@ -107,7 +107,8 @@ class ConvTransposed1d: Module, UnaryLayer {
     }
 }
 
-// TODO: Handle weight-norm either when importing the weights or at runtime.
+// weight-norm is handled externally when generating the weights file so this class is just
+// a wrapper around Conv1d
 class NormConv1d: Module, UnaryLayer {
     @ModuleInfo(key: "conv") var conv: Conv1d
 
@@ -216,7 +217,7 @@ class StreamableConv1d: Module, UnaryLayer, StreamingLayer {
             let stride = self.conv.conv.stride
             let dilation = self.conv.conv.dilation
             if !self.leftPadApplied {
-                self.leftPadApplied = true;
+                self.leftPadApplied = true
                 let kSize = (self.kSize - 1) * dilation + 1
                 let paddingTotal = kSize - stride
                 let z = IntOrPair.init((0, 0))
