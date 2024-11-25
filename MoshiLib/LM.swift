@@ -75,11 +75,11 @@ public struct LmConfig {
     public var audioCodebooks: Int
     public var audioDelays: [Int]
 
-    func audioEOSToken() -> Int {
+    public func audioEOSToken() -> Int {
         self.audioVocabSize - 2
     }
 
-    func audioPaddingToken() -> Int {
+    public func audioPaddingToken() -> Int {
         self.audioVocabSize - 1
     }
 
