@@ -15,7 +15,7 @@ func runTransformer() throws {
         url: URL(fileURLWithPath: homeDirectory + "/tmp/model.safetensors"))
     print(weights.keys)
     let parameters = ModuleParameters.unflattened(weights)
-    let cfg = LmConfig.moshi_v0_1()
+    let cfg = LmConfig.moshi_2024_07()
     let model = LM(cfg)
     try model.update(parameters: parameters, verify: [.all])
     eval(model)

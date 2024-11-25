@@ -19,7 +19,7 @@ public struct MimiConfig {
     public var quantizerBins: Int
     public var quantizerDim: Int
 
-    public static func v0_1(numCodebooks: Int = 16) -> MimiConfig {
+    public static func mimi_2024_07(numCodebooks: Int = 16) -> MimiConfig {
         let seanet = SeanetConfig.v0_1()
         let transformer = TransformerConfig(
             dModel: seanet.dimension,

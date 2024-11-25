@@ -59,7 +59,7 @@ func writeWAVFile(_ pcmData: [Float], sampleRate: Double, outputURL: URL) throws
 }
 
 func runMimi(dir: String) throws {
-    let cfg = MimiConfig.v0_1()
+    let cfg = MimiConfig.mimi_2024_07()
     let model = Mimi(cfg)
 
     let origWeights = try loadArrays(
