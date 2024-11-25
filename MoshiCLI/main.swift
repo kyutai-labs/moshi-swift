@@ -136,6 +136,7 @@ func runMimi() throws {
     try model.update(parameters: parameters, verify: [.all])
 
     let streaming = true
+    print("using device \(Device.defaultDevice().description)")
 
     if streaming {
         let pcm = readAudioToPCMArray(
