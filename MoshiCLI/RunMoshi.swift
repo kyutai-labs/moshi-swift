@@ -124,5 +124,5 @@ func runAsrMic(dir: String) throws {
             }
         }
     }
-    // Call `microphoneCapture.stopCapturing()` when you're done.
+    microphoneCapture.stopCapturing()
 }
