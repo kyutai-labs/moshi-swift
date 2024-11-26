@@ -207,4 +207,104 @@ public class LM: Module {
         return (out, logits)
     }
 
+    public func sample(
+        textTokens: MLXArray, audioTokens: [MLXArray], stepIdx: Int, textSampler: Sampler,
+        audioSampler: Sampler
+    ) -> (MLXArray, MLXArray) {
+        fatalError("TODO")
+    }
+
+}
+
+let zeroToken: Int = -1
+let ungeneratedToken: Int = -2
+
+public class LMGen {
+    let model: LM
+    let maxSteps: Int
+    let audioSampler: Sampler
+    let textSampler: Sampler
+    let numCodebooks: Int
+    let genSequence: MLXArray
+    let mainCodebooks: Int
+    var stepIdx: Int
+
+    public init(_ model: LM, maxSteps: Int, audioSampler: Sampler, textSampler: Sampler) {
+        self.model = model
+        self.maxSteps = maxSteps
+        self.audioSampler = audioSampler
+        self.textSampler = textSampler
+        self.numCodebooks = 1 + model.cfg.audioCodebooks
+        self.genSequence = MLXArray.full(
+            [1, self.numCodebooks], values: MLXArray(ungeneratedToken, dtype: .int32))
+        self.stepIdx = 0
+        self.mainCodebooks = self.model.cfg.depformer.numSlices
+    }
+
+    public func step(otherAudioTokens: MLXArray) -> MLXArray? {
+        if self.stepIdx >= self.maxSteps {
+            return nil
+        }
+        let textTokens: MLXArray
+        if self.stepIdx == 0 {
+            textTokens = MLXArray([self.model.cfg.textOutVocabSize]).reshaped([1, 1])
+        } else {
+            textTokens = self.genSequence[.newAxis, 0..., 0, self.stepIdx - 1]
+        }
+        self.genSequence[0..., (1 + self.mainCodebooks)..., self.stepIdx] = otherAudioTokens
+        var audioTokens: [MLXArray] = []
+        for (cbIdx, delay) in self.model.cfg.audioDelays.enumerated() {
+            let genIdx = self.stepIdx - 1 - delay
+            let audioToken: MLXArray
+            if genIdx >= 0 {
+                audioToken = self.genSequence[.newAxis, 0..., 1 + cbIdx, genIdx]
+            } else {
+                audioToken = MLXArray([self.model.cfg.audioPaddingToken()]).reshaped([1, 1])
+            }
+            if (audioToken .== MLXArray(ungeneratedToken)).any().item<Bool>() {
+                fatalError("ungenerated value in audio tokens, cb \(cbIdx), step \(stepIdx)")
+            }
+            assert(audioToken.shape == [1, 1])
+            audioTokens.append(audioToken)
+        }
+        if (textTokens .== MLXArray(ungeneratedToken)).any().item<Bool>() {
+            fatalError("ungenerated value in text tokens, step \(stepIdx)")
+        }
+        assert(textTokens.shape == [1, 1])
+        let (tt, at) = model.sample(
+            textTokens: textTokens,
+            audioTokens: audioTokens,
+            stepIdx: self.stepIdx,
+            textSampler: self.textSampler,
+            audioSampler: self.audioSampler
+        )
+        assert(tt.shape == [1])
+        assert(at.shape == [self.model.cfg.depformer.numSlices])
+
+        self.genSequence[0..., 0, self.stepIdx] = tt
+        for (cbIdx, delay) in self.model.cfg.audioDelays.enumerated() {
+            let genIdx = self.stepIdx - delay
+            if genIdx >= 0 {
+                self.genSequence[0..., cbIdx + 1, genIdx] = audioTokens[cbIdx]
+            }
+        }
+
+        self.stepIdx += 1
+        return textTokens
+    }
+
+    public func lastAudioTokens() -> MLXArray? {
+        let genIdx = self.stepIdx - 1 - (self.model.cfg.audioDelays.max() ?? 0)
+        if genIdx < 0 {
+            return nil
+        }
+        let tokens = self.genSequence[0..., 1...(1 + self.mainCodebooks), genIdx]
+        if (tokens .== MLXArray(ungeneratedToken)).any().item<Bool>() {
+            fatalError("ungenerated value in text tokens, step \(stepIdx)")
+        }
+        if (tokens .== MLXArray(self.model.cfg.audioPaddingToken())).any().item<Bool>() {
+            return nil
+        }
+        return tokens
+    }
 }
