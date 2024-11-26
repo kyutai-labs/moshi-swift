@@ -25,7 +25,7 @@ func loadVocab(_ filename: String) throws -> [Int: String] {
     return dictionary
 }
 
-func runAsr(dir: String) throws {
+func runAsr(dir: String, asrDelayInSteps: Int) throws {
     let mimi = try makeMimi(dir: dir)
     let moshi = try makeMoshi(dir + "/asr-1b-8d2516b9@150.safetensors")
     let vocab = try loadVocab(dir + "/tokenizer_spm_48k_multi6_2.json")
@@ -34,6 +34,7 @@ func runAsr(dir: String) throws {
     let pcm = readAudioToPCMArray(
         fileURL: URL(fileURLWithPath: dir + "/bria-24khz.mp3"))!
     let chunkSize = 1920
+    // TODO: use argmax and make the temperature settable as an option.
     let sampler = Sampler()
     let codebooks = moshi.cfg.audioCodebooks
     var prevTextToken = moshi.cfg.textInVocabSize - 1
@@ -46,6 +47,7 @@ func runAsr(dir: String) throws {
         print("sampled first", textTokenI)
         prevTextToken = textTokenI
     }
+    var cnt = 0
     for start in stride(from: 0, to: pcm.count, by: chunkSize) {
         let end = min(start + chunkSize, pcm.count)
         let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
@@ -53,14 +55,15 @@ func runAsr(dir: String) throws {
         if let codes = codes.asArray() {
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
-                let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
-                let audioIds = (0..<codebooks).map { codes[0..., $0, step] }
+                var textIds: MLXArray? = nil
+                if asrDelayInSteps < cnt {
+                    textIds = MLXArray([prevTextToken]).reshaped([1, 1])
+                }
+                let audioIds = (0..<codebooks).map { codes[0..., $0, step].reshaped(1, 1) }
                 let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
-                // TODO: use argmax and make the temperature settable as an option.
                 let (textToken, _) = sampler(logits: textLogits)
                 let textTokenI: Int = textToken[0].item()
-                // print("sampled", textTokenI, vocab[textTokenI])
-                if textTokenI != 0 && textTokenI != 3 {
+                if textTokenI != 0 && textTokenI != 3 && asrDelayInSteps <= cnt {
                     if var v = vocab[textTokenI] {
                         v.replace("▁", with: " ")
                         print(v, terminator: "")
@@ -68,18 +71,20 @@ func runAsr(dir: String) throws {
                     }
                 }
                 prevTextToken = textTokenI
+                cnt += 1
             }
         }
     }
     print()
 }
 
-func runAsrMic(dir: String) throws {
+func runAsrMic(dir: String, asrDelayInSteps: Int) throws {
     let mimi = try makeMimi(dir: dir)
     let moshi = try makeMoshi(dir + "/asr-1b-8d2516b9@150.safetensors")
     let vocab = try loadVocab(dir + "/tokenizer_spm_48k_multi6_2.json")
     print("using device \(Device.defaultDevice().description)")
 
+    // TODO: use argmax and make the temperature settable as an option.
     let sampler = Sampler()
     let codebooks = moshi.cfg.audioCodebooks
     var prevTextToken = moshi.cfg.textInVocabSize - 1
@@ -96,24 +101,22 @@ func runAsrMic(dir: String) throws {
     let microphoneCapture = MicrophoneCapture()
     microphoneCapture.startCapturing()
 
-    var allCodes: [MLXArray] = []
-    var allPcms: [[Float]] = []
     var cnt = 0
     while let pcm = microphoneCapture.receive() {
-        allPcms.append(pcm)
         let pcm = MLXArray(pcm)[.newAxis, .newAxis]
         let codes = mimi.encodeStep(StreamArray(pcm))
         if let codes = codes.asArray() {
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
-                let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
-                let audioIds = (0..<codebooks).map { codes[0..., $0, step] }
+                var textIds: MLXArray? = nil
+                if asrDelayInSteps < cnt {
+                    textIds = MLXArray([prevTextToken]).reshaped([1, 1])
+                }
+                let audioIds = (0..<codebooks).map { codes[0..., $0, step].reshaped(1, 1) }
                 let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
-                // TODO: use argmax and make the temperature settable as an option.
                 let (textToken, _) = sampler(logits: textLogits)
                 let textTokenI: Int = textToken[0].item()
-                // print("sampled", textTokenI, vocab[textTokenI])
-                if textTokenI != 0 && textTokenI != 3 {
+                if textTokenI != 0 && textTokenI != 3 && asrDelayInSteps <= cnt {
                     if var v = vocab[textTokenI] {
                         v.replace("▁", with: " ")
                         print(v, terminator: "")
@@ -121,6 +124,7 @@ func runAsrMic(dir: String) throws {
                     }
                 }
                 prevTextToken = textTokenI
+                cnt += 1
             }
         }
     }

@@ -196,14 +196,15 @@ public class LM: Module {
         self.transformerCache = self._transformer.wrappedValue.makeCache()
     }
 
-    public func stepMain(textIds: MLXArray, audioIds: [MLXArray]) -> (MLXArray, MLXArray) {
-        var x = textEmb(textIds)
+    public func stepMain(textIds: MLXArray?, audioIds: [MLXArray]) -> (MLXArray, MLXArray) {
+        var x = textIds.flatMap { textEmb($0) }
         for (a, emb) in zip(audioIds, self.audioEmbs) {
-            x = x + emb(a)
+            let e = emb(a)
+            x = x.map { $0 + e } ?? e
         }
-        x = transformer(x, cache: self.transformerCache)
-        let logits = textLinear(outNorm(x[0..., -1, 0...]))
-        return (x, logits)
+        let out = transformer(x!, cache: self.transformerCache)
+        let logits = textLinear(outNorm(out[0..., -1, 0...]))
+        return (out, logits)
     }
 
 }

@@ -61,5 +61,5 @@ func runMic(dir: String) throws {
 
 // try runMimi(dir: homeDirectory + "/tmp")
 // try runMic(dir: homeDirectory + "/tmp")
-// try runAsr(dir: homeDirectory + "/tmp")
-try runAsrMic(dir: homeDirectory + "/tmp")
+try runAsr(dir: homeDirectory + "/tmp", asrDelayInSteps: 25)
+// try runAsrMic(dir: homeDirectory + "/tmp", asrDelayInSteps: 25)
