@@ -8,11 +8,8 @@ import MLX
 import MLXNN
 import MoshiLib
 
-let homeDirectory = NSHomeDirectory()
-
-func runTransformer() throws {
-    let weights = try loadArrays(
-        url: URL(fileURLWithPath: homeDirectory + "/tmp/model.safetensors"))
+func runTransformer(baseDir: URL) throws {
+    let weights = try loadArrays(url: baseDir.appendingPathComponent("model.safetensors"))
     print(weights.keys)
     let parameters = ModuleParameters.unflattened(weights)
     let cfg = LmConfig.moshi_2024_07()
@@ -25,8 +22,8 @@ func runTransformer() throws {
     print(out.shape, out.dtype, out.ndim)
 }
 
-func runMic(dir: String) throws {
-    let model = try makeMimi(dir: dir)
+func runMic(baseDir: URL) throws {
+    let model = try makeMimi(baseDir: baseDir)
     let microphoneCapture = MicrophoneCapture()
     microphoneCapture.startCapturing()
 
@@ -47,19 +44,20 @@ func runMic(dir: String) throws {
                 cnt += 1
                 try save(
                     arrays: ["codes": codes],
-                    url: URL(fileURLWithPath: dir + "/mic-codes\(cnt).safetensors"))
+                    url: baseDir.appendingPathComponent("mic-codes\(cnt).safetensors"))
                 let pcm = allPcms.flatMap { $0 }
                 try writeWAVFile(
                     pcm,
                     sampleRate: 24000.0,
-                    outputURL: URL(fileURLWithPath: dir + "/mic-pcm\(cnt).wav"))
+                    outputURL: baseDir.appendingPathComponent("mic-pcm\(cnt).wav"))
             }
         }
     }
-    // Call `microphoneCapture.stopCapturing()` when you're done.
+    microphoneCapture.stopCapturing()
 }
 
-// try runMimi(dir: homeDirectory + "/tmp")
-// try runMic(dir: homeDirectory + "/tmp")
-try runAsr(dir: homeDirectory + "/tmp", asrDelayInSteps: 25)
-// try runAsrMic(dir: homeDirectory + "/tmp", asrDelayInSteps: 25)
+let baseDir = URL(fileURLWithPath: CommandLine.arguments[1])
+// try runMimi(baseDir: baseDir)
+// try runMic(baseDir: baseDir)
+try runAsr(baseDir: baseDir, asrDelayInSteps: 25)
+// try runAsrMic(baseDir: baseDir, asrDelayInSteps: 25)

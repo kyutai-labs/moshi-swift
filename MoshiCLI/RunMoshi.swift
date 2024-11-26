@@ -8,8 +8,8 @@ import MLX
 import MLXNN
 import MoshiLib
 
-func makeMoshi(_ filename: String) throws -> LM {
-    let weights = try loadArrays(url: URL(fileURLWithPath: filename))
+func makeMoshi(_ filename: URL) throws -> LM {
+    let weights = try loadArrays(url: filename)
     let parameters = ModuleParameters.unflattened(weights)
     let cfg = LmConfig.asr1b()
     let model = LM(cfg)
@@ -18,21 +18,19 @@ func makeMoshi(_ filename: String) throws -> LM {
     return model
 }
 
-func loadVocab(_ filename: String) throws -> [Int: String] {
-    let fileURL = URL(fileURLWithPath: filename)
+func loadVocab(_ fileURL: URL) throws -> [Int: String] {
     let jsonData = try Data(contentsOf: fileURL)
     let dictionary = try JSONDecoder().decode([Int: String].self, from: jsonData)
     return dictionary
 }
 
-func runAsr(dir: String, asrDelayInSteps: Int) throws {
-    let mimi = try makeMimi(dir: dir)
-    let moshi = try makeMoshi(dir + "/asr-1b-8d2516b9@150.safetensors")
-    let vocab = try loadVocab(dir + "/tokenizer_spm_48k_multi6_2.json")
+func runAsr(baseDir: URL, asrDelayInSteps: Int) throws {
+    let mimi = try makeMimi(baseDir: baseDir)
+    let moshi = try makeMoshi(baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"))
+    let vocab = try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
     print("using device \(Device.defaultDevice().description)")
 
-    let pcm = readAudioToPCMArray(
-        fileURL: URL(fileURLWithPath: dir + "/bria-24khz.mp3"))!
+    let pcm = readAudioToPCMArray(fileURL: baseDir.appendingPathComponent("bria-24khz.mp3"))!
     let chunkSize = 1920
     let sampler = Sampler(temp: 0.0)
     let codebooks = moshi.cfg.audioCodebooks
@@ -77,10 +75,10 @@ func runAsr(dir: String, asrDelayInSteps: Int) throws {
     print()
 }
 
-func runAsrMic(dir: String, asrDelayInSteps: Int) throws {
-    let mimi = try makeMimi(dir: dir)
-    let moshi = try makeMoshi(dir + "/asr-1b-8d2516b9@150.safetensors")
-    let vocab = try loadVocab(dir + "/tokenizer_spm_48k_multi6_2.json")
+func runAsrMic(baseDir: URL, asrDelayInSteps: Int) throws {
+    let mimi = try makeMimi(baseDir: baseDir)
+    let moshi = try makeMoshi(baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"))
+    let vocab = try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
     print("using device \(Device.defaultDevice().description)")
 
     let sampler = Sampler(temp: 0.0)

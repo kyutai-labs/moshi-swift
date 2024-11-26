@@ -8,13 +8,11 @@ import MLX
 import MLXNN
 import MoshiLib
 
-func makeMimi(dir: String) throws -> Mimi {
+func makeMimi(baseDir: URL) throws -> Mimi {
     let cfg = MimiConfig.mimi_2024_07()
     let model = Mimi(cfg)
 
-    let origWeights = try loadArrays(
-        url: URL(
-            fileURLWithPath: dir + "/tokenizer-e351c8d8-checkpoint125.safetensors"))
+    let origWeights = try loadArrays(url: baseDir.appendingPathComponent("tokenizer-e351c8d8-checkpoint125.safetensors"))
     var weights: [String: MLXArray] = [:]
     for (var key, var weight) in origWeights {
         // Mutating the keys while iterating over the map seems pretty dodgy, not sure what the idiomatic
@@ -70,14 +68,13 @@ func makeMimi(dir: String) throws -> Mimi {
     return model
 }
 
-func runMimi(dir: String) throws {
-    let model = try makeMimi(dir: dir)
+func runMimi(baseDir: URL) throws {
+    let model = try makeMimi(baseDir: baseDir)
     let streaming = true
     print("using device \(Device.defaultDevice().description)")
 
     if streaming {
-        let pcm = readAudioToPCMArray(
-            fileURL: URL(fileURLWithPath: dir + "/bria-24khz.mp3"))!
+        let pcm = readAudioToPCMArray(fileURL: baseDir.appendingPathComponent("bria-24khz.mp3"))!
         let chunkSize = 1920
         var pcmOuts: [[Float]] = []
         var elapsedTimes: [Double] = []
@@ -116,18 +113,16 @@ func runMimi(dir: String) throws {
         try writeWAVFile(
             pcmOuts.flatMap { $0 },
             sampleRate: 24000,
-            outputURL: URL(fileURLWithPath: dir + "/bria-out.wav"))
+            outputURL: baseDir.appendingPathComponent("bria-out.wav"))
     } else {
-        let pcm = readAudioToPCMArray(
-            fileURL: URL(fileURLWithPath: dir + "/bria-24khz.mp3"))!
+        let pcm = readAudioToPCMArray(fileURL: baseDir.appendingPathComponent("bria-24khz.mp3"))!
         let pcmA = MLXArray(pcm)[.newAxis, .newAxis, 0..<240000]
         print("pcm loaded from file", pcmA.shape, pcmA.dtype)
         let out = model.encode(pcmA)
         print("quantized", out.shape)
         try save(
             arrays: ["codes": out],
-            url: URL(fileURLWithPath: dir + "/bria-codes.safetensors")
-        )
+            url: baseDir.appendingPathComponent("bria-codes.safetensors"))
         print(out)
         let pcmOut = model.decode(out)
         print("pcm generated", pcmOut.shape)
@@ -136,6 +131,6 @@ func runMimi(dir: String) throws {
         try writeWAVFile(
             pcmOutA,
             sampleRate: 24000,
-            outputURL: URL(fileURLWithPath: dir + "/bria-out.wav"))
+            outputURL: baseDir.appendingPathComponent("bria-out.wav"))
     }
 }
