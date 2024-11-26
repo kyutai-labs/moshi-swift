@@ -34,8 +34,7 @@ func runAsr(dir: String, asrDelayInSteps: Int) throws {
     let pcm = readAudioToPCMArray(
         fileURL: URL(fileURLWithPath: dir + "/bria-24khz.mp3"))!
     let chunkSize = 1920
-    // TODO: use argmax and make the temperature settable as an option.
-    let sampler = Sampler()
+    let sampler = Sampler(temp: 0.0)
     let codebooks = moshi.cfg.audioCodebooks
     var prevTextToken = moshi.cfg.textInVocabSize - 1
     do {
@@ -84,8 +83,7 @@ func runAsrMic(dir: String, asrDelayInSteps: Int) throws {
     let vocab = try loadVocab(dir + "/tokenizer_spm_48k_multi6_2.json")
     print("using device \(Device.defaultDevice().description)")
 
-    // TODO: use argmax and make the temperature settable as an option.
-    let sampler = Sampler()
+    let sampler = Sampler(temp: 0.0)
     let codebooks = moshi.cfg.audioCodebooks
     var prevTextToken = moshi.cfg.textInVocabSize - 1
     do {

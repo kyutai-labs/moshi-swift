@@ -26,12 +26,13 @@ func categoricalSampling(logits: MLXArray, temp: Float) -> MLXArray {
 }
 
 public class Sampler {
-    let temp: Float = 0.8
+    let temp: Float
     let topP: Float = 0.95
     let minP: Float = 0.0
     let minTokensToKeep: Int = 1
 
-    public init() {
+    public init(temp: Float = 0.8) {
+        self.temp = temp
     }
 
     public func callAsFunction(logits: MLXArray) -> (MLXArray, MLXArray) {
