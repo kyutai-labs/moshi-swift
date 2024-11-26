@@ -202,16 +202,36 @@ public class LM: Module {
             let e = emb(a)
             x = x.map { $0 + e } ?? e
         }
-        let out = transformer(x!, cache: self.transformerCache)
-        let logits = textLinear(outNorm(out[0..., -1, 0...]))
+        let out = outNorm(transformer(x!, cache: self.transformerCache))
+        let logits = textLinear(out[0..., -1, 0...])
         return (out, logits)
     }
 
     public func sample(
-        textTokens: MLXArray, audioTokens: [MLXArray], stepIdx: Int, textSampler: Sampler,
+        textIds: MLXArray?,
+        audioIds: [MLXArray],
+        stepIdx: Int,
+        textSampler: Sampler,
         audioSampler: Sampler
     ) -> (MLXArray, MLXArray) {
-        fatalError("TODO")
+        var x = textIds.flatMap { textEmb($0) }
+        for (a, emb) in zip(audioIds, self.audioEmbs) {
+            let e = emb(a)
+            x = x.map { $0 + e } ?? e
+        }
+        let mainTransformerOut = outNorm(transformer(x!, cache: self.transformerCache))
+        let textLogits = textLinear(mainTransformerOut[0..., -1, 0...])
+        let (textToken, _) = textSampler(logits: textLogits)
+        if let depformer = self.depformer {
+            let audioTokens = depformer.sample(
+                mainTransformerOut: mainTransformerOut,
+                stepIdx: stepIdx,
+                sampler: audioSampler,
+                textToken: textToken)
+            return (textToken, audioTokens)
+        } else {
+            return (textToken, MLXArray())
+        }
     }
 
 }
@@ -245,14 +265,14 @@ public class LMGen {
         if self.stepIdx >= self.maxSteps {
             return nil
         }
-        let textTokens: MLXArray
+        let textIds: MLXArray
         if self.stepIdx == 0 {
-            textTokens = MLXArray([self.model.cfg.textOutVocabSize]).reshaped([1, 1])
+            textIds = MLXArray([self.model.cfg.textOutVocabSize]).reshaped([1, 1])
         } else {
-            textTokens = self.genSequence[.newAxis, 0..., 0, self.stepIdx - 1]
+            textIds = self.genSequence[.newAxis, 0..., 0, self.stepIdx - 1]
         }
         self.genSequence[0..., (1 + self.mainCodebooks)..., self.stepIdx] = otherAudioTokens
-        var audioTokens: [MLXArray] = []
+        var audioIds: [MLXArray] = []
         for (cbIdx, delay) in self.model.cfg.audioDelays.enumerated() {
             let genIdx = self.stepIdx - 1 - delay
             let audioToken: MLXArray
@@ -265,15 +285,15 @@ public class LMGen {
                 fatalError("ungenerated value in audio tokens, cb \(cbIdx), step \(stepIdx)")
             }
             assert(audioToken.shape == [1, 1])
-            audioTokens.append(audioToken)
+            audioIds.append(audioToken)
         }
-        if (textTokens .== MLXArray(ungeneratedToken)).any().item<Bool>() {
+        if (textIds .== MLXArray(ungeneratedToken)).any().item<Bool>() {
             fatalError("ungenerated value in text tokens, step \(stepIdx)")
         }
-        assert(textTokens.shape == [1, 1])
+        assert(textIds.shape == [1, 1])
         let (tt, at) = model.sample(
-            textTokens: textTokens,
-            audioTokens: audioTokens,
+            textIds: textIds,
+            audioIds: audioIds,
             stepIdx: self.stepIdx,
             textSampler: self.textSampler,
             audioSampler: self.audioSampler
@@ -285,12 +305,12 @@ public class LMGen {
         for (cbIdx, delay) in self.model.cfg.audioDelays.enumerated() {
             let genIdx = self.stepIdx - delay
             if genIdx >= 0 {
-                self.genSequence[0..., cbIdx + 1, genIdx] = audioTokens[cbIdx]
+                self.genSequence[0..., cbIdx + 1, genIdx] = audioIds[cbIdx]
             }
         }
 
         self.stepIdx += 1
-        return textTokens
+        return textIds
     }
 
     public func lastAudioTokens() -> MLXArray? {
