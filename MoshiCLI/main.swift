@@ -56,8 +56,21 @@ func runMic(baseDir: URL) throws {
     microphoneCapture.stopCapturing()
 }
 
-let baseDir = URL(fileURLWithPath: CommandLine.arguments[1])
-// try runMimi(baseDir: baseDir)
-// try runMic(baseDir: baseDir)
-try runAsr(baseDir: baseDir, asrDelayInSteps: 25)
-// try runAsrMic(baseDir: baseDir, asrDelayInSteps: 25)
+let args = CommandLine.arguments
+if args.count != 3 {
+    fatalError("usage: \(args[0]) cmd dir")
+}
+let baseDir = URL(fileURLWithPath: args[2])
+
+switch args[1] {
+case "mimi":
+    try runMimi(baseDir: baseDir)
+case "mic":
+    try runMic(baseDir: baseDir)
+case "asr":
+    try runAsr(baseDir: baseDir, asrDelayInSteps: 25)
+case "asr-mic":
+    try runAsrMic(baseDir: baseDir, asrDelayInSteps: 25)
+case let other:
+    fatalError("unknown command '\(other)'")
+}
