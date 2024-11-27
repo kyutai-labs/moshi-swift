@@ -42,7 +42,7 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     for start in stride(from: 0, to: pcm.count, by: chunkSize) {
         let end = min(start + chunkSize, pcm.count)
         let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
-        let codes = mimi.encodeStep(StreamArray(pcmA * 0))
+        let codes = mimi.encodeStep(StreamArray(pcmA))
         if let codes = codes.asArray() {
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
