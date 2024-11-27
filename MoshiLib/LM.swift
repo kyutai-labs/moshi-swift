@@ -32,14 +32,14 @@ class Depformer: Module {
     let transformerCache: [KVCache]
     @ModuleInfo(key: "slices") var slices: [DepformerSlice]
 
-    public init(_ cfg: LmConfig) {
+    public init(_ cfg: LmConfig, _ cfgDepformer: DepformerConfig) {
         self.cfg = cfg
-        let slices = (0..<cfg.depformer.numSlices).map { idx in
+        let slices = (0..<cfgDepformer.numSlices).map { idx in
             DepformerSlice(
                 inVocabSize: idx == 0 ? cfg.textInVocabSize : cfg.audioVocabSize,
                 outVocabSize: cfg.audioVocabSize - 1,
                 mainTransformerDim: cfg.transformer.dModel,
-                cfg: cfg.depformer.transformer)
+                cfg: cfgDepformer.transformer)
         }
         self._slices.wrappedValue = slices
         self.transformerCache = slices[0].transformer.makeCache()
@@ -69,7 +69,7 @@ class Depformer: Module {
 
 public struct LmConfig {
     public var transformer: TransformerConfig
-    public var depformer: DepformerConfig
+    public var depformer: DepformerConfig?
     public var textInVocabSize: Int
     public var textOutVocabSize: Int
     public var audioVocabSize: Int
@@ -86,6 +86,10 @@ public struct LmConfig {
 
     public func textInitToken() -> Int {
         self.textInVocabSize - 1
+    }
+
+    public func depformerSlices() -> Int {
+        self.depformer?.numSlices ?? 0
     }
 
     public static func moshi_2024_07() -> LmConfig {
@@ -157,31 +161,9 @@ public struct LmConfig {
     }
 
     public static func asr1b() -> LmConfig {
-        let depformer = DepformerConfig(
-            transformer:
-                TransformerConfig(
-                    dModel: 1024,
-                    numHeads: 16,
-                    numLayers: 6,
-                    causal: true,
-                    normFirst: true,
-                    biasFF: false,
-                    biasAttn: false,
-                    layerScale: nil,
-                    positionalEmbedding: .none,
-                    useConvBias: false,
-                    gating: true,
-                    norm: .rmsNorm,
-                    context: 8,
-                    maxPeriod: 10000,
-                    maxSeqLen: 4096,
-                    kvRepeat: 1,
-                    dimFeedForward: 1024 * 4,
-                    convLayout: false
-                ), numSlices: 0)
         return LmConfig(
             transformer: TransformerConfig.v1_1b(),
-            depformer: depformer,
+            depformer: nil,
             textInVocabSize: 48001,
             textOutVocabSize: 48000,
             audioVocabSize: 2049,
@@ -204,11 +186,7 @@ public class LM: Module {
     public init(_ cfg: LmConfig) {
         self.cfg = cfg
         self._transformer.wrappedValue = Transformer(cfg.transformer)
-        if cfg.depformer.numSlices > 0 {
-            self._depformer.wrappedValue = Depformer(cfg)
-        } else {
-            self._depformer.wrappedValue = nil
-        }
+        self._depformer.wrappedValue = cfg.depformer.map { Depformer(cfg, $0) }
         self._textEmb.wrappedValue = Embedding(
             embeddingCount: cfg.textInVocabSize, dimensions: cfg.transformer.dModel)
         self._outNorm.wrappedValue =
@@ -297,7 +275,7 @@ public class LMGen {
         self.genSequence = MLXArray.full(
             [1, self.numCodebooks, maxSteps], values: MLXArray(ungeneratedToken, dtype: .int32))
         self.stepIdx = 0
-        self.mainCodebooks = self.model.cfg.depformer.numSlices
+        self.mainCodebooks = self.model.cfg.depformerSlices()
     }
 
     public func step(otherAudioTokens: MLXArray) -> MLXArray? {
@@ -338,10 +316,10 @@ public class LMGen {
             audioSampler: self.audioSampler
         )
         assert(tt.shape == [1])
-        assert(at.shape == [self.model.cfg.depformer.numSlices])
+        assert(at.shape == [self.model.cfg.depformerSlices()])
 
         self.genSequence[0..., 0, self.stepIdx] = tt
-        for cbIdx in 0..<self.model.cfg.depformer.numSlices {
+        for cbIdx in 0..<self.model.cfg.depformerSlices() {
             let delay = self.model.cfg.audioDelays[cbIdx]
             let genIdx = self.stepIdx - delay
             if genIdx >= 0 {
