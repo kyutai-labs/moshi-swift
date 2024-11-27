@@ -52,7 +52,7 @@ func runMoshi(baseDir: URL) throws {
         if let codes = codes.asArray() {
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
-                if let textToken = gen.step(otherAudioTokens: codes[0..., 0..., step]) {
+                if let textToken = gen.step(otherAudioTokens: codes[0..., 0..<8, step]) {
                     let textTokenI: Int = textToken[0].item()
                     if textTokenI != 0 && textTokenI != 3 {
                         if var v = vocab[textTokenI] {

@@ -7,7 +7,7 @@ Swift](https://github.com/ml-explore/mlx-swift).
 
 ```bash
 xcodebuild -scheme moshi-cli -derivedDataPath ./build
-./build/Build/Products/Debug/MoshiCLI
+./build/Build/Products/Debug/MoshiCLI moshi ~/tmp/
 ```
 
 ### Downloading the checkpoints and test data

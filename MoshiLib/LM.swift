@@ -295,7 +295,7 @@ public class LMGen {
         self.textSampler = textSampler
         self.numCodebooks = 1 + model.cfg.audioCodebooks
         self.genSequence = MLXArray.full(
-            [1, self.numCodebooks], values: MLXArray(ungeneratedToken, dtype: .int32))
+            [1, self.numCodebooks, maxSteps], values: MLXArray(ungeneratedToken, dtype: .int32))
         self.stepIdx = 0
         self.mainCodebooks = self.model.cfg.depformer.numSlices
     }
