@@ -344,7 +344,7 @@ public class LMGen {
         for (cbIdx, delay) in self.model.cfg.audioDelays.enumerated() {
             let genIdx = self.stepIdx - delay
             if genIdx >= 0 {
-                self.genSequence[0..., cbIdx + 1, genIdx] = audioIds[cbIdx]
+                self.genSequence[0..., cbIdx + 1, genIdx] = at[cbIdx]
             }
         }
 
