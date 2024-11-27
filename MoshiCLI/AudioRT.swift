@@ -169,7 +169,7 @@ class AudioPlayer {
 
     func startPlaying() throws {
         let audioFormat = AVAudioFormat(standardFormatWithSampleRate: self.sampleRate, channels: 1)!
-        let sourceNode = AVAudioSourceNode { _, _, frameCount, audioBufferList -> OSStatus in
+        let sourceNode = AVAudioSourceNode(format: audioFormat) { _, _, frameCount, audioBufferList -> OSStatus in
             let audioBuffers = UnsafeMutableAudioBufferListPointer(audioBufferList)
             guard let channelData = audioBuffers[0].mData?.assumingMemoryBound(to: Float.self) else {
                 return kAudioHardwareUnspecifiedError
@@ -180,12 +180,16 @@ class AudioPlayer {
             }
             return noErr
         }
+        let af = sourceNode.inputFormat(forBus: 0)
+        print("playing audio-format \(af)")
         audioEngine.attach(sourceNode)
         audioEngine.connect(sourceNode, to: audioEngine.mainMixerNode, format: audioFormat)
         try audioEngine.start()
     }
 
     func send(_ values: [Float]) {
-        ringBuffer.write(values)
+        if !ringBuffer.write(values) {
+            print("cannot write audio as buffer is full")
+        }
     }
 }
