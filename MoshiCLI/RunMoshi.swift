@@ -29,7 +29,7 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     let vocab =
         switch cfg.textOutVocabSize {
         case 48000: try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
-        case 32000: try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_32k.json"))
+        case 32000: try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_32k_3.json"))
         case let other: fatalError("unexpected text vocab size \(other)")
         }
     print("using device \(Device.defaultDevice().description)")
