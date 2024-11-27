@@ -83,6 +83,10 @@ public struct LmConfig {
         self.audioVocabSize - 1
     }
 
+    public func textInitToken() -> Int {
+        self.textInVocabSize - 1
+    }
+
     public static func moshi_2024_07() -> LmConfig {
         let depformer = DepformerConfig(
             transformer:
@@ -114,6 +118,40 @@ public struct LmConfig {
             audioVocabSize: 2049,
             audioCodebooks: 16,
             audioDelays: [0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1]
+        )
+    }
+
+    public static func moshi_1b() -> LmConfig {
+        let depformer = DepformerConfig(
+            transformer:
+                TransformerConfig(
+                    dModel: 1024,
+                    numHeads: 16,
+                    numLayers: 6,
+                    causal: true,
+                    normFirst: true,
+                    biasFF: false,
+                    biasAttn: false,
+                    layerScale: nil,
+                    positionalEmbedding: .none,
+                    useConvBias: false,
+                    gating: true,
+                    norm: .rmsNorm,
+                    context: 8,
+                    maxPeriod: 10000,
+                    maxSeqLen: 4096,
+                    kvRepeat: 1,
+                    dimFeedForward: 1024 * 4,
+                    convLayout: false
+                ), numSlices: 8)
+        return LmConfig(
+            transformer: TransformerConfig.v1_1b(),
+            depformer: depformer,
+            textInVocabSize: 32001,
+            textOutVocabSize: 32000,
+            audioVocabSize: 2049,
+            audioCodebooks: 16,
+            audioDelays: [0, 2, 2, 2, 2, 2, 2, 2, 0, 2, 2, 2, 2, 2, 2, 2]
         )
     }
 

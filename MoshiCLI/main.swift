@@ -63,6 +63,8 @@ if args.count != 3 {
 let baseDir = URL(fileURLWithPath: args[2])
 
 switch args[1] {
+case "moshi":
+    try runMoshi(baseDir: baseDir)
 case "mimi":
     try runMimi(baseDir: baseDir)
 case "mic":
@@ -71,6 +73,8 @@ case "asr":
     try runAsr(baseDir: baseDir, asrDelayInSteps: 25)
 case "asr-mic":
     try runAsrMic(baseDir: baseDir, asrDelayInSteps: 25)
+case "transformer":
+    try runTransformer(baseDir: baseDir)
 case let other:
     fatalError("unknown command '\(other)'")
 }
