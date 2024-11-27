@@ -23,6 +23,49 @@ func loadVocab(_ fileURL: URL) throws -> [Int: String] {
     return dictionary
 }
 
+func runMoshiMic(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
+    let mimi = try makeMimi(baseDir: baseDir)
+    let moshi = try makeMoshi(baseDir.appendingPathComponent(filename), cfg)
+    let vocab =
+        switch cfg.textOutVocabSize {
+        case 48000: try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
+        case 32000: try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_32k_3.json"))
+        case let other: fatalError("unexpected text vocab size \(other)")
+        }
+    print("using device \(Device.defaultDevice().description)")
+    let maxSteps = moshi.cfg.transformer.maxSeqLen
+    let gen = LMGen(moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
+
+    let microphoneCapture = MicrophoneCapture()
+    microphoneCapture.startCapturing()
+
+    let codebooks = moshi.cfg.audioCodebooks
+    while let pcm = microphoneCapture.receive() {
+        let pcm = MLXArray(pcm)[.newAxis, .newAxis]
+        let codes = mimi.encodeStep(StreamArray(pcm))
+        if let codes = codes.asArray() {
+            let (_, _, steps) = codes.shape3
+            for step in 0..<steps {
+                if let textToken = gen.step(otherAudioTokens: codes[0..., 0..<8, step]) {
+                    let textTokenI: Int = textToken[0].item()
+                    if textTokenI != 0 && textTokenI != 3 {
+                        if var v = vocab[textTokenI] {
+                            v.replace("▁", with: " ")
+                            print(v, terminator: "")
+                            fflush(stdout)
+                        }
+                    }
+                }
+                if let audioTokens = gen.lastAudioTokens() {
+                    // TODO: store the resulting audio
+                }
+            }
+        }
+    }
+    print()
+    microphoneCapture.stopCapturing()
+}
+
 func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     let mimi = try makeMimi(baseDir: baseDir)
     let moshi = try makeMoshi(baseDir.appendingPathComponent(filename), cfg)

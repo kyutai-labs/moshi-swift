@@ -64,8 +64,12 @@ let baseDir = URL(fileURLWithPath: args[2])
 
 switch args[1] {
 case "moshi-1b":
-    try runMoshi("moshi-1b-1e20921d@50.safetensors", baseDir: baseDir, cfg: LmConfig.moshi1b())
+    try runMoshiMic("moshi-1b-1e20921d@50.safetensors", baseDir: baseDir, cfg: LmConfig.moshi1b())
 case "moshi-7b":
+    try runMoshiMic("model.safetensors", baseDir: baseDir, cfg: LmConfig.moshi_2024_07())
+case "moshi-1b-file":
+    try runMoshi("moshi-1b-1e20921d@50.safetensors", baseDir: baseDir, cfg: LmConfig.moshi1b())
+case "moshi-7b-file":
     try runMoshi("model.safetensors", baseDir: baseDir, cfg: LmConfig.moshi_2024_07())
 case "mimi":
     try runMimi(baseDir: baseDir, streaming: false)
@@ -73,9 +77,9 @@ case "mimi-streaming":
     try runMimi(baseDir: baseDir, streaming: true)
 case "mic":
     try runMic(baseDir: baseDir)
-case "asr":
+case "asr-file":
     try runAsr(baseDir: baseDir, asrDelayInSteps: 25)
-case "asr-mic":
+case "asr":
     try runAsrMic(baseDir: baseDir, asrDelayInSteps: 25)
 case "transformer":
     try runTransformer(baseDir: baseDir)
