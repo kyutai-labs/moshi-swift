@@ -341,7 +341,8 @@ public class LMGen {
         assert(at.shape == [self.model.cfg.depformer.numSlices])
 
         self.genSequence[0..., 0, self.stepIdx] = tt
-        for (cbIdx, delay) in self.model.cfg.audioDelays.enumerated() {
+        for cbIdx in 0..<self.model.cfg.depformer.numSlices {
+            let delay = self.model.cfg.audioDelays[cbIdx]
             let genIdx = self.stepIdx - delay
             if genIdx >= 0 {
                 self.genSequence[0..., cbIdx + 1, genIdx] = at[cbIdx]
