@@ -63,8 +63,10 @@ if args.count != 3 {
 let baseDir = URL(fileURLWithPath: args[2])
 
 switch args[1] {
-case "moshi":
-    try runMoshi(baseDir: baseDir)
+case "moshi-1b":
+    try runMoshi("moshi-1b-1e20921d@50.safetensors", baseDir: baseDir, cfg: LmConfig.moshi1b())
+case "moshi-7b":
+    try runMoshi("model.safetensors", baseDir: baseDir, cfg: LmConfig.moshi_2024_07())
 case "mimi":
     try runMimi(baseDir: baseDir)
 case "mic":

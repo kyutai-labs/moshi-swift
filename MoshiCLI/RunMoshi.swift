@@ -8,20 +8,9 @@ import MLX
 import MLXNN
 import MoshiLib
 
-func makeMoshi(_ filename: URL) throws -> LM {
+func makeMoshi(_ filename: URL, _ cfg: LmConfig) throws -> LM {
     let weights = try loadArrays(url: filename)
     let parameters = ModuleParameters.unflattened(weights)
-    let cfg = LmConfig.moshi1b()
-    let model = LM(cfg)
-    try model.update(parameters: parameters, verify: [.all])
-    eval(model)
-    return model
-}
-
-func makeMoshiAsr(_ filename: URL) throws -> LM {
-    let weights = try loadArrays(url: filename)
-    let parameters = ModuleParameters.unflattened(weights)
-    let cfg = LmConfig.asr1b()
     let model = LM(cfg)
     try model.update(parameters: parameters, verify: [.all])
     eval(model)
@@ -34,9 +23,9 @@ func loadVocab(_ fileURL: URL) throws -> [Int: String] {
     return dictionary
 }
 
-func runMoshi(baseDir: URL) throws {
+func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     let mimi = try makeMimi(baseDir: baseDir)
-    let moshi = try makeMoshi(baseDir.appendingPathComponent("moshi-1b-1e20921d@50.safetensors"))
+    let moshi = try makeMoshi(baseDir.appendingPathComponent(filename), cfg)
     let vocab = try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
     print("using device \(Device.defaultDevice().description)")
     let maxSteps = moshi.cfg.transformer.maxSeqLen
@@ -73,7 +62,8 @@ func runMoshi(baseDir: URL) throws {
 
 func runAsr(baseDir: URL, asrDelayInSteps: Int) throws {
     let mimi = try makeMimi(baseDir: baseDir)
-    let moshi = try makeMoshiAsr(baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"))
+    let moshi = try makeMoshi(
+        baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"), LmConfig.asr1b())
     let vocab = try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
     print("using device \(Device.defaultDevice().description)")
 
@@ -124,7 +114,8 @@ func runAsr(baseDir: URL, asrDelayInSteps: Int) throws {
 
 func runAsrMic(baseDir: URL, asrDelayInSteps: Int) throws {
     let mimi = try makeMimi(baseDir: baseDir)
-    let moshi = try makeMoshiAsr(baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"))
+    let moshi = try makeMoshi(
+        baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"), LmConfig.asr1b())
     let vocab = try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
     print("using device \(Device.defaultDevice().description)")
 
