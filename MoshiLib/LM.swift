@@ -30,18 +30,19 @@ class DepformerSlice: Module {
 class Depformer: Module {
     let cfg: LmConfig
     let transformerCache: [KVCache]
-    let slices: [DepformerSlice]
+    @ModuleInfo(key: "slices") var slices: [DepformerSlice]
 
     public init(_ cfg: LmConfig) {
         self.cfg = cfg
-        self.slices = (0..<cfg.depformer.numSlices).map { idx in
+        let slices = (0..<cfg.depformer.numSlices).map { idx in
             DepformerSlice(
                 inVocabSize: idx == 0 ? cfg.textInVocabSize : cfg.audioVocabSize,
                 outVocabSize: cfg.audioVocabSize - 1,
                 mainTransformerDim: cfg.transformer.dModel,
                 cfg: cfg.depformer.transformer)
         }
-        self.transformerCache = self.slices[0].transformer.makeCache()
+        self._slices.wrappedValue = slices
+        self.transformerCache = slices[0].transformer.makeCache()
     }
 
     public func sample(
@@ -121,7 +122,7 @@ public struct LmConfig {
         )
     }
 
-    public static func moshi_1b() -> LmConfig {
+    public static func moshi1b() -> LmConfig {
         let depformer = DepformerConfig(
             transformer:
                 TransformerConfig(
@@ -147,8 +148,8 @@ public struct LmConfig {
         return LmConfig(
             transformer: TransformerConfig.v1_1b(),
             depformer: depformer,
-            textInVocabSize: 32001,
-            textOutVocabSize: 32000,
+            textInVocabSize: 48001,
+            textOutVocabSize: 48000,
             audioVocabSize: 2049,
             audioCodebooks: 16,
             audioDelays: [0, 2, 2, 2, 2, 2, 2, 2, 0, 2, 2, 2, 2, 2, 2, 2]

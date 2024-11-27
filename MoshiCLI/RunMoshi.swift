@@ -11,7 +11,7 @@ import MoshiLib
 func makeMoshi(_ filename: URL) throws -> LM {
     let weights = try loadArrays(url: filename)
     let parameters = ModuleParameters.unflattened(weights)
-    let cfg = LmConfig.asr1b()
+    let cfg = LmConfig.moshi1b()
     let model = LM(cfg)
     try model.update(parameters: parameters, verify: [.all])
     eval(model)
