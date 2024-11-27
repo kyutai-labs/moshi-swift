@@ -54,7 +54,7 @@ class Depformer: Module {
         var lastToken = textToken
         var tokens: [MLXArray] = []
         for (sliceIdx, slice) in slices.enumerated() {
-            if sliceIdx == 0 || stepIdx < self.cfg.audioDelays[sliceIdx - 1] {
+            if sliceIdx != 0 && stepIdx < self.cfg.audioDelays[sliceIdx - 1] {
                 lastToken = MLXArray([self.cfg.audioPaddingToken()])
             }
             var xs = slice.linearIn(mainTransformerOut) + slice.emb(lastToken)
