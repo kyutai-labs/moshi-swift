@@ -24,7 +24,7 @@ class ThreadSafeChannel<T> {
 
 // The code below is probably macos specific and unlikely to work on ios.
 class MicrophoneCapture {
-    private let audioEngine: AVAudioEngine!
+    private let audioEngine: AVAudioEngine
     private let channel: ThreadSafeChannel<[Float]>
 
     init() {
@@ -105,5 +105,88 @@ class MicrophoneCapture {
 
     func receive() -> [Float]? {
         channel.receive()
+    }
+}
+
+class FloatRingBuffer {
+    private var buffer: [Float]
+    private let capacity: Int
+    private var readIndex = 0
+    private var writeIndex = 0
+    private var count = 0
+
+    private let lock = NSLock()
+
+    init(capacity: Int) {
+        self.capacity = capacity
+        self.buffer = [Float](repeating: 0, count: capacity)
+    }
+
+    func write(_ values: [Float]) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+
+        for value in values {
+            if count == capacity {
+                return false
+            }
+            buffer[writeIndex] = value
+            writeIndex = (writeIndex + 1) % capacity
+            count += 1
+        }
+        return true
+    }
+
+    func read(maxCount: Int) -> [Float] {
+        lock.lock()
+        defer { lock.unlock() }
+
+        var values: [Float] = []
+        for _ in 0..<maxCount {
+            if count == 0 {
+                break
+            }
+            let value = buffer[readIndex]
+            values.append(value)
+            readIndex = (readIndex + 1) % capacity
+            count -= 1
+        }
+        return values
+    }
+}
+
+
+class AudioPlayer {
+    private let audioEngine: AVAudioEngine
+    private let ringBuffer: FloatRingBuffer
+    private let sampleRate: Double
+
+    init(sampleRate: Double) {
+        audioEngine = AVAudioEngine()
+        ringBuffer = FloatRingBuffer(capacity: Int(sampleRate * 4))
+        self.sampleRate = sampleRate
+    }
+
+    func startPlaying() throws {
+        let audioFormat = AVAudioFormat(standardFormatWithSampleRate: self.sampleRate, channels: 1)!
+        let sourceNode = AVAudioSourceNode { _, _, frameCount, audioBufferList -> OSStatus in
+            let audioBuffers = UnsafeMutableAudioBufferListPointer(audioBufferList)
+            guard let channelData = audioBuffers[0].mData?.assumingMemoryBound(to: Float.self) else {
+                return kAudioHardwareUnspecifiedError
+            }
+            let data = self.ringBuffer.read(maxCount: Int(frameCount))
+            for i in 0..<Int(frameCount) {
+                channelData[i] = i < data.count ? data[i] : 0
+            }
+            return noErr
+        }
+        audioEngine.attach(sourceNode)
+        audioEngine.connect(sourceNode, to: audioEngine.mainMixerNode, format: audioFormat)
+        try audioEngine.start()
+        RunLoop.current.run()
+    }
+
+    func send(_ values: [Float]) {
+        ringBuffer.write(values)
     }
 }

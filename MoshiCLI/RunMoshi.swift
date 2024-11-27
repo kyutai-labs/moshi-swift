@@ -38,6 +38,9 @@ func runMoshiMic(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
 
     let microphoneCapture = MicrophoneCapture()
     microphoneCapture.startCapturing()
+    let player = AudioPlayer(sampleRate: 24000)
+    try player.startPlaying()
+    print("started the audio loops")
 
     while let pcm = microphoneCapture.receive() {
         let pcm = MLXArray(pcm)[.newAxis, .newAxis]
@@ -56,8 +59,10 @@ func runMoshiMic(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
                     }
                 }
                 if let audioTokens = gen.lastAudioTokens() {
-                    let _ = audioTokens
-                    // TODO: store the resulting audio
+                    let pcmOut = mimi.decodeStep(StreamArray(audioTokens[0..., 0..., .newAxis]))
+                    if let p = pcmOut.asArray() {
+                        player.send(p.asArray(Float.self))
+                    }
                 }
             }
         }
