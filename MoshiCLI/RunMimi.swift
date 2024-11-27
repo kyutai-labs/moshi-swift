@@ -12,7 +12,8 @@ func makeMimi(baseDir: URL) throws -> Mimi {
     let cfg = MimiConfig.mimi_2024_07()
     let model = Mimi(cfg)
 
-    let origWeights = try loadArrays(url: baseDir.appendingPathComponent("tokenizer-e351c8d8-checkpoint125.safetensors"))
+    let origWeights = try loadArrays(
+        url: baseDir.appendingPathComponent("tokenizer-e351c8d8-checkpoint125.safetensors"))
     var weights: [String: MLXArray] = [:]
     for (var key, var weight) in origWeights {
         // Mutating the keys while iterating over the map seems pretty dodgy, not sure what the idiomatic
@@ -68,9 +69,8 @@ func makeMimi(baseDir: URL) throws -> Mimi {
     return model
 }
 
-func runMimi(baseDir: URL) throws {
+func runMimi(baseDir: URL, streaming: Bool) throws {
     let model = try makeMimi(baseDir: baseDir)
-    let streaming = true
     print("using device \(Device.defaultDevice().description)")
 
     if streaming {

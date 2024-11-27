@@ -68,7 +68,9 @@ case "moshi-1b":
 case "moshi-7b":
     try runMoshi("model.safetensors", baseDir: baseDir, cfg: LmConfig.moshi_2024_07())
 case "mimi":
-    try runMimi(baseDir: baseDir)
+    try runMimi(baseDir: baseDir, streaming: false)
+case "mimi-streaming":
+    try runMimi(baseDir: baseDir, streaming: true)
 case "mic":
     try runMic(baseDir: baseDir)
 case "asr":
