@@ -26,7 +26,12 @@ func loadVocab(_ fileURL: URL) throws -> [Int: String] {
 func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     let mimi = try makeMimi(baseDir: baseDir)
     let moshi = try makeMoshi(baseDir.appendingPathComponent(filename), cfg)
-    let vocab = try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
+    let vocab =
+        switch cfg.textOutVocabSize {
+        case 48000: try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
+        case 32000: try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_32k.json"))
+        case let other: fatalError("unexpected text vocab size \(other)")
+        }
     print("using device \(Device.defaultDevice().description)")
     let maxSteps = moshi.cfg.transformer.maxSeqLen
     let gen = LMGen(moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
