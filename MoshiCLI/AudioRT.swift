@@ -183,7 +183,6 @@ class AudioPlayer {
         audioEngine.attach(sourceNode)
         audioEngine.connect(sourceNode, to: audioEngine.mainMixerNode, format: audioFormat)
         try audioEngine.start()
-        RunLoop.current.run()
     }
 
     func send(_ values: [Float]) {
