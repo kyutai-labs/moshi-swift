@@ -39,7 +39,6 @@ func runMoshiMic(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     let microphoneCapture = MicrophoneCapture()
     microphoneCapture.startCapturing()
 
-    let codebooks = moshi.cfg.audioCodebooks
     while let pcm = microphoneCapture.receive() {
         let pcm = MLXArray(pcm)[.newAxis, .newAxis]
         let codes = mimi.encodeStep(StreamArray(pcm))
@@ -57,6 +56,7 @@ func runMoshiMic(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
                     }
                 }
                 if let audioTokens = gen.lastAudioTokens() {
+                    let _ = audioTokens
                     // TODO: store the resulting audio
                 }
             }
@@ -75,13 +75,12 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
         case 32000: try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_32k_3.json"))
         case let other: fatalError("unexpected text vocab size \(other)")
         }
-    print("using device \(Device.defaultDevice().description)")
     let maxSteps = moshi.cfg.transformer.maxSeqLen
     let gen = LMGen(moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
 
     let pcm = readAudioToPCMArray(fileURL: baseDir.appendingPathComponent("bria-24khz.mp3"))!
     let chunkSize = 1920
-    let codebooks = moshi.cfg.audioCodebooks
+    var pcmOuts: [[Float]] = []
     for start in stride(from: 0, to: pcm.count, by: chunkSize) {
         let end = min(start + chunkSize, pcm.count)
         let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
@@ -100,12 +99,20 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
                     }
                 }
                 if let audioTokens = gen.lastAudioTokens() {
-                    // TODO: store the resulting audio
+                    let pcmOut = mimi.decodeStep(StreamArray(audioTokens[0..., 0..., .newAxis]))
+                    if let p = pcmOut.asArray() {
+                        let p: [Float] = p[0, 0].asArray(Float.self)
+                        pcmOuts.append(p)
+                    }
                 }
             }
         }
     }
     print()
+    try writeWAVFile(
+        pcmOuts.flatMap { $0 },
+        sampleRate: 24000,
+        outputURL: baseDir.appendingPathComponent("moshi-out.wav"))
 }
 
 func runAsr(baseDir: URL, asrDelayInSteps: Int) throws {

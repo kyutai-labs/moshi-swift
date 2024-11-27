@@ -358,7 +358,7 @@ public class LMGen {
         if genIdx < 0 {
             return nil
         }
-        let tokens = self.genSequence[0..., 1...(1 + self.mainCodebooks), genIdx]
+        let tokens = self.genSequence[0..., 1...self.mainCodebooks, genIdx]
         if (tokens .== MLXArray(ungeneratedToken)).any().item<Bool>() {
             fatalError("ungenerated value in text tokens, step \(stepIdx)")
         }
