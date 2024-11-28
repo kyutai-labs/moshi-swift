@@ -252,7 +252,16 @@ public class LM: Module {
     }
 
     public func warmup() {
-        // TODO
+        let sampler = Sampler()
+        let textIds = MLXArray.zeros([1, 1], dtype: .int32)
+        let audioIds = (0..<self.cfg.depformerSlices()).map { _ in
+            MLXArray.zeros([1, 1], dtype: .int32)
+        }
+        let (textToken, audioTokens) = sample(
+            textIds: textIds, audioIds: audioIds, stepIdx: 0, textSampler: sampler,
+            audioSampler: sampler)
+        eval(textToken)
+        eval(audioTokens)
     }
 }
 

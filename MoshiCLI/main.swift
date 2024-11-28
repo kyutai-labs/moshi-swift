@@ -64,11 +64,11 @@ let baseDir = URL(fileURLWithPath: args[2])
 
 switch args[1] {
 case "moshi-1b":
-    try runMoshiMic("moshi-1b-1e20921d@50.safetensors", baseDir: baseDir, cfg: LmConfig.moshi1b())
+    try runMoshiMic("moshi-1b-299feac8@50.safetensors", baseDir: baseDir, cfg: LmConfig.moshi1b())
 case "moshi-7b":
     try runMoshiMic("model.safetensors", baseDir: baseDir, cfg: LmConfig.moshi_2024_07())
 case "moshi-1b-file":
-    try runMoshi("moshi-1b-1e20921d@50.safetensors", baseDir: baseDir, cfg: LmConfig.moshi1b())
+    try runMoshi("moshi-1b-299feac8@50.safetensors", baseDir: baseDir, cfg: LmConfig.moshi1b())
 case "moshi-7b-file":
     try runMoshi("model.safetensors", baseDir: baseDir, cfg: LmConfig.moshi_2024_07())
 case "mimi":
