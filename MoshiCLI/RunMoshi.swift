@@ -175,13 +175,15 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
         let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
         stats.beginEncode()
         let codes = mimi.encodeStep(StreamArray(pcmA))
+        if let codes = codes.asArray() {
+            eval(codes)
+        }
         stats.endEncode()
         if let codes = codes.asArray() {
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
                 stats.beginStep()
                 let textToken = gen.step(otherAudioTokens: codes[0..., 0..<8, step])
-                stats.endStep()
                 if let textToken = textToken {
                     let textTokenI: Int = textToken[0].item()
                     if textTokenI != 0 && textTokenI != 3 {
@@ -192,14 +194,15 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
                         }
                     }
                 }
+                stats.endStep()
                 if let audioTokens = gen.lastAudioTokens() {
                     stats.beginDecode()
                     let pcmOut = mimi.decodeStep(StreamArray(audioTokens[0..., 0..., .newAxis]))
-                    stats.endDecode()
                     if let p = pcmOut.asArray() {
                         let p: [Float] = p[0, 0].asArray(Float.self)
                         pcmOuts.append(p)
                     }
+                    stats.endDecode()
                 }
             }
         }
