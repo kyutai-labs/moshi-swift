@@ -184,6 +184,7 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     let pcm = readAudioToPCMArray(fileURL: baseDir.appendingPathComponent("bria-24khz.mp3"))!
     let chunkSize = 1920
     var pcmOuts: [[Float]] = []
+    var allAudioTokens: [MLXArray] = []
     for start in stride(from: 0, to: pcm.count, by: chunkSize) {
         let end = min(start + chunkSize, pcm.count)
         let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
@@ -213,8 +214,10 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
                 let audioTokens = gen.lastAudioTokens()
                 stats.endDepformer()
                 if let audioTokens = audioTokens {
+                    let audioTokens = audioTokens[0..., 0..., .newAxis]
+                    allAudioTokens.append(audioTokens)
                     stats.beginDecode()
-                    let pcmOut = mimi.decodeStep(StreamArray(audioTokens[0..., 0..., .newAxis]))
+                    let pcmOut = mimi.decodeStep(StreamArray(audioTokens))
                     if let p = pcmOut.asArray() {
                         let p: [Float] = p[0, 0].asArray(Float.self)
                         pcmOuts.append(p)
@@ -225,6 +228,9 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
         }
     }
     print()
+    try save(
+        arrays: ["codes": concatenated(allAudioTokens, axis: -1)],
+        url: baseDir.appendingPathComponent("moshi-codes.safetensors"))
     try stats.writeJSONTrace(url: baseDir.appendingPathComponent("moshi-trace.json"))
     try writeWAVFile(
         pcmOuts.flatMap { $0 },
