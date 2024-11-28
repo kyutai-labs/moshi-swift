@@ -118,9 +118,10 @@ class ResidualVectorQuantization: Module {
     }
 
     func decode(_ indexes: MLXArray) -> MLXArray {
+        let seqLen = indexes.dim(0)
         var quantized = self.layers[0].decode(indexes[0])
-        for (i, layer) in self.layers[1...].enumerated() {
-            quantized = quantized + layer.decode(indexes[i + 1])
+        for i in 1..<seqLen {
+            quantized = quantized + self.layers[i].decode(indexes[i])
         }
         return quantized
     }
