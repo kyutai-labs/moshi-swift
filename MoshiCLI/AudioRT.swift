@@ -126,10 +126,10 @@ class FloatRingBuffer {
         lock.lock()
         defer { lock.unlock() }
 
+        if values.count + count > capacity {
+            return false
+        }
         for value in values {
-            if count == capacity {
-                return false
-            }
             buffer[writeIndex] = value
             writeIndex = (writeIndex + 1) % capacity
             count += 1
@@ -189,9 +189,7 @@ class AudioPlayer {
         try audioEngine.start()
     }
 
-    func send(_ values: [Float]) {
-        if !ringBuffer.write(values) {
-            print("cannot write audio as buffer is full")
-        }
+    func send(_ values: [Float]) -> Bool {
+        ringBuffer.write(values)
     }
 }

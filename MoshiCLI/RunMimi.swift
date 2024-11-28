@@ -167,7 +167,9 @@ public func runCodeToAudio(baseDir: URL, writeFile: Bool) throws {
             let pcmOut = model.decodeStep(StreamArray(codes))
             if let p = pcmOut.asArray() {
                 let p: [Float] = p[0, 0].asArray(Float.self)
-                player.send(p)
+                while !player.send(p) {
+                    usleep(1000)
+                }
             }
         }
     }
