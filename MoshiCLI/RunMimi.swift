@@ -135,7 +135,7 @@ func runMimi(baseDir: URL, streaming: Bool) throws {
     }
 }
 
-public func runCodeToAudio(baseDir: URL, streaming: Bool) throws {
+public func runCodeToAudio(baseDir: URL, writeFile: Bool) throws {
     let model = try makeMimi(baseDir: baseDir)
     print("using device \(Device.defaultDevice().description)")
 
@@ -145,7 +145,7 @@ public func runCodeToAudio(baseDir: URL, streaming: Bool) throws {
     print("loaded codes with shape", codes.shape)
     let (_, _, steps) = codes.shape3
 
-    if streaming {
+    if writeFile {
         var pcmOuts: [[Float]] = []
         for stepIdx in 0..<steps {
             let codes = codes[0..., 0..., stepIdx...stepIdx]
@@ -160,13 +160,14 @@ public func runCodeToAudio(baseDir: URL, streaming: Bool) throws {
             sampleRate: 24000,
             outputURL: baseDir.appendingPathComponent("mimi-out.wav"))
     } else {
-        let pcmOut = model.decode(codes)
-        print("pcm generated", pcmOut.shape)
-        let pcmOutA: [Float] = pcmOut[0, 0].asArray(Float.self)
-        print("data extracted")
-        try writeWAVFile(
-            pcmOutA,
-            sampleRate: 24000,
-            outputURL: baseDir.appendingPathComponent("mimi-out.wav"))
+        let player = AudioPlayer(sampleRate: 24000)
+        for stepIdx in 0..<steps {
+            let codes = codes[0..., 0..., stepIdx...stepIdx]
+            let pcmOut = model.decodeStep(StreamArray(codes))
+            if let p = pcmOut.asArray() {
+                let p: [Float] = p[0, 0].asArray(Float.self)
+                player.send(p)
+            }
+        }
     }
 }
