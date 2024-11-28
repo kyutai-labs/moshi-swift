@@ -171,7 +171,6 @@ class AudioPlayer {
         let sourceNode = AVAudioSourceNode(format: audioFormat) {
             _, _, frameCount, audioBufferList -> OSStatus in
             let audioBuffers = UnsafeMutableAudioBufferListPointer(audioBufferList)
-            print("cb \(frameCount)")
             guard let channelData = audioBuffers[0].mData?.assumingMemoryBound(to: Float.self)
             else {
                 return kAudioHardwareUnspecifiedError
