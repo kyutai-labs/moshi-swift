@@ -81,10 +81,12 @@ case "asr-file":
     try runAsr(baseDir: baseDir, asrDelayInSteps: 25)
 case "asr":
     try runAsrMic(baseDir: baseDir, asrDelayInSteps: 25)
-case "code-to-audio-file":
-    try runCodeToAudio(baseDir: baseDir, writeFile: true)
-case "code-to-audio":
-    try runCodeToAudio(baseDir: baseDir, writeFile: false)
+case "codes-to-audio-file":
+    try runCodesToAudio(baseDir: baseDir, writeFile: true)
+case "codes-to-audio":
+    try runCodesToAudio(baseDir: baseDir, writeFile: false)
+case "audio-to-codes":
+    try runAudioToCodes(baseDir: baseDir)
 case "transformer":
     try runTransformer(baseDir: baseDir)
 case let other:

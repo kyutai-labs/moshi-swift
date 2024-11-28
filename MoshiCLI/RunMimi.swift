@@ -135,7 +135,7 @@ func runMimi(baseDir: URL, streaming: Bool) throws {
     }
 }
 
-public func runCodeToAudio(baseDir: URL, writeFile: Bool) throws {
+public func runCodesToAudio(baseDir: URL, writeFile: Bool) throws {
     let model = try makeMimi(baseDir: baseDir)
     print("using device \(Device.defaultDevice().description)")
 
@@ -173,4 +173,31 @@ public func runCodeToAudio(baseDir: URL, writeFile: Bool) throws {
             }
         }
     }
+}
+
+public func runAudioToCodes(baseDir: URL) throws {
+    let model = try makeMimi(baseDir: baseDir)
+    print("using device \(Device.defaultDevice().description)")
+
+    let microphoneCapture = MicrophoneCapture()
+    microphoneCapture.startCapturing()
+    var cnt = 0
+    var allCodes: [MLXArray] = []
+    while let pcm = microphoneCapture.receive() {
+        let pcm = MLXArray(pcm)[.newAxis, .newAxis]
+        let codes = model.encodeStep(StreamArray(pcm))
+        if let codes = codes.asArray() {
+            eval(codes)
+            allCodes.append(codes)
+            cnt += codes.count
+            if cnt > 10 * 24000 {
+                break
+            }
+        }
+    }
+    try save(
+        arrays: ["codes": concatenated(allCodes, axis: -1)],
+        url: baseDir.appendingPathComponent("mimi-codes.safetensors"))
+    microphoneCapture.stopCapturing()
+
 }
