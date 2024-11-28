@@ -18,6 +18,15 @@ enum EventKind {
     case endEncode
 }
 
+struct ChromeTraceEvent: Codable {
+    let name: String
+    let cat: String
+    let ph: String
+    let ts: Int
+    let pid: Int
+    let tid: Int
+}
+
 class PerfStats {
     private let log: OSLog
     private var events: [(CFAbsoluteTime, EventKind)] = []
@@ -58,6 +67,27 @@ class PerfStats {
     func endDecode() {
         os_signpost(.end, log: log, name: "decode")
         append(.endDecode)
+    }
+
+    func writeJSONTrace(url: URL) throws {
+        let encoder = JSONEncoder()
+        var traceEvents: [ChromeTraceEvent] = []
+        for (time, kind) in events {
+            let ts = Int((time - events[0].0) * 1e6)
+            let (name, ph) =
+                switch kind {
+                case .beginStep: ("step", "B")
+                case .endStep: ("step", "E")
+                case .beginEncode: ("encode", "B")
+                case .endEncode: ("encode", "E")
+                case .beginDecode: ("decode", "B")
+                case .endDecode: ("decode", "E")
+                }
+            traceEvents.append(
+                ChromeTraceEvent(name: name, cat: "", ph: ph, ts: ts, pid: 42, tid: 1))
+        }
+        let jsonData = try encoder.encode(traceEvents)
+        try jsonData.write(to: url)
     }
 }
 
@@ -175,6 +205,7 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
         }
     }
     print()
+    try stats.writeJSONTrace(url: baseDir.appendingPathComponent("moshi-trace.json"))
     try writeWAVFile(
         pcmOuts.flatMap { $0 },
         sampleRate: 24000,
