@@ -251,6 +251,9 @@ public class LM: Module {
         }
     }
 
+    public func warmup() {
+        // TODO
+    }
 }
 
 let zeroToken: Int = -1

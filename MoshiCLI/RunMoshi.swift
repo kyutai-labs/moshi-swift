@@ -130,6 +130,12 @@ func runMoshiMic(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
         case let other: fatalError("unexpected text vocab size \(other)")
         }
     print("using device \(Device.defaultDevice().description)")
+    print("warming up mimi")
+    mimi.warmup()
+    print("warming up moshi")
+    moshi.warmup()
+    print("done warming up")
+
     let maxSteps = moshi.cfg.transformer.maxSeqLen
     let gen = LMGen(moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
 
@@ -296,6 +302,11 @@ func runAsrMic(baseDir: URL, asrDelayInSteps: Int) throws {
         baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"), LmConfig.asr1b())
     let vocab = try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
     print("using device \(Device.defaultDevice().description)")
+    print("warming up mimi")
+    mimi.warmup()
+    print("warming up moshi")
+    moshi.warmup()
+    print("done warming up")
 
     let sampler = Sampler(temp: 0.0)
     let codebooks = moshi.cfg.audioCodebooks

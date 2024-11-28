@@ -83,6 +83,13 @@ public class Mimi: Module {
         self.decoderCache = self._decoderTransformer.wrappedValue.makeCache()
     }
 
+    public func warmup() {
+        let pcm = MLXArray.zeros([1, 1920 * 4])
+        let codes = self.encode(pcm)
+        let pcmOut = self.decode(codes)
+        eval(pcmOut)
+    }
+
     public func encode(_ x: MLXArray) -> MLXArray {
         self.encoder.resetState()
         self.encoderCache.forEach { c in c.reset() }
