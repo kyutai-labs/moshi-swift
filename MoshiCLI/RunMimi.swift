@@ -190,7 +190,7 @@ public func runAudioToCodes(baseDir: URL) throws {
             eval(codes)
             allCodes.append(codes)
             cnt += codes.count
-            if cnt > 10 * 24000 {
+            if cnt > 125 {
                 break
             }
         }
