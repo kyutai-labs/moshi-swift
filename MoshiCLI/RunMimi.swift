@@ -161,6 +161,7 @@ public func runCodeToAudio(baseDir: URL, writeFile: Bool) throws {
             outputURL: baseDir.appendingPathComponent("mimi-out.wav"))
     } else {
         let player = AudioPlayer(sampleRate: 24000)
+        try player.startPlaying()
         for stepIdx in 0..<steps {
             let codes = codes[0..., 0..., stepIdx...stepIdx]
             let pcmOut = model.decodeStep(StreamArray(codes))

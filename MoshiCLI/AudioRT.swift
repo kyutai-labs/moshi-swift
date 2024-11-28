@@ -155,7 +155,6 @@ class FloatRingBuffer {
     }
 }
 
-
 class AudioPlayer {
     private let audioEngine: AVAudioEngine
     private let ringBuffer: FloatRingBuffer
@@ -169,9 +168,12 @@ class AudioPlayer {
 
     func startPlaying() throws {
         let audioFormat = AVAudioFormat(standardFormatWithSampleRate: self.sampleRate, channels: 1)!
-        let sourceNode = AVAudioSourceNode(format: audioFormat) { _, _, frameCount, audioBufferList -> OSStatus in
+        let sourceNode = AVAudioSourceNode(format: audioFormat) {
+            _, _, frameCount, audioBufferList -> OSStatus in
             let audioBuffers = UnsafeMutableAudioBufferListPointer(audioBufferList)
-            guard let channelData = audioBuffers[0].mData?.assumingMemoryBound(to: Float.self) else {
+            print("cb \(frameCount)")
+            guard let channelData = audioBuffers[0].mData?.assumingMemoryBound(to: Float.self)
+            else {
                 return kAudioHardwareUnspecifiedError
             }
             let data = self.ringBuffer.read(maxCount: Int(frameCount))
