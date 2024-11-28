@@ -12,6 +12,8 @@ import os.signpost
 enum EventKind {
     case beginStep
     case endStep
+    case beginDepformer
+    case endDepformer
     case beginDecode
     case endDecode
     case beginEncode
@@ -49,6 +51,16 @@ class PerfStats {
         append(.endStep)
     }
 
+    func beginDepformer() {
+        os_signpost(.begin, log: log, name: "depformer")
+        append(.beginDepformer)
+    }
+
+    func endDepformer() {
+        os_signpost(.end, log: log, name: "depformer")
+        append(.endDepformer)
+    }
+
     func beginEncode() {
         os_signpost(.begin, log: log, name: "encode")
         append(.beginEncode)
@@ -80,6 +92,8 @@ class PerfStats {
                 case .endStep: ("step", "E")
                 case .beginEncode: ("encode", "B")
                 case .endEncode: ("encode", "E")
+                case .beginDepformer: ("depformer", "B")
+                case .endDepformer: ("depformer", "E")
                 case .beginDecode: ("decode", "B")
                 case .endDecode: ("decode", "E")
                 }
@@ -195,7 +209,10 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
                     }
                 }
                 stats.endStep()
-                if let audioTokens = gen.lastAudioTokens() {
+                stats.beginDepformer()
+                let audioTokens = gen.lastAudioTokens()
+                stats.endDepformer()
+                if let audioTokens = audioTokens {
                     stats.beginDecode()
                     let pcmOut = mimi.decodeStep(StreamArray(audioTokens[0..., 0..., .newAxis]))
                     if let p = pcmOut.asArray() {
