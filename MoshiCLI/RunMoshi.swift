@@ -9,35 +9,55 @@ import MLXNN
 import MoshiLib
 import os.signpost
 
+enum EventKind {
+    case beginStep
+    case endStep
+    case beginDecode
+    case endDecode
+    case beginEncode
+    case endEncode
+}
+
 class PerfStats {
     private let log: OSLog
+    private var events: [(CFAbsoluteTime, EventKind)] = []
 
     init() {
         self.log = OSLog(subsystem: "org.kyutai.moshi", category: "Performance")
     }
 
+    func append(_ kind: EventKind) {
+        events.append((CFAbsoluteTimeGetCurrent(), kind))
+    }
+
     func beginStep() {
         os_signpost(.begin, log: log, name: "step")
+        append(.beginStep)
     }
 
     func endStep() {
         os_signpost(.end, log: log, name: "step")
+        append(.endStep)
     }
 
     func beginEncode() {
         os_signpost(.begin, log: log, name: "encode")
+        append(.beginEncode)
     }
 
     func endEncode() {
         os_signpost(.end, log: log, name: "encode")
+        append(.endEncode)
     }
 
     func beginDecode() {
         os_signpost(.begin, log: log, name: "decode")
+        append(.beginDecode)
     }
 
     func endDecode() {
         os_signpost(.end, log: log, name: "decode")
+        append(.endDecode)
     }
 }
 
