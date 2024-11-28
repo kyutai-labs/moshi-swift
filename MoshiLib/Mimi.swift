@@ -84,7 +84,7 @@ public class Mimi: Module {
     }
 
     public func warmup() {
-        let pcm = MLXArray.zeros([1, 1920 * 4])
+        let pcm = MLXArray.zeros([1, 1, 1920 * 4])
         let codes = self.encode(pcm)
         let pcmOut = self.decode(codes)
         eval(pcmOut)
