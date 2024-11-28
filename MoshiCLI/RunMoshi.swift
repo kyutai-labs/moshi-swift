@@ -7,6 +7,39 @@ import Foundation
 import MLX
 import MLXNN
 import MoshiLib
+import os.signpost
+
+class PerfStats {
+    private let log: OSLog
+
+    init() {
+        self.log = OSLog(subsystem: "org.kyutai.moshi", category: "Performance")
+    }
+
+    func beginStep() {
+        os_signpost(.begin, log: log, name: "step")
+    }
+
+    func endStep() {
+        os_signpost(.end, log: log, name: "step")
+    }
+
+    func beginEncode() {
+        os_signpost(.begin, log: log, name: "encode")
+    }
+
+    func endEncode() {
+        os_signpost(.end, log: log, name: "encode")
+    }
+
+    func beginDecode() {
+        os_signpost(.begin, log: log, name: "decode")
+    }
+
+    func endDecode() {
+        os_signpost(.end, log: log, name: "decode")
+    }
+}
 
 func makeMoshi(_ filename: URL, _ cfg: LmConfig) throws -> LM {
     let weights = try loadArrays(url: filename)
@@ -72,6 +105,7 @@ func runMoshiMic(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
 }
 
 func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
+    let stats = PerfStats()
     let mimi = try makeMimi(baseDir: baseDir)
     let moshi = try makeMoshi(baseDir.appendingPathComponent(filename), cfg)
     let vocab =
@@ -89,11 +123,16 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     for start in stride(from: 0, to: pcm.count, by: chunkSize) {
         let end = min(start + chunkSize, pcm.count)
         let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
+        stats.beginEncode()
         let codes = mimi.encodeStep(StreamArray(pcmA))
+        stats.endEncode()
         if let codes = codes.asArray() {
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
-                if let textToken = gen.step(otherAudioTokens: codes[0..., 0..<8, step]) {
+                stats.beginStep()
+                let textToken = gen.step(otherAudioTokens: codes[0..., 0..<8, step])
+                stats.endStep()
+                if let textToken = textToken {
                     let textTokenI: Int = textToken[0].item()
                     if textTokenI != 0 && textTokenI != 3 {
                         if var v = vocab[textTokenI] {
@@ -104,7 +143,9 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
                     }
                 }
                 if let audioTokens = gen.lastAudioTokens() {
+                    stats.beginDecode()
                     let pcmOut = mimi.decodeStep(StreamArray(audioTokens[0..., 0..., .newAxis]))
+                    stats.endDecode()
                     if let p = pcmOut.asArray() {
                         let p: [Float] = p[0, 0].asArray(Float.self)
                         pcmOuts.append(p)
