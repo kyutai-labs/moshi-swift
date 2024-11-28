@@ -134,3 +134,39 @@ func runMimi(baseDir: URL, streaming: Bool) throws {
             outputURL: baseDir.appendingPathComponent("bria-out.wav"))
     }
 }
+
+public func runCodeToAudio(baseDir: URL, streaming: Bool) throws {
+    let model = try makeMimi(baseDir: baseDir)
+    print("using device \(Device.defaultDevice().description)")
+
+    let codes = try loadArrays(
+        url:
+            baseDir.appendingPathComponent("moshi-codes.safetensors"))["codes"]!
+    print("loaded codes with shape", codes.shape)
+    let (_, _, steps) = codes.shape3
+
+    if streaming {
+        var pcmOuts: [[Float]] = []
+        for stepIdx in 0..<steps {
+            let codes = codes[0..., 0..., stepIdx...stepIdx]
+            let pcmOut = model.decodeStep(StreamArray(codes))
+            if let p = pcmOut.asArray() {
+                let p: [Float] = p[0, 0].asArray(Float.self)
+                pcmOuts.append(p)
+            }
+        }
+        try writeWAVFile(
+            pcmOuts.flatMap { $0 },
+            sampleRate: 24000,
+            outputURL: baseDir.appendingPathComponent("mimi-out.wav"))
+    } else {
+        let pcmOut = model.decode(codes)
+        print("pcm generated", pcmOut.shape)
+        let pcmOutA: [Float] = pcmOut[0, 0].asArray(Float.self)
+        print("data extracted")
+        try writeWAVFile(
+            pcmOutA,
+            sampleRate: 24000,
+            outputURL: baseDir.appendingPathComponent("mimi-out.wav"))
+    }
+}
