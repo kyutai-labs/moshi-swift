@@ -195,7 +195,8 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     let maxSteps = moshi.cfg.transformer.maxSeqLen
     let gen = LMGen(moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
 
-    let pcm = readAudioToPCMArray(fileURL: baseDir.appendingPathComponent("bria-24khz.mp3"))!
+    let sampleURL = try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
+    let pcm = readAudioToPCMArray(fileURL: sampleURL)!
     let chunkSize = 1920
     var pcmOuts: [[Float]] = []
     var allAudioTokens: [MLXArray] = []
@@ -265,7 +266,8 @@ func runAsr(baseDir: URL, asrDelayInSteps: Int) throws {
     moshi.warmup()
     print("done warming up")
 
-    let pcm = readAudioToPCMArray(fileURL: baseDir.appendingPathComponent("bria-24khz.mp3"))!
+    let sampleURL = try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
+    let pcm = readAudioToPCMArray(fileURL: sampleURL)!
     let chunkSize = 1920
     let sampler = Sampler(temp: 0.0)
     let codebooks = moshi.cfg.audioCodebooks

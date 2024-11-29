@@ -75,9 +75,10 @@ func makeMimi() throws -> Mimi {
 func runMimi(baseDir: URL, streaming: Bool) throws {
     let model = try makeMimi()
     print("using device \(Device.defaultDevice().description)")
+    let sampleURL = try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
+    let pcm = readAudioToPCMArray(fileURL: sampleURL)!
 
     if streaming {
-        let pcm = readAudioToPCMArray(fileURL: baseDir.appendingPathComponent("bria-24khz.mp3"))!
         let chunkSize = 1920
         var pcmOuts: [[Float]] = []
         var elapsedTimes: [Double] = []
@@ -118,7 +119,6 @@ func runMimi(baseDir: URL, streaming: Bool) throws {
             sampleRate: 24000,
             outputURL: baseDir.appendingPathComponent("bria-out.wav"))
     } else {
-        let pcm = readAudioToPCMArray(fileURL: baseDir.appendingPathComponent("bria-24khz.mp3"))!
         let pcmA = MLXArray(pcm)[.newAxis, .newAxis, 0..<240000]
         print("pcm loaded from file", pcmA.shape, pcmA.dtype)
         let out = model.encode(pcmA)
