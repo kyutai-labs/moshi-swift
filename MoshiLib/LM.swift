@@ -262,6 +262,9 @@ public class LM: Module {
             audioSampler: sampler)
         eval(textToken)
         eval(audioTokens)
+        for c in self.transformerCache {
+            c.reset()
+        }
     }
 }
 
