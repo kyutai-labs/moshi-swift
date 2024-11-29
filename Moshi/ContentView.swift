@@ -148,6 +148,7 @@ class Model {
 
 struct ContentView: View {
     @State private var model: Model? = nil
+    @Environment(DeviceStat.self) private var deviceStat
 
     var body: some View {
         let buttonText = model == nil ? "Load Weights" : "Launch Model"
@@ -209,6 +210,25 @@ struct ContentView: View {
             }
         }
         .padding()
+        .toolbar {
+            ToolbarItem {
+                Label(
+                    "Memory Usage: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))",
+                    systemImage: "info.circle.fill"
+                )
+                .labelStyle(.titleAndIcon)
+                .padding(.horizontal)
+                .help(
+                    Text(
+                        """
+                        Active Memory: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))/\(GPU.memoryLimit.formatted(.byteCount(style: .memory)))
+                        Cache Memory: \(deviceStat.gpuUsage.cacheMemory.formatted(.byteCount(style: .memory)))/\(GPU.cacheLimit.formatted(.byteCount(style: .memory)))
+                        Peak Memory: \(deviceStat.gpuUsage.peakMemory.formatted(.byteCount(style: .memory)))
+                        """
+                    )
+                )
+            }
+        }
     }
 }
 
