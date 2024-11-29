@@ -173,7 +173,8 @@ class AudioPlayer {
             let audioBuffers = UnsafeMutableAudioBufferListPointer(audioBufferList)
             guard let channelData = audioBuffers[0].mData?.assumingMemoryBound(to: Float.self)
             else {
-                return kAudioHardwareUnspecifiedError
+                // TODO: Get a proper error here that would work on ios.
+                return 1
             }
             let data = self.ringBuffer.read(maxCount: Int(frameCount))
             for i in 0..<Int(frameCount) {
