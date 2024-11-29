@@ -72,7 +72,7 @@ func makeMimi() throws -> Mimi {
     return model
 }
 
-func runMimi(baseDir: URL, streaming: Bool) throws {
+func runMimi(streaming: Bool) throws {
     let model = try makeMimi()
     print("using device \(Device.defaultDevice().description)")
     let sampleURL = try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
@@ -117,7 +117,7 @@ func runMimi(baseDir: URL, streaming: Bool) throws {
         try writeWAVFile(
             pcmOuts.flatMap { $0 },
             sampleRate: 24000,
-            outputURL: baseDir.appendingPathComponent("bria-out.wav"))
+            outputURL: URL(fileURLWithPath: "bria-out.wav"))
     } else {
         let pcmA = MLXArray(pcm)[.newAxis, .newAxis, 0..<240000]
         print("pcm loaded from file", pcmA.shape, pcmA.dtype)
@@ -125,7 +125,7 @@ func runMimi(baseDir: URL, streaming: Bool) throws {
         print("quantized", out.shape)
         try save(
             arrays: ["codes": out],
-            url: baseDir.appendingPathComponent("bria-codes.safetensors"))
+            url: URL(fileURLWithPath: "bria-codes.safetensors"))
         print(out)
         let pcmOut = model.decode(out)
         print("pcm generated", pcmOut.shape)
@@ -134,17 +134,16 @@ func runMimi(baseDir: URL, streaming: Bool) throws {
         try writeWAVFile(
             pcmOutA,
             sampleRate: 24000,
-            outputURL: baseDir.appendingPathComponent("bria-out.wav"))
+            outputURL: URL(fileURLWithPath: "bria-out.wav"))
     }
 }
 
-public func runCodesToAudio(baseDir: URL, writeFile: Bool) throws {
+public func runCodesToAudio(writeFile: Bool) throws {
     let model = try makeMimi()
     print("using device \(Device.defaultDevice().description)")
 
     let codes = try loadArrays(
-        url:
-            baseDir.appendingPathComponent("moshi-codes.safetensors"))["codes"]!
+        url: URL(fileURLWithPath: "moshi-codes.safetensors"))["codes"]!
     print("loaded codes with shape", codes.shape)
     let (_, _, steps) = codes.shape3
 
@@ -161,7 +160,7 @@ public func runCodesToAudio(baseDir: URL, writeFile: Bool) throws {
         try writeWAVFile(
             pcmOuts.flatMap { $0 },
             sampleRate: 24000,
-            outputURL: baseDir.appendingPathComponent("mimi-out.wav"))
+            outputURL: URL(fileURLWithPath: "mimi-out.wav"))
     } else {
         let player = AudioPlayer(sampleRate: 24000)
         try player.startPlaying()
@@ -178,7 +177,7 @@ public func runCodesToAudio(baseDir: URL, writeFile: Bool) throws {
     }
 }
 
-public func runAudioToCodes(baseDir: URL) throws {
+public func runAudioToCodes() throws {
     let model = try makeMimi()
     print("using device \(Device.defaultDevice().description)")
 
@@ -200,7 +199,7 @@ public func runAudioToCodes(baseDir: URL) throws {
     }
     try save(
         arrays: ["codes": concatenated(allCodes, axis: -1)],
-        url: baseDir.appendingPathComponent("mimi-codes.safetensors"))
+        url: URL(fileURLWithPath: "mimi-codes.safetensors"))
     microphoneCapture.stopCapturing()
 
 }

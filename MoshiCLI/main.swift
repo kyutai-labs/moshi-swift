@@ -22,38 +22,60 @@ func downloadFromHub(id: String, filename: String) throws -> URL {
 }
 
 let args = CommandLine.arguments
-if args.count < 3 {
-    fatalError("usage: \(args[0]) cmd dir")
+if args.count < 2 {
+    fatalError("usage: \(args[0]) cmd")
 }
-let baseDir = URL(fileURLWithPath: args[2])
-
 switch args[1] {
 case "moshi-1b":
-    let fileName = args.count <= 3 ? "moshi-1b-299feac8@50.safetensors" : args[3]
-    try runMoshiMic(fileName, baseDir: baseDir, cfg: LmConfig.moshi1b())
+    let url: URL
+    if args.count <= 2 {
+        url = URL(fileURLWithPath: "moshi-1b-299feac8@50.safetensors")
+    } else {
+        url = URL(fileURLWithPath: args[2])
+    }
+    try runMoshiMic(url, cfg: LmConfig.moshi1b())
 case "moshi-7b":
-    let fileName = args.count <= 3 ? "model.safetensors" : args[3]
-    try runMoshiMic(fileName, baseDir: baseDir, cfg: LmConfig.moshi_2024_07())
+    let url: URL
+    if args.count <= 2 {
+        print("downloading the weights from the hub, this may take a while...")
+        url = try downloadFromHub(id: "kyutai/moshiko-mlx-q4", filename: "model.q4.safetensors")
+    } else {
+        url = URL(fileURLWithPath: args[2])
+    }
+    try runMoshiMic(url, cfg: LmConfig.moshi_2024_07())
 case "moshi-1b-file":
-    let fileName = args.count <= 3 ? "moshi-1b-299feac8@50.safetensors" : args[3]
-    try runMoshi(fileName, baseDir: baseDir, cfg: LmConfig.moshi1b())
+    let url: URL
+    if args.count <= 2 {
+        url = URL(fileURLWithPath: "moshi-1b-299feac8@50.safetensors")
+    } else {
+        url = URL(fileURLWithPath: args[2])
+    }
+    try runMoshi(url, cfg: LmConfig.moshi1b())
 case "moshi-7b-file":
-    let fileName = args.count <= 3 ? "model.safetensors" : args[3]
-    try runMoshi(fileName, baseDir: baseDir, cfg: LmConfig.moshi_2024_07())
+    let url: URL
+    if args.count <= 2 {
+        print("downloading the weights from the hub, this may take a while...")
+        url = try downloadFromHub(id: "kyutai/moshiko-mlx-q4", filename: "model.q4.safetensors")
+    } else {
+        url = URL(fileURLWithPath: args[2])
+    }
+    try runMoshi(url, cfg: LmConfig.moshi_2024_07())
 case "mimi":
-    try runMimi(baseDir: baseDir, streaming: false)
+    try runMimi(streaming: false)
 case "mimi-streaming":
-    try runMimi(baseDir: baseDir, streaming: true)
+    try runMimi(streaming: true)
 case "asr-file":
-    try runAsr(baseDir: baseDir, asrDelayInSteps: 25)
+    let url = URL(fileURLWithPath: "asr-1b-8d2516b9@150.safetensors")
+    try runAsr(url, asrDelayInSteps: 25)
 case "asr":
-    try runAsrMic(baseDir: baseDir, asrDelayInSteps: 25)
+    let url = URL(fileURLWithPath: "asr-1b-8d2516b9@150.safetensors")
+    try runAsrMic(url, asrDelayInSteps: 25)
 case "codes-to-audio-file":
-    try runCodesToAudio(baseDir: baseDir, writeFile: true)
+    try runCodesToAudio(writeFile: true)
 case "codes-to-audio":
-    try runCodesToAudio(baseDir: baseDir, writeFile: false)
+    try runCodesToAudio(writeFile: false)
 case "audio-to-codes":
-    try runAudioToCodes(baseDir: baseDir)
+    try runAudioToCodes()
 case let other:
     fatalError("unknown command '\(other)'")
 }

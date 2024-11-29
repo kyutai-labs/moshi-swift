@@ -7,14 +7,11 @@ Swift](https://github.com/ml-explore/mlx-swift).
 
 ```bash
 xcodebuild -scheme moshi-cli -derivedDataPath ./build
-./build/Build/Products/Release/MoshiCLI moshi-7b ~/tmp/ model.q4.safetensors
+./build/Build/Products/Release/MoshiCLI moshi-7b
 ```
 
-### Downloading the checkpoints
-```bash
-wget https://huggingface.co/kyutai/moshiko-mlx-q4/resolve/main/model.q4.safetensors
-```
-Move all the asset files in `~/tmp`.
+The checkpoints are automatically downloaded from the huggingface hub. So you
+may have to wait for a bit when running the model for the first time.
 
 ### Possible workarounds for common issues
 `LD_RUNPATH_SEARCH_PATHS` has been set in xcode to include the executable path

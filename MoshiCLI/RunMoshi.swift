@@ -132,9 +132,9 @@ func loadVocab(_ cfg: LmConfig) throws -> [Int: String] {
     return dictionary
 }
 
-func runMoshiMic(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
+func runMoshiMic(_ url: URL, cfg: LmConfig) throws {
     let mimi = try makeMimi()
-    let moshi = try makeMoshi(baseDir.appendingPathComponent(filename), cfg)
+    let moshi = try makeMoshi(url, cfg)
     let vocab = try loadVocab(cfg)
     print("using device \(Device.defaultDevice().description)")
     print("warming up mimi")
@@ -181,10 +181,10 @@ func runMoshiMic(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     microphoneCapture.stopCapturing()
 }
 
-func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
+func runMoshi(_ url: URL, cfg: LmConfig) throws {
     let stats = PerfStats()
     let mimi = try makeMimi()
-    let moshi = try makeMoshi(baseDir.appendingPathComponent(filename), cfg)
+    let moshi = try makeMoshi(url, cfg)
     let vocab = try loadVocab(cfg)
     print("warming up mimi")
     mimi.warmup()
@@ -245,19 +245,18 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     print()
     try save(
         arrays: ["codes": concatenated(allAudioTokens, axis: -1)],
-        url: baseDir.appendingPathComponent("moshi-codes.safetensors"))
-    try stats.writeJSONTrace(url: baseDir.appendingPathComponent("moshi-trace.json"))
+        url: URL(fileURLWithPath: "moshi-codes.safetensors"))
+    try stats.writeJSONTrace(url: URL(fileURLWithPath: "moshi-trace.json"))
     try writeWAVFile(
         pcmOuts.flatMap { $0 },
         sampleRate: 24000,
-        outputURL: baseDir.appendingPathComponent("moshi-out.wav"))
+        outputURL: URL(fileURLWithPath: "moshi-out.wav"))
 }
 
-func runAsr(baseDir: URL, asrDelayInSteps: Int) throws {
+func runAsr(_ url: URL, asrDelayInSteps: Int) throws {
     let mimi = try makeMimi()
     let cfg = LmConfig.asr1b()
-    let moshi = try makeMoshi(
-        baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"), cfg)
+    let moshi = try makeMoshi(url, cfg)
     let vocab = try loadVocab(cfg)
     print("using device \(Device.defaultDevice().description)")
     print("warming up mimi")
@@ -312,11 +311,10 @@ func runAsr(baseDir: URL, asrDelayInSteps: Int) throws {
     print()
 }
 
-func runAsrMic(baseDir: URL, asrDelayInSteps: Int) throws {
+func runAsrMic(_ url: URL, asrDelayInSteps: Int) throws {
     let mimi = try makeMimi()
     let cfg = LmConfig.asr1b()
-    let moshi = try makeMoshi(
-        baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"), cfg)
+    let moshi = try makeMoshi(url, cfg)
     let vocab = try loadVocab(cfg)
     print("using device \(Device.defaultDevice().description)")
     print("warming up mimi")
