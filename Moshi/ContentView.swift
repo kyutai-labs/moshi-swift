@@ -125,19 +125,19 @@ class Model {
     let moshi: LM
     let vocab: [Int: String]
     let mimi: Mimi
-    let gen: LmGen
+    let gen: LMGen
 
     init() throws {
         print("downloading model")
         let url = try downloadFromHub(
             id: "kyutai/moshiko-mlx-q4", filename: "model.q4.safetensors")
-        print("downloaded model")
         let cfg = LmConfig.moshi_2024_07()
         self.moshi = try makeMoshi(url, cfg)
-        self.mimi = try MakeMimi()
+        self.mimi = try makeMimi()
+        print("downloaded model")
         let maxSteps = cfg.transformer.maxSeqLen
         self.gen = LMGen(moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
-
+        self.vocab = try loadVocab(cfg)
         print("warming up mimi")
         self.mimi.warmup()
         print("warming up moshi")
@@ -147,7 +147,7 @@ class Model {
 }
 
 struct ContentView: View {
-    @State private var model: LM? = nil
+    @State private var model: Model? = nil
 
     var body: some View {
         let buttonText = model == nil ? "Load Weights" : "Launch Model"
@@ -157,14 +157,54 @@ struct ContentView: View {
                 .foregroundStyle(.tint)
             Text("...")
             Button(buttonText) {
-                if self.model == nil {
-                    do {
-                        self.model = Model()
-                    } catch {
-                        print("error in callback", error)
+                do {
+                    if self.model == nil {
+                        // TODO: Async download with progress bar.
+                        let m = try Model()
+                        self.model = m
+                    } else {
+                        let model = self.model!
+                        // TODO: Do not create a fresh audio input/output on each session.
+                        let microphoneCapture = MicrophoneCapture()
+                        microphoneCapture.startCapturing()
+                        let player = AudioPlayer(sampleRate: 24000)
+                        try player.startPlaying()
+                        print("started the audio loops")
+                        
+                        // TODO: Async inference loop
+                        while let pcm = microphoneCapture.receive() {
+                            let pcm = MLXArray(pcm)[.newAxis, .newAxis]
+                            let codes = model.mimi.encodeStep(StreamArray(pcm))
+                            if let codes = codes.asArray() {
+                                let (_, _, steps) = codes.shape3
+                                for step in 0..<steps {
+                                    if let textToken = model.gen.step(
+                                        otherAudioTokens: codes[0..., 0..<8, step])
+                                    {
+                                        let textTokenI: Int = textToken[0].item()
+                                        if textTokenI != 0 && textTokenI != 3 {
+                                            if var v = model.vocab[textTokenI] {
+                                                v.replace("▁", with: " ")
+                                                print(v, terminator: "")
+                                                fflush(stdout)
+                                            }
+                                        }
+                                    }
+                                    if let audioTokens = model.gen.lastAudioTokens() {
+                                        let pcmOut = model.mimi.decodeStep(
+                                            StreamArray(audioTokens[0..., 0..., .newAxis]))
+                                        if let p = pcmOut.asArray() {
+                                            player.send(p.asArray(Float.self))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        print()
+                        microphoneCapture.stopCapturing()
                     }
-                } else {
-                    print("run model...")
+                } catch {
+                    print("error in callback", error)
                 }
             }
         }
