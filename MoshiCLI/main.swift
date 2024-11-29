@@ -57,20 +57,24 @@ func runMic(baseDir: URL) throws {
 }
 
 let args = CommandLine.arguments
-if args.count != 3 {
+if args.count < 3 {
     fatalError("usage: \(args[0]) cmd dir")
 }
 let baseDir = URL(fileURLWithPath: args[2])
 
 switch args[1] {
 case "moshi-1b":
-    try runMoshiMic("moshi-1b-299feac8@50.safetensors", baseDir: baseDir, cfg: LmConfig.moshi1b())
+    let fileName = args.count <= 3 ? "moshi-1b-299feac8@50.safetensors" : args[3]
+    try runMoshiMic(fileName, baseDir: baseDir, cfg: LmConfig.moshi1b())
 case "moshi-7b":
-    try runMoshiMic("model.safetensors", baseDir: baseDir, cfg: LmConfig.moshi_2024_07())
+    let fileName = args.count <= 3 ? "model.safetensors" : args[3]
+    try runMoshiMic(fileName, baseDir: baseDir, cfg: LmConfig.moshi_2024_07())
 case "moshi-1b-file":
-    try runMoshi("moshi-1b-299feac8@50.safetensors", baseDir: baseDir, cfg: LmConfig.moshi1b())
+    let fileName = args.count <= 3 ? "moshi-1b-299feac8@50.safetensors" : args[3]
+    try runMoshi(fileName, baseDir: baseDir, cfg: LmConfig.moshi1b())
 case "moshi-7b-file":
-    try runMoshi("model.safetensors", baseDir: baseDir, cfg: LmConfig.moshi_2024_07())
+    let fileName = args.count <= 3 ? "model.safetensors" : args[3]
+    try runMoshi(fileName, baseDir: baseDir, cfg: LmConfig.moshi_2024_07())
 case "mimi":
     try runMimi(baseDir: baseDir, streaming: false)
 case "mimi-streaming":

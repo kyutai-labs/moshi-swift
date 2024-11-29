@@ -105,10 +105,15 @@ class PerfStats {
     }
 }
 
-func makeMoshi(_ filename: URL, _ cfg: LmConfig) throws -> LM {
-    let weights = try loadArrays(url: filename)
+func makeMoshi(_ url: URL, _ cfg: LmConfig) throws -> LM {
+    let weights = try loadArrays(url: url)
     let parameters = ModuleParameters.unflattened(weights)
     let model = LM(cfg)
+    if url.lastPathComponent.hasSuffix(".q4.safetensors") {
+        quantize(model: model, groupSize: 32, bits: 4)
+    } else if url.lastPathComponent.hasSuffix(".q8.safetensors") {
+        quantize(model: model, groupSize: 64, bits: 8)
+    }
     try model.update(parameters: parameters, verify: [.all])
     eval(model)
     return model
