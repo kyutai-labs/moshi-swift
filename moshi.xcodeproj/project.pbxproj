@@ -24,6 +24,7 @@
 		4D40195E2CEE1DFB00953487 /* MLXRandom in Frameworks */ = {isa = PBXBuildFile; productRef = 4D40195D2CEE1DFB00953487 /* MLXRandom */; };
 		4D40195F2CEE1DFB00953487 /* MoshiLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* MoshiLib.framework */; };
 		4D4019602CEE1DFB00953487 /* MoshiLib.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4D4019312CEE1DDD00953487 /* MoshiLib.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4D7E86F02CF9CE8700DAA2F0 /* Transformers in Frameworks */ = {isa = PBXBuildFile; productRef = 4D7E86EF2CF9CE8700DAA2F0 /* Transformers */; };
 		4DA4FF5B2CEF13A00039339E /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF5A2CEF13A00039339E /* MLX */; };
 		4DA4FF5D2CEF13A00039339E /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF5C2CEF13A00039339E /* MLXFast */; };
 		4DA4FF5F2CEF13A00039339E /* MLXFFT in Frameworks */ = {isa = PBXBuildFile; productRef = 4DA4FF5E2CEF13A00039339E /* MLXFFT */; };
@@ -212,6 +213,7 @@
 				4D4019582CEE1DFB00953487 /* MLXLinalg in Frameworks */,
 				4DA4FF6B2CEF162C0039339E /* Numerics in Frameworks */,
 				4D4019522CEE1DFB00953487 /* MLX in Frameworks */,
+				4D7E86F02CF9CE8700DAA2F0 /* Transformers in Frameworks */,
 				4D40195A2CEE1DFB00953487 /* MLXNN in Frameworks */,
 				4DA4FF6D2CEF162C0039339E /* RealModule in Frameworks */,
 				4D40195F2CEE1DFB00953487 /* MoshiLib.framework in Frameworks */,
@@ -400,6 +402,7 @@
 				4DA4FF682CEF162C0039339E /* ComplexModule */,
 				4DA4FF6A2CEF162C0039339E /* Numerics */,
 				4DA4FF6C2CEF162C0039339E /* RealModule */,
+				4D7E86EF2CF9CE8700DAA2F0 /* Transformers */,
 			);
 			productName = "moshi-cli";
 			productReference = 4D4019252CEE1D8F00953487 /* MoshiCLI */;
@@ -1253,6 +1256,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4D4019162CEE17CD00953487 /* XCRemoteSwiftPackageReference "mlx-swift" */;
 			productName = MLXRandom;
+		};
+		4D7E86EF2CF9CE8700DAA2F0 /* Transformers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4DA4FF742CEF199C0039339E /* XCRemoteSwiftPackageReference "swift-transformers" */;
+			productName = Transformers;
 		};
 		4DA4FF5A2CEF13A00039339E /* MLX */ = {
 			isa = XCSwiftPackageProductDependency;

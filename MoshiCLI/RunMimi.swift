@@ -4,16 +4,19 @@
 
 import AVFoundation
 import Foundation
+import Hub
 import MLX
 import MLXNN
 import MoshiLib
 
-func makeMimi(baseDir: URL) throws -> Mimi {
+func makeMimi() throws -> Mimi {
     let cfg = MimiConfig.mimi_2024_07()
     let model = Mimi(cfg)
 
-    let origWeights = try loadArrays(
-        url: baseDir.appendingPathComponent("tokenizer-e351c8d8-checkpoint125.safetensors"))
+    let url = try downloadFromHub(
+        id: "kyutai/moshiko-mlx-q4",
+        filename: "tokenizer-e351c8d8-checkpoint125.safetensors")
+    let origWeights = try loadArrays(url: url)
     var weights: [String: MLXArray] = [:]
     for (var key, var weight) in origWeights {
         // Mutating the keys while iterating over the map seems pretty dodgy, not sure what the idiomatic
@@ -70,7 +73,7 @@ func makeMimi(baseDir: URL) throws -> Mimi {
 }
 
 func runMimi(baseDir: URL, streaming: Bool) throws {
-    let model = try makeMimi(baseDir: baseDir)
+    let model = try makeMimi()
     print("using device \(Device.defaultDevice().description)")
 
     if streaming {
@@ -136,7 +139,7 @@ func runMimi(baseDir: URL, streaming: Bool) throws {
 }
 
 public func runCodesToAudio(baseDir: URL, writeFile: Bool) throws {
-    let model = try makeMimi(baseDir: baseDir)
+    let model = try makeMimi()
     print("using device \(Device.defaultDevice().description)")
 
     let codes = try loadArrays(
@@ -176,7 +179,7 @@ public func runCodesToAudio(baseDir: URL, writeFile: Bool) throws {
 }
 
 public func runAudioToCodes(baseDir: URL) throws {
-    let model = try makeMimi(baseDir: baseDir)
+    let model = try makeMimi()
     print("using device \(Device.defaultDevice().description)")
 
     let microphoneCapture = MicrophoneCapture()

@@ -126,7 +126,7 @@ func loadVocab(_ fileURL: URL) throws -> [Int: String] {
 }
 
 func runMoshiMic(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
-    let mimi = try makeMimi(baseDir: baseDir)
+    let mimi = try makeMimi()
     let moshi = try makeMoshi(baseDir.appendingPathComponent(filename), cfg)
     let vocab =
         switch cfg.textOutVocabSize {
@@ -181,7 +181,7 @@ func runMoshiMic(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
 
 func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     let stats = PerfStats()
-    let mimi = try makeMimi(baseDir: baseDir)
+    let mimi = try makeMimi()
     let moshi = try makeMoshi(baseDir.appendingPathComponent(filename), cfg)
     let vocab =
         switch cfg.textOutVocabSize {
@@ -257,7 +257,7 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
 }
 
 func runAsr(baseDir: URL, asrDelayInSteps: Int) throws {
-    let mimi = try makeMimi(baseDir: baseDir)
+    let mimi = try makeMimi()
     let moshi = try makeMoshi(
         baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"), LmConfig.asr1b())
     let vocab = try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
@@ -314,7 +314,7 @@ func runAsr(baseDir: URL, asrDelayInSteps: Int) throws {
 }
 
 func runAsrMic(baseDir: URL, asrDelayInSteps: Int) throws {
-    let mimi = try makeMimi(baseDir: baseDir)
+    let mimi = try makeMimi()
     let moshi = try makeMoshi(
         baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"), LmConfig.asr1b())
     let vocab = try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
