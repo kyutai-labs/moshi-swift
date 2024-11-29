@@ -1,9 +1,6 @@
-//
-//  moshiApp.swift
-//  moshi
-//
-//  Created by Laurent on 20/11/2024.
-//
+// Copyright (c) Kyutai, all rights reserved.
+// This source code is licensed under the license found in the
+// LICENSE file in the root directory of this source tree.
 
 import SwiftUI
 
