@@ -119,7 +119,14 @@ func makeMoshi(_ url: URL, _ cfg: LmConfig) throws -> LM {
     return model
 }
 
-func loadVocab(_ fileURL: URL) throws -> [Int: String] {
+func loadVocab(_ cfg: LmConfig) throws -> [Int: String] {
+    let filename =
+        switch cfg.textOutVocabSize {
+        case 48000: "tokenizer_spm_48k_multi6_2.json"
+        case 32000: "tokenizer_spm_32k_3.json"
+        case let other: fatalError("unexpected text vocab size \(other)")
+        }
+    let fileURL = try downloadFromHub(id: "lmz/moshi-swift", filename: filename)
     let jsonData = try Data(contentsOf: fileURL)
     let dictionary = try JSONDecoder().decode([Int: String].self, from: jsonData)
     return dictionary
@@ -128,12 +135,7 @@ func loadVocab(_ fileURL: URL) throws -> [Int: String] {
 func runMoshiMic(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     let mimi = try makeMimi()
     let moshi = try makeMoshi(baseDir.appendingPathComponent(filename), cfg)
-    let vocab =
-        switch cfg.textOutVocabSize {
-        case 48000: try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
-        case 32000: try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_32k_3.json"))
-        case let other: fatalError("unexpected text vocab size \(other)")
-        }
+    let vocab = try loadVocab(cfg)
     print("using device \(Device.defaultDevice().description)")
     print("warming up mimi")
     mimi.warmup()
@@ -183,13 +185,7 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
     let stats = PerfStats()
     let mimi = try makeMimi()
     let moshi = try makeMoshi(baseDir.appendingPathComponent(filename), cfg)
-    let vocab =
-        switch cfg.textOutVocabSize {
-        case 48000: try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
-        case 32000: try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_32k_3.json"))
-        case let other: fatalError("unexpected text vocab size \(other)")
-        }
-
+    let vocab = try loadVocab(cfg)
     print("warming up mimi")
     mimi.warmup()
     print("warming up moshi")
@@ -258,9 +254,10 @@ func runMoshi(_ filename: String, baseDir: URL, cfg: LmConfig) throws {
 
 func runAsr(baseDir: URL, asrDelayInSteps: Int) throws {
     let mimi = try makeMimi()
+    let cfg = LmConfig.asr1b()
     let moshi = try makeMoshi(
-        baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"), LmConfig.asr1b())
-    let vocab = try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
+        baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"), cfg)
+    let vocab = try loadVocab(cfg)
     print("using device \(Device.defaultDevice().description)")
     print("warming up mimi")
     mimi.warmup()
@@ -315,9 +312,10 @@ func runAsr(baseDir: URL, asrDelayInSteps: Int) throws {
 
 func runAsrMic(baseDir: URL, asrDelayInSteps: Int) throws {
     let mimi = try makeMimi()
+    let cfg = LmConfig.asr1b()
     let moshi = try makeMoshi(
-        baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"), LmConfig.asr1b())
-    let vocab = try loadVocab(baseDir.appendingPathComponent("tokenizer_spm_48k_multi6_2.json"))
+        baseDir.appendingPathComponent("asr-1b-8d2516b9@150.safetensors"), cfg)
+    let vocab = try loadVocab(cfg)
     print("using device \(Device.defaultDevice().description)")
     print("warming up mimi")
     mimi.warmup()
