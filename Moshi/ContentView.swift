@@ -106,9 +106,11 @@ class Evaluator {
 
     func generate() async {
         guard !running else { return }
-        
+
         self.shouldStop.store(false, ordering: .relaxed)
         self.modelInfo = "starting"
+        self.output = ""
+        // TODO: Reset the model state here.
         running = true
         do {
             let model = try await load()
