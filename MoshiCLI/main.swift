@@ -10,14 +10,23 @@ import MLXNN
 import MoshiLib
 
 func downloadFromHub(id: String, filename: String) throws -> URL {
+    let targetURL = HubApi().localRepoLocation(Hub.Repo(id: id)).appending(path: filename)
+    if FileManager.default.fileExists(atPath: targetURL.path) {
+        print("using cached file \(targetURL.path)")
+        return targetURL
+    }
     var url: URL? = nil
     let semaphore = DispatchSemaphore(value: 0)
     Task {
         let repo = Hub.Repo(id: id)
-        url = try await Hub.snapshot(from: repo, matching: filename)
+        url = try await Hub.snapshot(from: repo, matching: filename) { progress in
+            let pct = Int(progress.fractionCompleted * 100)
+            print("\rretrieving \(filename): \(pct)%", terminator: "")
+        }
         semaphore.signal()
     }
     semaphore.wait()
+    print("\rretrieved \(filename)")
     return url!.appending(path: filename)
 }
 
@@ -38,7 +47,7 @@ case "moshi-7b":
     let url: URL
     if args.count <= 2 {
         print("downloading the weights from the hub, this may take a while...")
-        url = try downloadFromHub(id: "kyutai/moshiko-mlx-q4", filename: "model.q4.safetensors")
+        url = try downloadFromHub(id: "kyutai/moshiko-mlx-q8", filename: "model.q8.safetensors")
     } else {
         url = URL(fileURLWithPath: args[2])
     }
@@ -55,7 +64,7 @@ case "moshi-7b-file":
     let url: URL
     if args.count <= 2 {
         print("downloading the weights from the hub, this may take a while...")
-        url = try downloadFromHub(id: "kyutai/moshiko-mlx-q4", filename: "model.q4.safetensors")
+        url = try downloadFromHub(id: "kyutai/moshiko-mlx-q8", filename: "model.q8.safetensors")
     } else {
         url = URL(fileURLWithPath: args[2])
     }
