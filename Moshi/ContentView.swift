@@ -9,13 +9,13 @@ import MLXRandom
 import Metal
 import MoshiLib
 import SwiftUI
+import Synchronization
 
 struct ContentView: View {
     @State var model = Evaluator()
     @Environment(DeviceStat.self) private var deviceStat
 
     var body: some View {
-        let buttonText = model.running ? "Stop" : "Start"
         VStack {
             Image(systemName: "globe")
                 .imageScale(.large)
@@ -24,7 +24,11 @@ struct ContentView: View {
             if model.progress != nil {
                 ProgressView(model.progress!)
             }
-            Button(buttonText, action: generate).disabled(model.running)
+            if !model.running {
+                Button("Start", action: generate)
+            } else {
+                Button("Stop", action: stopGenerate)
+            }
             ScrollView(.vertical) {
                 ScrollViewReader { sp in
                     Group {
@@ -67,6 +71,12 @@ struct ContentView: View {
             await model.generate()
         }
     }
+
+    private func stopGenerate() {
+        Task {
+            await model.stopGenerate()
+        }
+    }
 }
 
 #Preview {
@@ -81,6 +91,7 @@ class Evaluator {
     var stat = ""
     var output = ""
     var progress: Progress? = nil
+    let shouldStop: Atomic<Bool> = .init(false)
 
     enum LoadState {
         case idle
@@ -90,11 +101,13 @@ class Evaluator {
     var loadState = LoadState.idle
 
     func stopGenerate() async {
-        // TODO
+        self.shouldStop.store(true, ordering: .relaxed)
     }
-    
+
     func generate() async {
         guard !running else { return }
+        
+        self.shouldStop.store(false, ordering: .relaxed)
         self.modelInfo = "starting"
         running = true
         do {
@@ -107,8 +120,10 @@ class Evaluator {
                 try player.startPlaying()
                 print("started the audio loops")
 
-                // TODO: Async inference loop
                 while let pcm = microphoneCapture.receive() {
+                    if shouldStop.load(ordering: .relaxed) {
+                        break
+                    }
                     let pcm = MLXArray(pcm)[.newAxis, .newAxis]
                     let codes = model.mimi.encodeStep(StreamArray(pcm))
                     if let codes = codes.asArray() {
@@ -142,12 +157,13 @@ class Evaluator {
                 print()
                 microphoneCapture.stopCapturing()
             }
+            self.modelInfo = "finished generating"
         } catch {
             self.modelInfo = "failed: \(error)"
         }
         running = false
     }
-    
+
     func downloadFromHub(id: String, filename: String) async throws -> URL {
         let targetURL = HubApi().localRepoLocation(Hub.Repo(id: id)).appending(path: filename)
         if FileManager.default.fileExists(atPath: targetURL.path) {
@@ -275,10 +291,8 @@ class Evaluator {
                 moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
             let vocab = try await loadVocab(cfg)
             self.modelInfo = "warming up mimi"
-            // TODO: run in background task
             mimi.warmup()
             self.modelInfo = "warming up moshi"
-            // TODO: run in background task
             moshi.warmup()
             self.modelInfo = "done warming up"
             let m = Model(moshi: moshi, vocab: vocab, mimi: mimi, gen: gen)
