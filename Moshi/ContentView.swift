@@ -13,14 +13,17 @@ import SwiftUI
 struct ContentView: View {
     @State var model = Evaluator()
     @Environment(DeviceStat.self) private var deviceStat
-    
+
     var body: some View {
-        let buttonText = model == nil ? "Load Weights" : "Launch Model"
+        let buttonText = model.running ? "Stop" : "Start"
         VStack {
             Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundStyle(.tint)
             Text(model.modelInfo)
+            if model.progress != nil {
+                ProgressView(model.progress!)
+            }
             Button(buttonText, action: generate).disabled(model.running)
             ScrollView(.vertical) {
                 ScrollViewReader { sp in
@@ -58,7 +61,7 @@ struct ContentView: View {
             }
         }
     }
-    
+
     private func generate() {
         Task {
             await model.generate()
@@ -77,13 +80,18 @@ class Evaluator {
     var modelInfo = "...moshi..."
     var stat = ""
     var output = ""
-    
+    var progress: Progress? = nil
+
     enum LoadState {
         case idle
         case loaded(Model)
     }
-    
+
     var loadState = LoadState.idle
+
+    func stopGenerate() async {
+        // TODO
+    }
     
     func generate() async {
         guard !running else { return }
@@ -91,14 +99,14 @@ class Evaluator {
         running = true
         do {
             let model = try await load()
-            let result = try await model.perform { vocab, mimi, gen in
+            try await model.perform { vocab, mimi, gen in
                 // TODO: Do not create a fresh audio input/output on each session.
                 let microphoneCapture = MicrophoneCapture()
                 microphoneCapture.startCapturing()
                 let player = AudioPlayer(sampleRate: 24000)
                 try player.startPlaying()
                 print("started the audio loops")
-                
+
                 // TODO: Async inference loop
                 while let pcm = microphoneCapture.receive() {
                     let pcm = MLXArray(pcm)[.newAxis, .newAxis]
@@ -140,46 +148,27 @@ class Evaluator {
         running = false
     }
     
-    func load() async throws -> Model {
-        switch self.loadState {
-        case .idle:
-            // TODO: async loading + report progresses
-            self.modelInfo = "downloading model"
-            let url = try await downloadFromHub(
-                id: "kyutai/moshiko-mlx-q4", filename: "model.q4.safetensors")
-            let cfg = LmConfig.moshi_2024_07()
-            let moshi = try await makeMoshi(url, cfg)
-            let mimi = try await makeMimi()
-            self.modelInfo = "downloaded model"
-            let maxSteps = cfg.transformer.maxSeqLen
-            let gen = LMGen(moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
-            let vocab = try await loadVocab(cfg)
-            self.modelInfo = "warming up mimi"
-            // TODO: run in background task
-            mimi.warmup()
-            self.modelInfo = "warming up moshi"
-            // TODO: run in background task
-            moshi.warmup()
-            self.modelInfo = "done warming up"
-            let m = Model(moshi: moshi, vocab: vocab, mimi: mimi, gen: gen)
-            self.loadState = .loaded(m)
-            return m
-        case .loaded(let m):
-            return m
-        }
-    }
-    
     func downloadFromHub(id: String, filename: String) async throws -> URL {
-        let semaphore = DispatchSemaphore(value: 0)
+        let targetURL = HubApi().localRepoLocation(Hub.Repo(id: id)).appending(path: filename)
+        if FileManager.default.fileExists(atPath: targetURL.path) {
+            print("using cached file \(targetURL.path)")
+            return targetURL
+        }
         let downloadDir = FileManager.default.urls(
             for: .downloadsDirectory, in: .userDomainMask
         ).first!
         let api = HubApi(downloadBase: downloadDir)
         let repo = Hub.Repo(id: id)
-        let url = try await api.snapshot(from: repo, matching: filename)
+        let url = try await api.snapshot(from: repo, matching: filename) { progress in
+            Task { @MainActor in
+                self.progress = progress
+            }
+        }
+        // TODO: also set this back to nil on errors.
+        self.progress = nil
         return url.appending(path: filename)
     }
-    
+
     func makeMoshi(_ url: URL, _ cfg: LmConfig) throws -> LM {
         let weights = try loadArrays(url: url)
         let parameters = ModuleParameters.unflattened(weights)
@@ -193,11 +182,11 @@ class Evaluator {
         eval(model)
         return model
     }
-    
+
     func makeMimi() async throws -> Mimi {
         let cfg = MimiConfig.mimi_2024_07()
         let model = Mimi(cfg)
-        
+
         let url = try await downloadFromHub(
             id: "kyutai/moshiko-mlx-q4",
             filename: "tokenizer-e351c8d8-checkpoint125.safetensors")
@@ -228,7 +217,8 @@ class Evaluator {
                     "decoder.\(decoderIdx + 1).", with: "decoder.layers.\(layerIdx).residuals.0.")
             }
             for (layerIdx, encoderIdx) in [1, 4, 7, 10].enumerated() {
-                key.replace("encoder.\(encoderIdx).", with: "encoder.layers.\(layerIdx).residuals.0.")
+                key.replace(
+                    "encoder.\(encoderIdx).", with: "encoder.layers.\(layerIdx).residuals.0.")
                 key.replace(
                     "encoder.\(encoderIdx + 2).", with: "encoder.layers.\(layerIdx).downsample.")
             }
@@ -248,7 +238,7 @@ class Evaluator {
             if key.hasSuffix(".convtr.weight") {
                 weight = weight.transposed(axes: [1, 2, 0])
             }
-            
+
             // print(key, weight.shape)
             weights[key] = weight
         }
@@ -256,18 +246,47 @@ class Evaluator {
         try model.update(parameters: parameters, verify: [.all])
         return model
     }
-    
+
     func loadVocab(_ cfg: LmConfig) async throws -> [Int: String] {
         let filename =
-        switch cfg.textOutVocabSize {
-        case 48000: "tokenizer_spm_48k_multi6_2.json"
-        case 32000: "tokenizer_spm_32k_3.json"
-        case let other: fatalError("unexpected text vocab size \(other)")
-        }
+            switch cfg.textOutVocabSize {
+            case 48000: "tokenizer_spm_48k_multi6_2.json"
+            case 32000: "tokenizer_spm_32k_3.json"
+            case let other: fatalError("unexpected text vocab size \(other)")
+            }
         let fileURL = try await downloadFromHub(id: "lmz/moshi-swift", filename: filename)
         let jsonData = try Data(contentsOf: fileURL)
         let dictionary = try JSONDecoder().decode([Int: String].self, from: jsonData)
         return dictionary
+    }
+
+    func load() async throws -> Model {
+        switch self.loadState {
+        case .idle:
+            self.modelInfo = "downloading model"
+            let url = try await downloadFromHub(
+                id: "kyutai/moshiko-mlx-q4", filename: "model.q4.safetensors")
+            let cfg = LmConfig.moshi_2024_07()
+            let moshi = try await makeMoshi(url, cfg)
+            let mimi = try await makeMimi()
+            self.modelInfo = "downloaded model"
+            let maxSteps = cfg.transformer.maxSeqLen
+            let gen = LMGen(
+                moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
+            let vocab = try await loadVocab(cfg)
+            self.modelInfo = "warming up mimi"
+            // TODO: run in background task
+            mimi.warmup()
+            self.modelInfo = "warming up moshi"
+            // TODO: run in background task
+            moshi.warmup()
+            self.modelInfo = "done warming up"
+            let m = Model(moshi: moshi, vocab: vocab, mimi: mimi, gen: gen)
+            self.loadState = .loaded(m)
+            return m
+        case .loaded(let m):
+            return m
+        }
     }
 }
 
@@ -276,15 +295,17 @@ actor Model {
     let vocab: [Int: String]
     let mimi: Mimi
     let gen: LMGen
-    
+
     init(moshi: LM, vocab: [Int: String], mimi: Mimi, gen: LMGen) {
         self.moshi = moshi
         self.vocab = vocab
         self.mimi = mimi
         self.gen = gen
     }
-    
-    public func perform<R>(_ action: @Sendable ([Int: String], Mimi, LMGen) throws -> R) rethrows -> R {
+
+    public func perform<R>(_ action: @Sendable ([Int: String], Mimi, LMGen) throws -> R) rethrows
+        -> R
+    {
         try action(vocab, mimi, gen)
     }
 }
