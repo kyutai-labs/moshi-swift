@@ -12,3 +12,6 @@ build
 buildServer.json
 xcuserdata
 model*.safetensors
+moshi-codes.safetensors
+moshi-out.wav
+moshi-trace.json

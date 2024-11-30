@@ -360,4 +360,10 @@ public class LMGen {
         }
         return tokens
     }
+
+    public func reset() {
+        self.stepIdx = 0
+        self.model.resetCache()
+        self.genSequence[0...] = MLXArray(ungeneratedToken)
+    }
 }

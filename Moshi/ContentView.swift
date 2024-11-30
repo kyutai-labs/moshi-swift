@@ -110,11 +110,12 @@ class Evaluator {
         self.shouldStop.store(false, ordering: .relaxed)
         self.modelInfo = "starting"
         self.output = ""
-        // TODO: Reset the model state here.
         running = true
         do {
             let model = try await load()
             try await model.perform { vocab, mimi, gen in
+                mimi.resetState()
+                gen.reset()
                 // TODO: Do not create a fresh audio input/output on each session.
                 let microphoneCapture = MicrophoneCapture()
                 microphoneCapture.startCapturing()
