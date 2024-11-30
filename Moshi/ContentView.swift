@@ -284,7 +284,7 @@ class Evaluator {
         case .idle:
             self.modelInfo = "downloading model"
             let url = try await downloadFromHub(
-                id: "kyutai/moshiko-mlx-q4", filename: "model.q4.safetensors")
+                id: "kyutai/moshiko-mlx-q8", filename: "model.q8.safetensors")
             let cfg = LmConfig.moshi_2024_07()
             let moshi = try await makeMoshi(url, cfg)
             let mimi = try await makeMimi()
