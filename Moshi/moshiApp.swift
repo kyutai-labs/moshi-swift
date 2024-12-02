@@ -18,6 +18,8 @@ func requestMicrophoneAccess() {
             return
         case .restricted: // The user can't grant access due to restrictions.
             return
+        case _:
+            return
     }
 }
 
