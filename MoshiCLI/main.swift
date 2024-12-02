@@ -74,11 +74,27 @@ case "mimi":
 case "mimi-streaming":
     try runMimi(streaming: true)
 case "asr-file":
-    let url = URL(fileURLWithPath: "asr-1b-8d2516b9@150.safetensors")
-    try runAsr(url, asrDelayInSteps: 25)
+    let url: URL
+    let cfg: LmConfig
+    if args.count <= 2 {
+        cfg = LmConfig.asr1b()
+        url = URL(fileURLWithPath: "asr-1b-8d2516b9@150.safetensors")
+    } else {
+        cfg = LmConfig.asr300m()
+        url = URL(fileURLWithPath: args[2])
+    }
+    try runAsr(url, cfg, asrDelayInSteps: 25)
 case "asr":
-    let url = URL(fileURLWithPath: "asr-1b-8d2516b9@150.safetensors")
-    try runAsrMic(url, asrDelayInSteps: 25)
+    let url: URL
+    let cfg: LmConfig
+    if args.count <= 2 {
+        cfg = LmConfig.asr1b()
+        url = URL(fileURLWithPath: "asr-1b-8d2516b9@150.safetensors")
+    } else {
+        cfg = LmConfig.asr300m()
+        url = URL(fileURLWithPath: args[2])
+    }
+    try runAsrMic(url, cfg, asrDelayInSteps: 25)
 case "codes-to-audio-file":
     try runCodesToAudio(writeFile: true)
 case "codes-to-audio":

@@ -254,9 +254,8 @@ func runMoshi(_ url: URL, cfg: LmConfig) throws {
         outputURL: URL(fileURLWithPath: "moshi-out.wav"))
 }
 
-func runAsr(_ url: URL, asrDelayInSteps: Int) throws {
+func runAsr(_ url: URL, _ cfg: LmConfig, asrDelayInSteps: Int) throws {
     let mimi = try makeMimi()
-    let cfg = LmConfig.asr1b()
     let moshi = try makeMoshi(url, cfg)
     let vocab = try loadVocab(cfg)
     print("using device \(Device.defaultDevice().description)")
@@ -312,9 +311,8 @@ func runAsr(_ url: URL, asrDelayInSteps: Int) throws {
     print()
 }
 
-func runAsrMic(_ url: URL, asrDelayInSteps: Int) throws {
+func runAsrMic(_ url: URL, _ cfg: LmConfig, asrDelayInSteps: Int) throws {
     let mimi = try makeMimi()
-    let cfg = LmConfig.asr1b()
     let moshi = try makeMoshi(url, cfg)
     let vocab = try loadVocab(cfg)
     print("using device \(Device.defaultDevice().description)")
