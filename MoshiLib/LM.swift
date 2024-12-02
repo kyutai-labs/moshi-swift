@@ -160,6 +160,18 @@ public struct LmConfig {
         )
     }
 
+    public static func asr300m() -> LmConfig {
+        return LmConfig(
+            transformer: TransformerConfig.v1_300m(),
+            depformer: nil,
+            textInVocabSize: 8001,
+            textOutVocabSize: 8000,
+            audioVocabSize: 2049,
+            audioCodebooks: 8,
+            audioDelays: [0, 0, 0, 0, 0, 0, 0, 0]
+        )
+    }
+
     public static func asr1b() -> LmConfig {
         return LmConfig(
             transformer: TransformerConfig.v1_1b(),

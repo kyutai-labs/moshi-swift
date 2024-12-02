@@ -124,6 +124,7 @@ func loadVocab(_ cfg: LmConfig) throws -> [Int: String] {
         switch cfg.textOutVocabSize {
         case 48000: "tokenizer_spm_48k_multi6_2.json"
         case 32000: "tokenizer_spm_32k_3.json"
+        case 8000: "tokenizer_spm_8k_0.json"
         case let other: fatalError("unexpected text vocab size \(other)")
         }
     let fileURL = try downloadFromHub(id: "lmz/moshi-swift", filename: filename)
