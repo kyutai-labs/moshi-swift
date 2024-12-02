@@ -75,25 +75,35 @@ case "mimi-streaming":
     try runMimi(streaming: true)
 case "asr-file":
     let url: URL
-    let cfg: LmConfig
     if args.count <= 2 {
-        cfg = LmConfig.asr1b()
         url = URL(fileURLWithPath: "asr-1b-8d2516b9@150.safetensors")
     } else {
-        cfg = LmConfig.asr300m()
         url = URL(fileURLWithPath: args[2])
     }
+    let weights = try loadArrays(url: url)
+    let cfg =
+        switch weights["out_norm.weight"]?.shape {
+        case .none: fatalError("no out_norm.weight tensor in \(url)")
+        case .some([1024]): LmConfig.asr300m()
+        case .some([2048]): LmConfig.asr1b()
+        case .some(let s): fatalError("unexpected shape for out_norm.weight \(s)")
+        }
     try runAsr(url, cfg, asrDelayInSteps: 25)
 case "asr":
     let url: URL
-    let cfg: LmConfig
     if args.count <= 2 {
-        cfg = LmConfig.asr1b()
         url = URL(fileURLWithPath: "asr-1b-8d2516b9@150.safetensors")
     } else {
-        cfg = LmConfig.asr300m()
         url = URL(fileURLWithPath: args[2])
     }
+    let weights = try loadArrays(url: url)
+    let cfg =
+        switch weights["out_norm.weight"]?.shape {
+        case .none: fatalError("no out_norm.weight tensor in \(url)")
+        case .some([1024]): LmConfig.asr300m()
+        case .some([2048]): LmConfig.asr1b()
+        case .some(let s): fatalError("unexpected shape for out_norm.weight \(s)")
+        }
     try runAsrMic(url, cfg, asrDelayInSteps: 25)
 case "codes-to-audio-file":
     try runCodesToAudio(writeFile: true)
