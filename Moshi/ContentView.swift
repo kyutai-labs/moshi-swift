@@ -118,16 +118,16 @@ class Evaluator {
     var loadStateMimi = LoadStateMimi.idle
 
     func downloadFromHub(id: String, filename: String) async throws -> URL {
-        let targetURL = HubApi().localRepoLocation(Hub.Repo(id: id)).appending(path: filename)
-        if FileManager.default.fileExists(atPath: targetURL.path) {
-            print("using cached file \(targetURL.path)")
-            return targetURL
-        }
         let downloadDir = FileManager.default.urls(
             for: .downloadsDirectory, in: .userDomainMask
         ).first!
         let api = HubApi(downloadBase: downloadDir)
         let repo = Hub.Repo(id: id)
+        let targetURL = api.localRepoLocation(repo).appending(path: filename)
+        if FileManager.default.fileExists(atPath: targetURL.path) {
+            print("using cached file \(targetURL.path)")
+            return targetURL
+        }
         let url = try await api.snapshot(from: repo, matching: filename) { progress in
             Task { @MainActor in
                 self.progress = progress
@@ -315,7 +315,7 @@ class Evaluator {
                 microphoneCapture.startCapturing()
                 let player = AudioPlayer(sampleRate: 24000)
                 try player.startPlaying()
-                
+
                 Task { @MainActor in
                     self.modelInfo = "started the audio loops"
                 }
