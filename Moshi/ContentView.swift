@@ -252,23 +252,25 @@ class Evaluator {
                 let player = AudioPlayer(sampleRate: 24000)
                 try player.startPlaying()
                 print("started the audio loops")
+                let mimi = await model.mimi
+                let gen = await model.gen
 
                 while let pcm = microphoneCapture.receive() {
                     if shouldStop.load(ordering: .relaxed) {
                         break
                     }
                     let pcm = MLXArray(pcm)[.newAxis, .newAxis]
-                    let codes = model.mimi.encodeStep(StreamArray(pcm))
+                    let codes = mimi.encodeStep(StreamArray(pcm))
                     if let codes = codes.asArray() {
                         let (_, _, steps) = codes.shape3
                         for step in 0..<steps {
-                            if let textToken = model.gen.step(
+                            if let textToken = gen.step(
                                 otherAudioTokens: codes[0..., 0..<8, step])
                             {
                                 let textTokenI: Int = textToken[0].item()
                                 if textTokenI != 0 && textTokenI != 3 {
-                                    if var v = model.vocab[textTokenI] {
-                                        v.replace("▁", with: " ")
+                                    if let v = model.vocab[textTokenI] {
+                                        let v = v.replacing("▁", with: " ")
                                         print(v, terminator: "")
                                         fflush(stdout)
                                         Task { @MainActor in
@@ -277,11 +279,11 @@ class Evaluator {
                                     }
                                 }
                             }
-                            if let audioTokens = model.gen.lastAudioTokens() {
-                                let pcmOut = model.mimi.decodeStep(
+                            if let audioTokens = gen.lastAudioTokens() {
+                                let pcmOut = mimi.decodeStep(
                                     StreamArray(audioTokens[0..., 0..., .newAxis]))
                                 if let p = pcmOut.asArray() {
-                                    player.send(p.asArray(Float.self))
+                                    let _ = player.send(p.asArray(Float.self))
                                 }
                             }
                         }
@@ -324,18 +326,18 @@ class Evaluator {
                         break
                     }
                     let pcm = MLXArray(pcm)[.newAxis, .newAxis]
-                    let micCodes = model.mimi.encodeStep(StreamArray(pcm))
+                    let micCodes = mimi.encodeStep(StreamArray(pcm))
                     if let micCodes = micCodes.asArray() {
                         let (_, _, steps) = micCodes.shape3
-                        for step in 0..<steps {
+                        for _ in 0..<steps {
                             if currentStep >= totalSteps {
                                 break
                             }
                             let audioTokens = codes[.ellipsis, currentStep...currentStep]
-                            let pcmOut = model.mimi.decodeStep(
+                            let pcmOut = mimi.decodeStep(
                                 StreamArray(audioTokens))
                             if let p = pcmOut.asArray() {
-                                player.send(p.asArray(Float.self))
+                                let _ = player.send(p.asArray(Float.self))
                             }
                             currentStep += 1
                         }
@@ -361,7 +363,7 @@ class Evaluator {
             let url = try await downloadFromHub(
                 id: "kyutai/moshiko-mlx-q8", filename: "model.q8.safetensors")
             let cfg = LmConfig.moshi_2024_07()
-            let moshi = try await makeMoshi(url, cfg)
+            let moshi = try makeMoshi(url, cfg)
             let mimi = try await makeMimi()
             self.modelInfo = "downloaded model"
             let maxSteps = cfg.transformer.maxSeqLen
@@ -414,10 +416,10 @@ actor Model {
         self.gen = gen
     }
 
-    public func perform<R>(_ action: @Sendable ([Int: String], Mimi, LMGen) throws -> R) rethrows
+    public func perform<R>(_ action: @Sendable ([Int: String], Mimi, LMGen) async throws -> R) async rethrows
         -> R
     {
-        try action(vocab, mimi, gen)
+        try await action(vocab, mimi, gen)
     }
 }
 
@@ -430,9 +432,9 @@ actor MimiModel {
         self.codes = codes
     }
 
-    public func perform<R>(_ action: @Sendable (MLXArray, Mimi) throws -> R) rethrows
+    public func perform<R>(_ action: @Sendable (MLXArray, Mimi) async throws -> R) async rethrows
         -> R
     {
-        try action(codes, mimi)
+        try await action(codes, mimi)
     }
 }
