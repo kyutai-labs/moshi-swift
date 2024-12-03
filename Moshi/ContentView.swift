@@ -119,7 +119,7 @@ class Evaluator {
 
     func downloadFromHub(id: String, filename: String) async throws -> URL {
         let downloadDir = FileManager.default.urls(
-            for: .downloadsDirectory, in: .userDomainMask
+            for: .applicationSupportDirectory, in: .userDomainMask
         ).first!
         let api = HubApi(downloadBase: downloadDir)
         let repo = Hub.Repo(id: id)
