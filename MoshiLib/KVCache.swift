@@ -128,25 +128,21 @@ class RotatingKVCache: KVCache, Evaluatable {
     }
 
     func update(keys: MLXArray, values: MLXArray) -> (MLXArray, MLXArray) {
-        let t = self.keys.dim(2)
+        let t = keys.dim(2)
         if t > self.maxSize {
             fatalError("query to update with shape \(keys.shape) larger than maxSize \(maxSize)")
         } 
         let currentOffset = self.offset % self.maxSize
         let tMax = min(self.maxSize, currentOffset + t)
-        self.keys[0..., currentOffset..<tMax] = keys[0..., 0..<(tMax - currentOffset)]
-        self.values[0..., currentOffset..<tMax] = values[0..., 0..<(tMax - currentOffset)]
+        self.keys[0..., 0..., currentOffset..<tMax] = keys[0..., 0..., 0..<(tMax - currentOffset)]
+        self.values[0..., 0..., currentOffset..<tMax] = values[0..., 0..., 0..<(tMax - currentOffset)]
         let leftToCopy = t - tMax + currentOffset
         if 0 < leftToCopy {
-            self.keys[0..., 0..<leftToCopy] = keys[0..., (tMax - currentOffset)...]
-            self.values[0..., 0..<leftToCopy] = values[0..., (tMax - currentOffset)...]
+            self.keys[0..., 0..., 0..<leftToCopy] = keys[0..., 0..., (tMax - currentOffset)...]
+            self.values[0..., 0..., 0..<leftToCopy] = values[0..., 0..., (tMax - currentOffset)...]
         }
         self.offset += t
-        if self.offset < self.maxSize {
-            return (self.keys[0..., 0..<self.offset], self.values[0..., 0..<self.offset])
-        } else {
-            return (self.keys, self.values)
-        }
+        return (self.keys, self.values)
     }
 
     func reset() {
@@ -172,6 +168,7 @@ class RotatingKVCache: KVCache, Evaluatable {
         }
         let linds = MLXArray(Int32(offset)..<Int32(offset + t))
         let mask = linds[0..., .newAxis] .< MLXArray(rinds)[.newAxis]
-        return (mask * Float32(-1e9)).asType(h.dtype)
+        let res = (mask * Float32(-1e9)).asType(h.dtype)
+        return res
     }
 }
