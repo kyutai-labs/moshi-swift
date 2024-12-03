@@ -106,8 +106,10 @@ class KVCacheSimple: KVCache, Evaluatable {
     func createAttentionMask(h: MLXArray) -> MLXArray? {
         let t = h.dim(1)
         if t > 1 {
-            return createAdditiveCausalMask(n: t, offset: self.offset)
-                .asType(h.dtype)
+            let rinds = MLXArray(Int32(0)..<Int32(offset + t))
+            let linds = offset != 0 ? MLXArray(Int32(offset)..<Int32(offset + t)) : rinds
+            let mask = linds[0..., .newAxis] .< rinds[.newAxis]
+            return (mask * Float32(-1e9)).asType(h.dtype)
         }
         return nil
     }
@@ -156,6 +158,20 @@ class RotatingKVCache: KVCache, Evaluatable {
     }
 
     func createAttentionMask(h: MLXArray) -> MLXArray? {
-        nil
+        let t = h.dim(1)
+        let offset = self.offset + t
+        let offsetMod = offset % self.maxSize
+        var rinds = Array(repeating: Int32(offset), count: self.maxSize)
+        for i in 0..<offsetMod {
+            rinds[i] = Int32(offset + i - offsetMod)
+        }
+        if offsetMod != offset {
+            for i in offsetMod..<rinds.count {
+                rinds[i] = Int32(offset + i - offsetMod - rinds.count)
+            }
+        }
+        let linds = MLXArray(Int32(offset)..<Int32(offset + t))
+        let mask = linds[0..., .newAxis] .< MLXArray(rinds)[.newAxis]
+        return (mask * Float32(-1e9)).asType(h.dtype)
     }
 }
