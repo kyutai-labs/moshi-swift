@@ -19,6 +19,7 @@ public protocol KVCache: Evaluatable {
 
     func update(keys: MLXArray, values: MLXArray) -> (MLXArray, MLXArray)
     func reset()
+    func createAttentionMask(h: MLXArray) -> MLXArray?
 }
 
 func createAdditiveCausalMask(n: Int, offset: Int) -> MLXArray {
@@ -26,23 +27,6 @@ func createAdditiveCausalMask(n: Int, offset: Int) -> MLXArray {
     let linds = offset != 0 ? MLXArray(Int32(offset)..<Int32(offset + n)) : rinds
     let mask = linds[0..., .newAxis] .< rinds[.newAxis]
     return mask * Float32(-1e9)
-}
-
-/// create an attention mask using the parameters from the KVCache.
-///
-/// See also ``MultiHeadAttention/createAdditiveCausalMask(_:dtype:)`` -- same idea
-/// but doesn't honor the cache offset.
-public func createAttentionMask(h: MLXArray, cache: [KVCache]?) -> MLXArray? {
-    let t = h.dim(1)
-    if t > 1 {
-        var offset = 0
-        if let c = cache?.first {
-            offset = c.offset
-        }
-        return createAdditiveCausalMask(n: t, offset: offset)
-            .asType(h.dtype)
-    }
-    return nil
 }
 
 /// See https://github.com/ml-explore/mlx-examples/blob/main/llms/mlx_lm/models/base.py#L11
@@ -114,6 +98,19 @@ class KVCacheSimple: KVCache, Evaluatable {
             self.values![.ellipsis, ..<self.offset, 0...]
         )
     }
+
+    /// create an attention mask using the parameters from the KVCache.
+    ///
+    /// See also ``MultiHeadAttention/createAdditiveCausalMask(_:dtype:)`` -- same idea
+    /// but doesn't honor the cache offset.
+    func createAttentionMask(h: MLXArray) -> MLXArray? {
+        let t = h.dim(1)
+        if t > 1 {
+            return createAdditiveCausalMask(n: t, offset: self.offset)
+                .asType(h.dtype)
+        }
+        return nil
+    }
 }
 
 class RotatingKVCache: KVCache, Evaluatable {
@@ -156,5 +153,9 @@ class RotatingKVCache: KVCache, Evaluatable {
 
     func innerState() -> [MLXArray] {
         [self.keys, self.values].compactMap { $0 }
+    }
+
+    func createAttentionMask(h: MLXArray) -> MLXArray? {
+        nil
     }
 }

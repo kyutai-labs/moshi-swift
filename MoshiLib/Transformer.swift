@@ -280,7 +280,7 @@ public class Transformer: Module {
 
     public func callAsFunction(_ x: MLXArray, cache: [KVCache]) -> MLXArray {
         var x = x
-        let mask = createAttentionMask(h: x, cache: cache)
+        let mask = cache.first?.createAttentionMask(h: x)
         for (layer, c) in zip(self.layers, cache) {
             x = layer(x, mask: mask, cache: c)
         }
