@@ -1,3 +1,8 @@
+// Copyright (c) Kyutai, all rights reserved.
+// This source code is licensed under the license found in the
+// LICENSE file in the root directory of this source tree.
+//
+// Parts of this file came from:
 // https://github.com/ml-explore/mlx-swift-examples/blob/main/Libraries/LLM/KVCache.swift
 // Copyright © 2024 Apple Inc.
 
@@ -109,5 +114,47 @@ class KVCacheSimple: KVCache, Evaluatable {
             self.values![.ellipsis, ..<self.offset, 0...]
         )
     }
+}
 
+class RotatingKVCache: KVCache, Evaluatable {
+    let keys: MLXArray
+    let values: MLXArray
+    let maxSize: Int
+    var offset: Int = 0
+
+    init(bSize: Int, numHeads: Int, maxSize: Int, headDim: Int, dtype: DType) {
+        self.keys = MLXArray.zeros([bSize, numHeads, maxSize, headDim], dtype: dtype)
+        self.values = MLXArray.zeros([bSize, numHeads, maxSize, headDim], dtype: dtype)
+        self.maxSize = maxSize
+    }
+
+    func update(keys: MLXArray, values: MLXArray) -> (MLXArray, MLXArray) {
+        let t = self.keys.dim(2)
+        if t > self.maxSize {
+            fatalError("query to update with shape \(keys.shape) larger than maxSize \(maxSize)")
+        } 
+        let currentOffset = self.offset % self.maxSize
+        let tMax = min(self.maxSize, currentOffset + t)
+        self.keys[0..., currentOffset..<tMax] = keys[0..., 0..<(tMax - currentOffset)]
+        self.values[0..., currentOffset..<tMax] = values[0..., 0..<(tMax - currentOffset)]
+        let leftToCopy = t - tMax + currentOffset
+        if 0 < leftToCopy {
+            self.keys[0..., 0..<leftToCopy] = keys[0..., (tMax - currentOffset)...]
+            self.values[0..., 0..<leftToCopy] = values[0..., (tMax - currentOffset)...]
+        }
+        self.offset += t
+        if self.offset < self.maxSize {
+            return (self.keys[0..., 0..<self.offset], self.values[0..., 0..<self.offset])
+        } else {
+            return (self.keys, self.values)
+        }
+    }
+
+    func reset() {
+        offset = 0
+    }
+
+    func innerState() -> [MLXArray] {
+        [self.keys, self.values].compactMap { $0 }
+    }
 }
