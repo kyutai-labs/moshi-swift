@@ -32,7 +32,7 @@ class Depformer: Module {
     let transformerCache: [KVCache]
     @ModuleInfo(key: "slices") var slices: [DepformerSlice]
 
-    public init(_ cfg: LmConfig, _ cfgDepformer: DepformerConfig) {
+    public init(_ cfg: LmConfig, _ cfgDepformer: DepformerConfig, bSize: Int) {
         self.cfg = cfg
         let slices = (0..<cfgDepformer.numSlices).map { idx in
             DepformerSlice(
@@ -42,7 +42,7 @@ class Depformer: Module {
                 cfg: cfgDepformer.transformer)
         }
         self._slices.wrappedValue = slices
-        self.transformerCache = slices[0].transformer.makeCache()
+        self.transformerCache = slices[0].transformer.makeCache(bSize: bSize)
     }
 
     public func sample(
@@ -195,10 +195,10 @@ public class LM: Module {
     @ModuleInfo(key: "text_linear") var textLinear: Linear
     @ModuleInfo(key: "audio_embs") var audioEmbs: [Embedding]
 
-    public init(_ cfg: LmConfig) {
+    public init(_ cfg: LmConfig, bSize: Int) {
         self.cfg = cfg
         self._transformer.wrappedValue = Transformer(cfg.transformer)
-        self._depformer.wrappedValue = cfg.depformer.map { Depformer(cfg, $0) }
+        self._depformer.wrappedValue = cfg.depformer.map { Depformer(cfg, $0, bSize: bSize) }
         self._textEmb.wrappedValue = Embedding(
             embeddingCount: cfg.textInVocabSize, dimensions: cfg.transformer.dModel)
         self._outNorm.wrappedValue =
@@ -212,7 +212,7 @@ public class LM: Module {
         self._audioEmbs.wrappedValue = (0..<cfg.audioCodebooks).map { _ in
             Embedding(embeddingCount: cfg.audioVocabSize, dimensions: cfg.transformer.dModel)
         }
-        self.transformerCache = self._transformer.wrappedValue.makeCache()
+        self.transformerCache = self._transformer.wrappedValue.makeCache(bSize: bSize)
     }
 
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
@@ -222,7 +222,9 @@ public class LM: Module {
     }
 
     public func resetCache() {
-        self.transformerCache = self._transformer.wrappedValue.makeCache()
+        for cache in self.transformerCache {
+            cache.reset()
+        }
     }
 
     public func stepMain(textIds: MLXArray?, audioIds: [MLXArray]) -> (MLXArray, MLXArray) {

@@ -11,7 +11,7 @@ import MoshiLib
 
 func makeMimi() throws -> Mimi {
     let cfg = MimiConfig.mimi_2024_07()
-    let model = Mimi(cfg)
+    let model = Mimi(cfg, bSize: 1)
 
     let url = try downloadFromHub(
         id: "kyutai/moshiko-mlx-q4",

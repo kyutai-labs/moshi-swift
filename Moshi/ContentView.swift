@@ -155,7 +155,7 @@ class Evaluator {
     func makeMoshi(_ url: URL, _ cfg: LmConfig) throws -> LM {
         let weights = try loadArrays(url: url)
         let parameters = ModuleParameters.unflattened(weights)
-        let model = LM(cfg)
+        let model = LM(cfg, bSize: 1)
         if url.lastPathComponent.hasSuffix(".q4.safetensors") {
             quantize(model: model, groupSize: 32, bits: 4)
         } else if url.lastPathComponent.hasSuffix(".q8.safetensors") {
@@ -168,7 +168,7 @@ class Evaluator {
 
     func makeMimi() async throws -> Mimi {
         let cfg = MimiConfig.mimi_2024_07()
-        let model = Mimi(cfg)
+        let model = Mimi(cfg, bSize: 1)
 
         let url = try await downloadFromHub(
             id: "kyutai/moshiko-mlx-q4",

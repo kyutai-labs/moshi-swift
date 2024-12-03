@@ -287,7 +287,7 @@ public class Transformer: Module {
         return x
     }
 
-    public func makeCache() -> [KVCache] {
+    public func makeCache(bSize: Int) -> [KVCache] {
         let kvHeads = cfg.numHeads / cfg.kvRepeat
         return (0..<cfg.numLayers).map { _ in
             KVCacheSimple(headDim: .init(cfg.headDim()), kvHeads: kvHeads)
@@ -338,7 +338,7 @@ public class ProjectedTransformer: Module {
         return outs
     }
 
-    public func makeCache() -> [KVCache] {
-        self.transformer.makeCache()
+    public func makeCache(bSize: Int) -> [KVCache] {
+        self.transformer.makeCache(bSize: bSize)
     }
 }

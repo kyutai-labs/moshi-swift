@@ -61,7 +61,7 @@ public class Mimi: Module {
     @ModuleInfo(key: "upsample") var upsample: ConvTrUpsample1d
     @ModuleInfo(key: "quantizer") var quantizer: SplitResidualVectorQuantizer
 
-    public init(_ cfg: MimiConfig) {
+    public init(_ cfg: MimiConfig, bSize: Int) {
         let dim = cfg.seanet.dimension
         self.cfg = cfg
         let encoderFrameRate = cfg.sampleRate / Float(cfg.seanet.ratios.reduce(1, *))
@@ -79,8 +79,8 @@ public class Mimi: Module {
             stride: downsampleStride, dim: dim, causal: true)
         self._upsample.wrappedValue = ConvTrUpsample1d(
             stride: downsampleStride, dim: dim, causal: true)
-        self.encoderCache = self._encoderTransformer.wrappedValue.makeCache()
-        self.decoderCache = self._decoderTransformer.wrappedValue.makeCache()
+        self.encoderCache = self._encoderTransformer.wrappedValue.makeCache(bSize: bSize)
+        self.decoderCache = self._decoderTransformer.wrappedValue.makeCache(bSize: bSize)
     }
 
     public func warmup() {
