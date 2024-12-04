@@ -328,14 +328,18 @@ class Evaluator {
                     let pcm = MLXArray(pcm)[.newAxis, .newAxis]
                     let micCodes = mimi.encodeStep(StreamArray(pcm))
                     if let micCodes = micCodes.asArray() {
+                        // As of 2024-12-04, there is a memory leak if this eval is removed, this is
+                        // triggered even without the decoding and audio playing, only the line
+                        // below is needed:
+                        // let audioTokens = codes[.ellipsis, currentStep...currentStep]
+                        eval(micCodes)
                         let (_, _, steps) = micCodes.shape3
                         for _ in 0..<steps {
                             if currentStep >= totalSteps {
                                 break
                             }
                             let audioTokens = codes[.ellipsis, currentStep...currentStep]
-                            let pcmOut = mimi.decodeStep(
-                                StreamArray(audioTokens))
+                            let pcmOut = mimi.decodeStep(StreamArray(audioTokens))
                             if let p = pcmOut.asArray() {
                                 let _ = player.send(p.asArray(Float.self))
                             }

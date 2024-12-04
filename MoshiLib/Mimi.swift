@@ -39,7 +39,8 @@ public struct MimiConfig {
             maxSeqLen: 8192,
             kvRepeat: 1,
             dimFeedForward: 2048,
-            convLayout: true
+            convLayout: true,
+            useRotatingKVCache: false
         )
         return MimiConfig(
             channels: 1,

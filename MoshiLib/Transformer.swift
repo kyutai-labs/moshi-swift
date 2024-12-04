@@ -35,6 +35,7 @@ public struct TransformerConfig {
     public var kvRepeat: Int
     public var dimFeedForward: Int
     public var convLayout: Bool
+    public var useRotatingKVCache: Bool
 
     public func headDim() -> Int {
         self.dModel / self.numHeads
@@ -60,7 +61,8 @@ public struct TransformerConfig {
             maxSeqLen: 4096,
             kvRepeat: 1,
             dimFeedForward: 1024 * 4,
-            convLayout: false
+            convLayout: false,
+            useRotatingKVCache: false
         )
     }
 
@@ -84,7 +86,8 @@ public struct TransformerConfig {
             maxSeqLen: 4096,
             kvRepeat: 1,
             dimFeedForward: 2048 * 4,
-            convLayout: false
+            convLayout: false,
+            useRotatingKVCache: false
         )
     }
 
@@ -107,7 +110,8 @@ public struct TransformerConfig {
             maxSeqLen: 4096,
             kvRepeat: 1,
             dimFeedForward: 4096 * 4,
-            convLayout: false
+            convLayout: false,
+            useRotatingKVCache: false
         )
     }
 }
@@ -190,8 +194,6 @@ private class Attention: Module {
             v = v[0..., 0..., offset...]
         }
 
-        // TODO: We should probably replace the KVCache with a rotating version that would handle
-        // the context and return the appropriate mask directly.
         var mask = mask
         if let m = mask {
             let maskLen = m.dim(-1)
@@ -290,10 +292,16 @@ public class Transformer: Module {
     public func makeCache(bSize: Int) -> [KVCache] {
         let kvHeads = cfg.numHeads / cfg.kvRepeat
         let dtype = self.layers.first!.selfAttn.inProj.weight.dtype
-        return (0..<cfg.numLayers).map { _ in
-            // RotatingKVCache(bSize: bSize, numHeads: kvHeads, maxSize: cfg.context, headDim: cfg.headDim(), dtype: dtype)
-            KVCacheSimple(headDim: .init(cfg.headDim()), kvHeads: kvHeads)
+        let cache = (0..<cfg.numLayers).map { _ in
+            let cache: KVCache
+            if cfg.useRotatingKVCache {
+                cache = RotatingKVCache(bSize: bSize, numHeads: kvHeads, maxSize: cfg.context, headDim: cfg.headDim(), dtype: dtype)
+            } else {
+                cache = KVCacheSimple(headDim: .init(cfg.headDim()), kvHeads: kvHeads)
+            }
+            return cache
         }
+        return cache
     }
 }
 

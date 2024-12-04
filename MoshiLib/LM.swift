@@ -113,7 +113,8 @@ public struct LmConfig {
                     maxSeqLen: 4096,
                     kvRepeat: 1,
                     dimFeedForward: 1024 * 4,
-                    convLayout: false
+                    convLayout: false,
+                    useRotatingKVCache: false
                 ), numSlices: 8)
         return LmConfig(
             transformer: TransformerConfig.v1_7b(),
@@ -147,7 +148,8 @@ public struct LmConfig {
                     maxSeqLen: 4096,
                     kvRepeat: 1,
                     dimFeedForward: 1024 * 4,
-                    convLayout: false
+                    convLayout: false,
+                    useRotatingKVCache: false
                 ), numSlices: 8)
         return LmConfig(
             transformer: TransformerConfig.v1_1b(),
