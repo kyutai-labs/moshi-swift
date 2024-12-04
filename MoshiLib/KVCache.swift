@@ -155,18 +155,19 @@ class RotatingKVCache: KVCache, Evaluatable {
 
     func createAttentionMask(h: MLXArray) -> MLXArray? {
         let t = h.dim(1)
-        let offset = self.offset + t
-        let offsetMod = offset % self.maxSize
-        var rinds = Array(repeating: Int32(offset), count: self.maxSize)
-        for i in 0..<offsetMod {
-            rinds[i] = Int32(offset + i - offsetMod)
+        let finalOffset = self.offset + t
+        let finalOffsetMod = finalOffset % self.maxSize
+        // As a default we use finalOffset + 1 so that these slices cannot be seen.
+        var rinds = Array(repeating: Int32(finalOffset + 1), count: self.maxSize)
+        for i in 0..<finalOffsetMod {
+            rinds[i] = Int32(finalOffset + i - finalOffsetMod)
         }
-        if offsetMod != offset {
-            for i in offsetMod..<rinds.count {
-                rinds[i] = Int32(offset + i - offsetMod - rinds.count)
+        if finalOffsetMod != finalOffset {
+            for i in finalOffsetMod..<rinds.count {
+                rinds[i] = Int32(finalOffset + i - finalOffsetMod - rinds.count)
             }
         }
-        let linds = MLXArray(Int32(offset)..<Int32(offset + t))
+        let linds = MLXArray(Int32(self.offset)..<Int32(self.offset + t))
         let mask = linds[0..., .newAxis] .< MLXArray(rinds)[.newAxis]
         let res = (mask * Float32(-1e9)).asType(h.dtype)
         return res
