@@ -61,6 +61,8 @@ class ConvTransposed1d: Module, UnaryLayer {
     let inC: Int
     let outC: Int
     let kSize: Int
+    var expandedWeight: MLXArray
+    var expandedGroups: Int
 
     init(
         inputChannels: Int,
@@ -75,6 +77,7 @@ class ConvTransposed1d: Module, UnaryLayer {
 
         self._weight.wrappedValue = uniform(
             low: -scale, high: scale, [outputChannels / groups, kernelSize, inputChannels])
+        let weight = self._weight.wrappedValue
         self._bias.wrappedValue = bias ? MLXArray.zeros([outputChannels]) : nil
         self.padding = padding
         self.stride = stride
@@ -82,23 +85,41 @@ class ConvTransposed1d: Module, UnaryLayer {
         self.inC = inputChannels
         self.outC = outputChannels
         self.kSize = kernelSize
-    }
-
-    open func callAsFunction(_ x: MLXArray) -> MLXArray {
-        var weight = self.weight
-        var groups = self.groups
-        // Groups are not supported in convTransposed1d as of 0.18.1 so we hack our way around it.
         if groups == inC && groups == outC {
             // TODO: Do not recompute this each time, maybe override the update function?
             let eye = repeated(
                 eye(outC).asType(weight.dtype).reshaped([outC, 1, outC]), count: kSize, axis: 1)
-            weight = repeated(weight, count: groups, axis: 0) * eye
-            groups = 1
+            self.expandedWeight = repeated(weight, count: groups, axis: 0) * eye
+            self.expandedGroups = 1
         } else if groups > 1 {
             fatalError("groups are not supported in ConvTranspose1d, \(groups), \(inC), \(outC)")
+        } else {
+            self.expandedWeight = weight
+            self.expandedGroups = groups
         }
+    }
+
+    override func update(parameters: ModuleParameters, verify: Module.VerifyUpdate) throws -> Self {
+        try super.update(parameters: parameters, verify: verify)
+        if groups == inC && groups == outC {
+            // TODO: Do not recompute this each time, maybe override the update function?
+            let eye = repeated(
+                eye(outC).asType(weight.dtype).reshaped([outC, 1, outC]), count: kSize, axis: 1)
+            self.expandedWeight = repeated(weight, count: groups, axis: 0) * eye
+            self.expandedGroups = 1
+        } else if groups > 1 {
+            fatalError("groups are not supported in ConvTranspose1d, \(groups), \(inC), \(outC)")
+        } else {
+            self.expandedWeight = weight
+            self.expandedGroups = groups
+        }
+        return self
+    }
+
+    open func callAsFunction(_ x: MLXArray) -> MLXArray {
+        // Groups are not supported in convTransposed1d as of 0.18.1 so we hack our way around it.
         var y = convTransposed1d(
-            x.swappedAxes(-1, -2), weight, stride: stride, padding: padding, groups: groups
+            x.swappedAxes(-1, -2), expandedWeight, stride: stride, padding: padding, groups: expandedGroups
         )
         if let bias {
             y = y + bias
