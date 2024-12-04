@@ -9,8 +9,8 @@ import MLXNN
 class EuclideanCodebook: Module {
     let epsilon: Float
     let dim: Int
-    var embedding: MLXArray? = nil
-    var c2: MLXArray? = nil
+    var embedding: MLXArray
+    var c2: MLXArray
     @ModuleInfo(key: "_initialized") var initialized: MLXArray
     @ModuleInfo(key: "embedding_sum") var embeddingSum: MLXArray
     @ModuleInfo(key: "cluster_usage") var clusterUsage: MLXArray
@@ -21,32 +21,20 @@ class EuclideanCodebook: Module {
         self._initialized.wrappedValue = MLXArray.zeros([1], dtype: .float32)
         self._embeddingSum.wrappedValue = MLXArray.zeros([codebookSize, dim], dtype: .float32)
         self._clusterUsage.wrappedValue = MLXArray.zeros([codebookSize], dtype: .float32)
+        let clusterUsage = maximum(self._clusterUsage.wrappedValue, self.epsilon)[0..., .newAxis]
+        self.embedding = self._embeddingSum.wrappedValue / clusterUsage
+        self.c2 = self.embedding.square().sum(axis: -1) / 2
     }
 
-    // Precompute the embedding and c2 tensors
-    func embeddingAndC2() -> (MLXArray, MLXArray) {
-        var embedding: MLXArray
-        switch self.embedding {
-        case .none:
-            let clusterUsage = maximum(self.clusterUsage, self.epsilon)[0..., .newAxis]
-            embedding = self.embeddingSum / clusterUsage
-            self.embedding = embedding
-        case .some(let e): embedding = e
-        }
-
-        var c2: MLXArray
-        switch self.c2 {
-        case .none:
-            c2 = embedding.square().sum(axis: -1) / 2
-            self.c2 = c2
-        case .some(let e): c2 = e
-        }
-
-        return (embedding, c2)
+    override func update(parameters: ModuleParameters, verify: Module.VerifyUpdate) throws -> Self {
+        try super.update(parameters: parameters, verify: verify)
+        let clusterUsage = maximum(self._clusterUsage.wrappedValue, self.epsilon)[0..., .newAxis]
+        self.embedding = self._embeddingSum.wrappedValue / clusterUsage
+        self.c2 = self.embedding.square().sum(axis: -1) / 2
+        return self
     }
 
     func encode(_ x: MLXArray) -> MLXArray {
-        let (embedding, c2) = self.embeddingAndC2()
         let targetShape = Array(x.shape.dropLast())
         let x = x.flattened(end: -2)
         let dotProd = x.matmul(embedding.swappedAxes(-1, -2))
@@ -56,7 +44,6 @@ class EuclideanCodebook: Module {
     func decode(_ indexes: MLXArray) -> MLXArray {
         let finalDims = indexes.shape + [self.dim]
         let indexes = indexes.flattened()
-        let (embedding, _) = self.embeddingAndC2()
         return embedding.take(indexes, axis: 0).reshaped(finalDims)
     }
 }
