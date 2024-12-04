@@ -86,7 +86,6 @@ class ConvTransposed1d: Module, UnaryLayer {
         self.outC = outputChannels
         self.kSize = kernelSize
         if groups == inC && groups == outC {
-            // TODO: Do not recompute this each time, maybe override the update function?
             let eye = repeated(
                 eye(outC).asType(weight.dtype).reshaped([outC, 1, outC]), count: kSize, axis: 1)
             self.expandedWeight = repeated(weight, count: groups, axis: 0) * eye
@@ -102,7 +101,6 @@ class ConvTransposed1d: Module, UnaryLayer {
     override func update(parameters: ModuleParameters, verify: Module.VerifyUpdate) throws -> Self {
         try super.update(parameters: parameters, verify: verify)
         if groups == inC && groups == outC {
-            // TODO: Do not recompute this each time, maybe override the update function?
             let eye = repeated(
                 eye(outC).asType(weight.dtype).reshaped([outC, 1, outC]), count: kSize, axis: 1)
             self.expandedWeight = repeated(weight, count: groups, axis: 0) * eye
