@@ -106,12 +106,12 @@ class Evaluator {
 
     enum LoadState {
         case idle
-        case loaded(Model)
+        case loaded(ModelState)
     }
 
     enum LoadStateMimi {
         case idle
-        case loaded(MimiModel)
+        case loaded(MimiModelState)
     }
 
     var loadState = LoadState.idle
@@ -243,51 +243,21 @@ class Evaluator {
         running = true
         do {
             let model = try await load()
-            try await model.perform { vocab, mimi, gen in
-                mimi.resetState()
-                gen.reset()
+            try await model.perform { model in
+                model.reset()
                 // TODO: Do not create a fresh audio input/output on each session.
                 let microphoneCapture = MicrophoneCapture()
                 microphoneCapture.startCapturing()
-                let player = AudioPlayer(sampleRate: 24000)
-                try player.startPlaying()
+                let ap = AudioPlayer(sampleRate: 24000)
+                try ap.startPlaying()
                 print("started the audio loops")
-                let mimi = await model.mimi
-                let gen = await model.gen
 
                 while let pcm = microphoneCapture.receive() {
                     if shouldStop.load(ordering: .relaxed) {
                         break
                     }
                     let pcm = MLXArray(pcm)[.newAxis, .newAxis]
-                    let codes = mimi.encodeStep(StreamArray(pcm))
-                    if let codes = codes.asArray() {
-                        let (_, _, steps) = codes.shape3
-                        for step in 0..<steps {
-                            if let textToken = gen.step(
-                                otherAudioTokens: codes[0..., 0..<8, step])
-                            {
-                                let textTokenI: Int = textToken[0].item()
-                                if textTokenI != 0 && textTokenI != 3 {
-                                    if let v = model.vocab[textTokenI] {
-                                        let v = v.replacing("▁", with: " ")
-                                        print(v, terminator: "")
-                                        fflush(stdout)
-                                        Task { @MainActor in
-                                            self.output += v
-                                        }
-                                    }
-                                }
-                            }
-                            if let audioTokens = gen.lastAudioTokens() {
-                                let pcmOut = mimi.decodeStep(
-                                    StreamArray(audioTokens[0..., 0..., .newAxis]))
-                                if let p = pcmOut.asArray() {
-                                    let _ = player.send(p.asArray(Float.self))
-                                }
-                            }
-                        }
-                    }
+                    model.onMicrophonePcm(pcm, ap: ap, ev: self)
                 }
                 print()
                 microphoneCapture.stopCapturing()
@@ -360,26 +330,11 @@ class Evaluator {
         running = false
     }
 
-    func load() async throws -> Model {
+    func load() async throws -> ModelState {
         switch self.loadState {
         case .idle:
-            self.modelInfo = "downloading model"
-            let url = try await downloadFromHub(
-                id: "kyutai/moshiko-mlx-q8", filename: "model.q8.safetensors")
-            let cfg = LmConfig.moshi_2024_07()
-            let moshi = try makeMoshi(url, cfg)
-            let mimi = try await makeMimi()
-            self.modelInfo = "downloaded model"
-            let maxSteps = cfg.transformer.maxSeqLen
-            let gen = LMGen(
-                moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
-            let vocab = try await loadVocab(cfg)
-            self.modelInfo = "warming up mimi"
-            mimi.warmup()
-            self.modelInfo = "warming up moshi"
-            moshi.warmup()
-            self.modelInfo = "done warming up"
-            let m = Model(moshi: moshi, vocab: vocab, mimi: mimi, gen: gen)
+            let model = try await MoshiModel(self)
+            let m = ModelState(model)
             self.loadState = .loaded(m)
             return m
         case .loaded(let m):
@@ -387,7 +342,7 @@ class Evaluator {
         }
     }
 
-    func loadMimi() async throws -> MimiModel {
+    func loadMimi() async throws -> MimiModelState {
         switch self.loadStateMimi {
         case .idle:
             self.modelInfo = "downloading model"
@@ -398,37 +353,101 @@ class Evaluator {
             let codeURL = try await downloadFromHub(
                 id: "lmz/moshi-swift", filename: "bria-codes.safetensors")
             let codes = try loadArrays(url: codeURL)["codes"]!
-            let m = MimiModel(mimi: mimi, codes: codes)
+            let m = MimiModelState(mimi: mimi, codes: codes)
             self.loadStateMimi = .loaded(m)
             return m
         case .loaded(let m):
             return m
         }
     }
+
+    func setModelInfo(_ s: String) {
+        modelInfo = s
+    }
 }
 
-actor Model {
+protocol Model {
+    init(_ ev: Evaluator) async throws
+    func reset()
+    func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator)
+}
+
+struct MoshiModel: Model {
     let moshi: LM
     let vocab: [Int: String]
     let mimi: Mimi
     let gen: LMGen
 
-    init(moshi: LM, vocab: [Int: String], mimi: Mimi, gen: LMGen) {
-        self.moshi = moshi
-        self.vocab = vocab
-        self.mimi = mimi
-        self.gen = gen
+    init(_ ev: Evaluator) async throws {
+        await ev.setModelInfo("downloading model")
+        let url = try await ev.downloadFromHub(
+            id: "kyutai/moshiko-mlx-q8", filename: "model.q8.safetensors")
+        let cfg = LmConfig.moshi_2024_07()
+        self.moshi = try await ev.makeMoshi(url, cfg)
+        self.mimi = try await ev.makeMimi()
+        await ev.setModelInfo("downloaded model")
+        let maxSteps = cfg.transformer.maxSeqLen
+        self.gen = LMGen(
+            moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
+        self.vocab = try await ev.loadVocab(cfg)
+        await ev.setModelInfo("warming up mimi")
+        self.mimi.warmup()
+        await ev.setModelInfo("warming up moshi")
+        self.moshi.warmup()
+        await ev.setModelInfo("done warming up")
     }
 
-    public func perform<R>(_ action: @Sendable ([Int: String], Mimi, LMGen) async throws -> R)
-        async rethrows
-        -> R
-    {
-        try await action(vocab, mimi, gen)
+    func reset() {
+        mimi.resetState()
+        gen.reset()
+    }
+
+    func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) {
+        let codes = mimi.encodeStep(StreamArray(pcm))
+        if let codes = codes.asArray() {
+            let (_, _, steps) = codes.shape3
+            for step in 0..<steps {
+                if let textToken = gen.step(
+                    otherAudioTokens: codes[0..., 0..<8, step])
+                {
+                    let textTokenI: Int = textToken[0].item()
+                    if textTokenI != 0 && textTokenI != 3 {
+                        if let v = vocab[textTokenI] {
+                            let v = v.replacing("▁", with: " ")
+                            print(v, terminator: "")
+                            fflush(stdout)
+                            Task { @MainActor in
+                                ev.output += v
+                            }
+                        }
+                    }
+                }
+                if let audioTokens = gen.lastAudioTokens() {
+                    let pcmOut = mimi.decodeStep(StreamArray(audioTokens[0..., 0..., .newAxis]))
+                    if let p = pcmOut.asArray() {
+                        let _ = ap.send(p.asArray(Float.self))
+                    }
+                }
+            }
+        }
     }
 }
 
-actor MimiModel {
+actor ModelState {
+    let model: Model
+    init(_ model: Model) {
+        self.model = model
+    }
+
+    public func perform<R>(_ action: @Sendable (Model) async throws -> R)
+        async rethrows
+        -> R
+    {
+        try await action(model)
+    }
+}
+
+actor MimiModelState {
     let mimi: Mimi
     let codes: MLXArray
 
