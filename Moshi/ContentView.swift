@@ -11,28 +11,34 @@ import MoshiLib
 import SwiftUI
 import Synchronization
 
+enum ModelSelect {
+    case mimi
+    case asr
+    case moshi
+}
+
 struct ContentView: View {
     @State var model = Evaluator()
+    @State var selectedModel: ModelSelect = .mimi
     @Environment(DeviceStat.self) private var deviceStat
 
     var body: some View {
         VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text(model.modelInfo)
-            if model.progress != nil {
-                ProgressView(model.progress!)
-            }
-            if !model.running {
-                Button("Start Moshi", action: generate)
-            } else {
-                Button("Stop", action: stopGenerate)
-            }
-            if !model.running {
-                Button("Start Mimi", action: generateMimi)
-            } else {
-                Button("Stop", action: stopGenerate)
+            List {
+                Text(model.modelInfo)
+                Picker("Model", selection: $selectedModel) {
+                    Text("Mimi").tag(ModelSelect.mimi)
+                    Text("ASR").tag(ModelSelect.asr)
+                    Text("Moshi").tag(ModelSelect.moshi)
+                }
+                if model.progress != nil {
+                    ProgressView(model.progress!)
+                }
+                if !model.running {
+                    Button("Run", action: generate)
+                } else {
+                    Button("Stop", action: stopGenerate)
+                }
             }
             ScrollView(.vertical) {
                 ScrollViewReader { sp in
@@ -73,13 +79,7 @@ struct ContentView: View {
 
     private func generate() {
         Task {
-            await model.generate(moshi: true)
-        }
-    }
-
-    private func generateMimi() {
-        Task {
-            await model.generate(moshi: false)
+            await model.generate(self.selectedModel)
         }
     }
 
@@ -106,7 +106,7 @@ class Evaluator {
 
     enum LoadState {
         case idle
-        case loaded(ModelState)
+        case loaded(ModelState, ModelSelect)
     }
 
     var loadState = LoadState.idle
@@ -228,7 +228,7 @@ class Evaluator {
         self.shouldStop.store(true, ordering: .relaxed)
     }
 
-    func generate(moshi: Bool) async {
+    func generate(_ sm: ModelSelect) async {
         guard !running else { return }
 
         self.shouldStop.store(false, ordering: .relaxed)
@@ -236,7 +236,7 @@ class Evaluator {
         self.output = ""
         running = true
         do {
-            let model = try await load(moshi: moshi)
+            let model = try await load(sm)
             try await model.perform { model in
                 model.reset()
                 // TODO: Do not create a fresh audio input/output on each session.
@@ -265,22 +265,24 @@ class Evaluator {
         running = false
     }
 
-    func load(moshi: Bool) async throws -> ModelState {
-        switch self.loadState {
-        case .idle:
-            let m: ModelState
-            if moshi {
-                let model = try await MoshiModel(self)
-                m = ModelState(model)
-            } else {
-                let model = try await MimiModel(self)
-                m = ModelState(model)
-            }
-            self.loadState = .loaded(m)
-            return m
-        case .loaded(let m):
+    func load(_ sm: ModelSelect) async throws -> ModelState {
+        if case .loaded(let m, sm) = self.loadState {
             return m
         }
+        let m: ModelState
+        switch sm {
+        case .moshi:
+            let model = try await MoshiModel(self)
+            m = ModelState(model)
+        case .mimi:
+            let model = try await MimiModel(self)
+            m = ModelState(model)
+        case .asr:
+            let model = try await AsrModel(self)
+            m = ModelState(model)
+        }
+        self.loadState = .loaded(m, sm)
+        return m
     }
 
     func setModelInfo(_ s: String) {
@@ -358,7 +360,6 @@ struct AsrModel: Model {
         self.moshi = try await ev.makeMoshi(url, cfg)
         self.mimi = try await ev.makeMimi()
         await ev.setModelInfo("model built")
-        let maxSteps = cfg.transformer.maxSeqLen
         self.vocab = try await ev.loadVocab(cfg)
         await ev.setModelInfo("warming up mimi")
         self.mimi.warmup()
