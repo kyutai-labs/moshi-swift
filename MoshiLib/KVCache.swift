@@ -131,11 +131,12 @@ class RotatingKVCache: KVCache, Evaluatable {
         let t = keys.dim(2)
         if t > self.maxSize {
             fatalError("query to update with shape \(keys.shape) larger than maxSize \(maxSize)")
-        } 
+        }
         let currentOffset = self.offset % self.maxSize
         let tMax = min(self.maxSize, currentOffset + t)
         self.keys[0..., 0..., currentOffset..<tMax] = keys[0..., 0..., 0..<(tMax - currentOffset)]
-        self.values[0..., 0..., currentOffset..<tMax] = values[0..., 0..., 0..<(tMax - currentOffset)]
+        self.values[0..., 0..., currentOffset..<tMax] =
+            values[0..., 0..., 0..<(tMax - currentOffset)]
         let leftToCopy = t - tMax + currentOffset
         if 0 < leftToCopy {
             self.keys[0..., 0..., 0..<leftToCopy] = keys[0..., 0..., (tMax - currentOffset)...]

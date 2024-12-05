@@ -420,7 +420,8 @@ actor Model {
         self.gen = gen
     }
 
-    public func perform<R>(_ action: @Sendable ([Int: String], Mimi, LMGen) async throws -> R) async rethrows
+    public func perform<R>(_ action: @Sendable ([Int: String], Mimi, LMGen) async throws -> R)
+        async rethrows
         -> R
     {
         try await action(vocab, mimi, gen)

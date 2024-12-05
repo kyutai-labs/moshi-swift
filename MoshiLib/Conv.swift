@@ -117,7 +117,8 @@ class ConvTransposed1d: Module, UnaryLayer {
     open func callAsFunction(_ x: MLXArray) -> MLXArray {
         // Groups are not supported in convTransposed1d as of 0.18.1 so we hack our way around it.
         var y = convTransposed1d(
-            x.swappedAxes(-1, -2), expandedWeight, stride: stride, padding: padding, groups: expandedGroups
+            x.swappedAxes(-1, -2), expandedWeight, stride: stride, padding: padding,
+            groups: expandedGroups
         )
         if let bias {
             y = y + bias

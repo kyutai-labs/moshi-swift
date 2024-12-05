@@ -8,18 +8,18 @@ import SwiftUI
 
 func requestMicrophoneAccess() {
     switch AVCaptureDevice.authorizationStatus(for: .audio) {
-        case .authorized:
-            return
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .audio) { granted in
-                print("granted", granted)
-            }
-        case .denied: // The user has previously denied access.
-            return
-        case .restricted: // The user can't grant access due to restrictions.
-            return
-        case _:
-            return
+    case .authorized:
+        return
+    case .notDetermined:
+        AVCaptureDevice.requestAccess(for: .audio) { granted in
+            print("granted", granted)
+        }
+    case .denied:  // The user has previously denied access.
+        return
+    case .restricted:  // The user can't grant access due to restrictions.
+        return
+    case _:
+        return
     }
 }
 

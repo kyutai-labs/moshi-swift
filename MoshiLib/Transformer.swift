@@ -295,7 +295,9 @@ public class Transformer: Module {
         let cache = (0..<cfg.numLayers).map { _ in
             let cache: KVCache
             if cfg.useRotatingKVCache {
-                cache = RotatingKVCache(bSize: bSize, numHeads: kvHeads, maxSize: cfg.context, headDim: cfg.headDim(), dtype: dtype)
+                cache = RotatingKVCache(
+                    bSize: bSize, numHeads: kvHeads, maxSize: cfg.context, headDim: cfg.headDim(),
+                    dtype: dtype)
             } else {
                 cache = KVCacheSimple(headDim: .init(cfg.headDim()), kvHeads: kvHeads)
             }
