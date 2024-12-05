@@ -73,13 +73,13 @@ struct ContentView: View {
 
     private func generate() {
         Task {
-            await model.generate()
+            await model.generate(moshi: true)
         }
     }
 
     private func generateMimi() {
         Task {
-            await model.generateMimi()
+            await model.generate(moshi: false)
         }
     }
 
@@ -109,13 +109,7 @@ class Evaluator {
         case loaded(ModelState)
     }
 
-    enum LoadStateMimi {
-        case idle
-        case loaded(MimiModelState)
-    }
-
     var loadState = LoadState.idle
-    var loadStateMimi = LoadStateMimi.idle
 
     func downloadFromHub(id: String, filename: String) async throws -> URL {
         let downloadDir = FileManager.default.urls(
@@ -234,7 +228,7 @@ class Evaluator {
         self.shouldStop.store(true, ordering: .relaxed)
     }
 
-    func generate() async {
+    func generate(moshi: Bool) async {
         guard !running else { return }
 
         self.shouldStop.store(false, ordering: .relaxed)
@@ -242,7 +236,7 @@ class Evaluator {
         self.output = ""
         running = true
         do {
-            let model = try await load()
+            let model = try await load(moshi: moshi)
             try await model.perform { model in
                 model.reset()
                 // TODO: Do not create a fresh audio input/output on each session.
@@ -257,66 +251,7 @@ class Evaluator {
                         break
                     }
                     let pcm = MLXArray(pcm)[.newAxis, .newAxis]
-                    model.onMicrophonePcm(pcm, ap: ap, ev: self)
-                }
-                print()
-                microphoneCapture.stopCapturing()
-            }
-            self.modelInfo = "finished generating"
-        } catch {
-            self.modelInfo = "failed: \(error)"
-        }
-        running = false
-    }
-
-    func generateMimi() async {
-        guard !running else { return }
-
-        self.shouldStop.store(false, ordering: .relaxed)
-        self.modelInfo = "starting"
-        self.output = ""
-        running = true
-        do {
-            let model = try await loadMimi()
-            try await model.perform { codes, mimi in
-                mimi.resetState()
-                // TODO: Do not create a fresh audio input/output on each session.
-                let microphoneCapture = MicrophoneCapture()
-                var currentStep = 0
-                let totalSteps = codes.dim(-1)
-                microphoneCapture.startCapturing()
-                let player = AudioPlayer(sampleRate: 24000)
-                try player.startPlaying()
-
-                Task { @MainActor in
-                    self.modelInfo = "started the audio loops"
-                }
-                while let pcm = microphoneCapture.receive() {
-                    if shouldStop.load(ordering: .relaxed) {
-                        break
-                    }
-                    let pcm = MLXArray(pcm)[.newAxis, .newAxis]
-                    let micCodes = mimi.encodeStep(StreamArray(pcm))
-                    if let micCodes = micCodes.asArray() {
-                        // As of 2024-12-04, there is a memory leak if this eval is removed, this is
-                        // triggered even without the decoding and audio playing, only the line
-                        // below is needed:
-                        // let audioTokens = codes[.ellipsis, currentStep...currentStep]
-                        eval(micCodes)
-                        let (_, _, steps) = micCodes.shape3
-                        for _ in 0..<steps {
-                            if currentStep >= totalSteps {
-                                break
-                            }
-                            let audioTokens = codes[.ellipsis, currentStep...currentStep]
-                            let pcmOut = mimi.decodeStep(StreamArray(audioTokens))
-                            if let p = pcmOut.asArray() {
-                                let _ = player.send(p.asArray(Float.self))
-                            }
-                            currentStep += 1
-                        }
-                    }
-                    if currentStep >= totalSteps {
+                    if !model.onMicrophonePcm(pcm, ap: ap, ev: self) {
                         break
                     }
                 }
@@ -330,31 +265,18 @@ class Evaluator {
         running = false
     }
 
-    func load() async throws -> ModelState {
+    func load(moshi: Bool) async throws -> ModelState {
         switch self.loadState {
         case .idle:
-            let model = try await MoshiModel(self)
-            let m = ModelState(model)
+            let m: ModelState
+            if moshi {
+                let model = try await MoshiModel(self)
+                m = ModelState(model)
+            } else {
+                let model = try await MimiModel(self)
+                m = ModelState(model)
+            }
             self.loadState = .loaded(m)
-            return m
-        case .loaded(let m):
-            return m
-        }
-    }
-
-    func loadMimi() async throws -> MimiModelState {
-        switch self.loadStateMimi {
-        case .idle:
-            self.modelInfo = "downloading model"
-            let mimi = try await makeMimi()
-            self.modelInfo = "warming up mimi"
-            mimi.warmup()
-            self.modelInfo = "done warming up"
-            let codeURL = try await downloadFromHub(
-                id: "lmz/moshi-swift", filename: "bria-codes.safetensors")
-            let codes = try loadArrays(url: codeURL)["codes"]!
-            let m = MimiModelState(mimi: mimi, codes: codes)
-            self.loadStateMimi = .loaded(m)
             return m
         case .loaded(let m):
             return m
@@ -369,7 +291,54 @@ class Evaluator {
 protocol Model {
     init(_ ev: Evaluator) async throws
     func reset()
-    func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator)
+    // If onMicrophonePcm continue, otherwise break.
+    mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool
+}
+
+struct MimiModel: Model {
+    let mimi: Mimi
+    let codes: MLXArray
+    var currentStep: Int
+    let totalSteps: Int
+
+    init(_ ev: Evaluator) async throws {
+        await ev.setModelInfo("building model")
+        self.mimi = try await ev.makeMimi()
+        await ev.setModelInfo("model built")
+        let codeURL = try await ev.downloadFromHub(
+            id: "lmz/moshi-swift", filename: "bria-codes.safetensors")
+        self.codes = try loadArrays(url: codeURL)["codes"]!
+        self.currentStep = 0
+        self.totalSteps = codes.dim(-1)
+    }
+
+    func reset() {
+        mimi.resetState()
+    }
+
+    mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
+        let micCodes = mimi.encodeStep(StreamArray(pcm))
+        if let micCodes = micCodes.asArray() {
+            // As of 2024-12-04, there is a memory leak if this eval is removed, this is
+            // triggered even without the decoding and audio playing, only the line
+            // below is needed:
+            // let audioTokens = codes[.ellipsis, currentStep...currentStep]
+            eval(micCodes)
+            let (_, _, steps) = micCodes.shape3
+            for _ in 0..<steps {
+                if currentStep >= totalSteps {
+                    break
+                }
+                let audioTokens = codes[.ellipsis, currentStep...currentStep]
+                let pcmOut = mimi.decodeStep(StreamArray(audioTokens))
+                if let p = pcmOut.asArray() {
+                    let _ = ap.send(p.asArray(Float.self))
+                }
+                currentStep += 1
+            }
+        }
+        return currentStep < totalSteps
+    }
 }
 
 struct MoshiModel: Model {
@@ -379,13 +348,13 @@ struct MoshiModel: Model {
     let gen: LMGen
 
     init(_ ev: Evaluator) async throws {
-        await ev.setModelInfo("downloading model")
+        await ev.setModelInfo("building model")
         let url = try await ev.downloadFromHub(
             id: "kyutai/moshiko-mlx-q8", filename: "model.q8.safetensors")
         let cfg = LmConfig.moshi_2024_07()
         self.moshi = try await ev.makeMoshi(url, cfg)
         self.mimi = try await ev.makeMimi()
-        await ev.setModelInfo("downloaded model")
+        await ev.setModelInfo("model built")
         let maxSteps = cfg.transformer.maxSeqLen
         self.gen = LMGen(
             moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
@@ -402,7 +371,7 @@ struct MoshiModel: Model {
         gen.reset()
     }
 
-    func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) {
+    mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
         let codes = mimi.encodeStep(StreamArray(pcm))
         if let codes = codes.asArray() {
             let (_, _, steps) = codes.shape3
@@ -430,35 +399,23 @@ struct MoshiModel: Model {
                 }
             }
         }
+        return true
     }
 }
 
 actor ModelState {
     let model: Model
+
     init(_ model: Model) {
         self.model = model
     }
 
-    public func perform<R>(_ action: @Sendable (Model) async throws -> R)
+    public func perform<R>(_ action: @Sendable (inout Model) async throws -> R)
         async rethrows
         -> R
     {
-        try await action(model)
-    }
-}
-
-actor MimiModelState {
-    let mimi: Mimi
-    let codes: MLXArray
-
-    init(mimi: Mimi, codes: MLXArray) {
-        self.mimi = mimi
-        self.codes = codes
-    }
-
-    public func perform<R>(_ action: @Sendable (MLXArray, Mimi) async throws -> R) async rethrows
-        -> R
-    {
-        try await action(codes, mimi)
+        var model = model
+        let result = try await action(&model)
+        return result
     }
 }
