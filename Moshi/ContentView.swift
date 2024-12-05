@@ -290,8 +290,8 @@ class Evaluator {
 
 protocol Model {
     init(_ ev: Evaluator) async throws
-    func reset()
-    // If onMicrophonePcm continue, otherwise break.
+    mutating func reset()
+    // If onMicrophonePcm returns true continue, otherwise break.
     mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool
 }
 
@@ -312,7 +312,7 @@ struct MimiModel: Model {
         self.totalSteps = codes.dim(-1)
     }
 
-    func reset() {
+    mutating func reset() {
         mimi.resetState()
     }
 
@@ -341,6 +341,78 @@ struct MimiModel: Model {
     }
 }
 
+struct AsrModel: Model {
+    let moshi: LM
+    let vocab: [Int: String]
+    let mimi: Mimi
+    var prevTextToken: Int = 0
+    var cnt: Int = 0
+    let sampler: Sampler = Sampler(temp: 0.0)
+    let asrDelayInSteps: Int = 25
+
+    init(_ ev: Evaluator) async throws {
+        await ev.setModelInfo("building model")
+        let url = Bundle.main.url(
+            forResource: "asr-300m-f28fe6d5@100", withExtension: "safetensors")!
+        let cfg = LmConfig.asr300m()
+        self.moshi = try await ev.makeMoshi(url, cfg)
+        self.mimi = try await ev.makeMimi()
+        await ev.setModelInfo("model built")
+        let maxSteps = cfg.transformer.maxSeqLen
+        self.vocab = try await ev.loadVocab(cfg)
+        await ev.setModelInfo("warming up mimi")
+        self.mimi.warmup()
+        await ev.setModelInfo("warming up moshi")
+        self.moshi.warmup()
+        await ev.setModelInfo("done warming up")
+    }
+
+    mutating func reset() {
+        mimi.resetState()
+        moshi.resetCache()
+        prevTextToken = self.moshi.cfg.textInitToken()
+        cnt = 0
+        let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
+        let audioIds = (0..<16).map { _ in MLXArray([moshi.cfg.audioPaddingToken()]) }
+        let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
+        let (textToken, _) = sampler(logits: textLogits)
+        let textTokenI: Int = textToken[0].item()
+        print("sampled first", textTokenI)
+        prevTextToken = textTokenI
+    }
+
+    mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
+        let codebooks = moshi.cfg.audioCodebooks
+        let codes = mimi.encodeStep(StreamArray(pcm))
+        if let codes = codes.asArray() {
+            let (_, _, steps) = codes.shape3
+            for step in 0..<steps {
+                var textIds: MLXArray? = nil
+                if asrDelayInSteps < cnt {
+                    textIds = MLXArray([prevTextToken]).reshaped([1, 1])
+                }
+                let audioIds = (0..<codebooks).map { codes[0..., $0, step].reshaped(1, 1) }
+                let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
+                let (textToken, _) = sampler(logits: textLogits)
+                let textTokenI: Int = textToken[0].item()
+                if textTokenI != 0 && textTokenI != 3 && asrDelayInSteps <= cnt {
+                    if var v = vocab[textTokenI] {
+                        v.replace("▁", with: " ")
+                        print(v, terminator: "")
+                        fflush(stdout)
+                        Task { @MainActor in
+                            ev.output += v
+                        }
+                    }
+                }
+                prevTextToken = textTokenI
+                cnt += 1
+            }
+        }
+        return true
+    }
+}
+
 struct MoshiModel: Model {
     let moshi: LM
     let vocab: [Int: String]
@@ -366,7 +438,7 @@ struct MoshiModel: Model {
         await ev.setModelInfo("done warming up")
     }
 
-    func reset() {
+    mutating func reset() {
         mimi.resetState()
         gen.reset()
     }
