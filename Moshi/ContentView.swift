@@ -90,6 +90,7 @@ struct ContentView: View {
                         VStack {
                             Text("Memory Usage: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))")
                         }
+                        .padding()
                     }
                     .labelStyle(.titleAndIcon)
                     .padding(.horizontal)
