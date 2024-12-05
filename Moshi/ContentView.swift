@@ -373,13 +373,13 @@ struct MimiModel: Model {
                 if let p = pcmOut.asArray() {
                     let _ = ap.send(p.asArray(Float.self))
                 }
-                currentStep += 1
                 if currentStep % 4 == 0 {
                     let v = sampleWords[(currentStep / 4) % sampleWords.count] + " "
                     Task { @MainActor in
                         ev.output += v
                     }
                 }
+                currentStep += 1
             }
         }
         return currentStep < totalSteps
