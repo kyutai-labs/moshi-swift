@@ -354,6 +354,8 @@ struct MimiModel: Model {
     }
 
     mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
+        let sampleText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+        let sampleWords = sampleText.components(separatedBy: " ")
         let micCodes = mimi.encodeStep(StreamArray(pcm))
         if let micCodes = micCodes.asArray() {
             // As of 2024-12-04, there is a memory leak if this eval is removed, this is
@@ -372,6 +374,12 @@ struct MimiModel: Model {
                     let _ = ap.send(p.asArray(Float.self))
                 }
                 currentStep += 1
+                if currentStep % 4 == 0 {
+                    let v = sampleWords[(currentStep / 4) % sampleWords.count] + " "
+                    Task { @MainActor in
+                        ev.output += v
+                    }
+                }
             }
         }
         return currentStep < totalSteps
