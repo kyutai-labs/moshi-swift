@@ -17,63 +17,97 @@ enum ModelSelect {
     case moshi
 }
 
+
 struct ContentView: View {
     @State var model = Evaluator()
     @State var selectedModel: ModelSelect = .mimi
     @Environment(DeviceStat.self) private var deviceStat
+    @State private var displayStats = false
 
     var body: some View {
-        VStack {
-            List {
-                Text(model.modelInfo)
+        NavigationStack {
+            VStack {
+
+                Spacer()
+                    .frame(height:20.0)
+
                 Picker("Model", selection: $selectedModel) {
                     Text("Mimi").tag(ModelSelect.mimi)
                     Text("ASR").tag(ModelSelect.asr)
                     Text("Moshi").tag(ModelSelect.moshi)
                 }
-                if model.progress != nil {
-                    ProgressView(model.progress!)
+                .pickerStyle(.segmented)
+                .padding()
+
+                VStack {
+
+                    Text(model.modelInfo)
+                        .font(.system(size: 22.0, weight: .semibold))
+                        .padding()
+
+
+                    if model.progress != nil {
+                        ProgressView(model.progress!)
+                            .padding()
+                            .transition(.slide)
+                    }
+                    HStack {
+                        Spacer()
+                        Button(model.running ? "Stop" : "Run",
+                               action: withAnimation { model.running ? stopGenerate : generate } )
+                            .buttonStyle(BorderedButtonStyle())
+                            .padding()
+                        Spacer()
+                    }
                 }
-                if !model.running {
-                    Button("Run", action: generate)
-                } else {
-                    Button("Stop", action: stopGenerate)
+                .background(RoundedRectangle(cornerRadius: 15.0).fill(.blue.opacity(0.1)))
+                .padding()
+
+                ScrollView(.vertical) {
+                    ScrollViewReader { sp in
+                        Group {
+                            Text(model.output)
+                                .textSelection(.enabled)
+                        }
+                        .onChange(of: model.output) { _, _ in
+                            sp.scrollTo("bottom")
+                        }
+                        Spacer()
+                            .frame(width: 1, height: 1)
+                            .id("bottom")
+                    }
                 }
             }
-            ScrollView(.vertical) {
-                ScrollViewReader { sp in
-                    Group {
-                        Text(model.output)
-                            .textSelection(.enabled)
+            .padding()
+            .toolbar {
+                ToolbarItem {
+                    Button(action: {displayStats.toggle()}, label: {
+                        Label(
+                            "Stats",
+                            systemImage: "info.circle.fill"
+                        )})
+                    .popover(isPresented: $displayStats) {
+                        VStack {
+                            Text("Memory Usage: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))")
+                        }
                     }
-                    .onChange(of: model.output) { _, _ in
-                        sp.scrollTo("bottom")
-                    }
-                    Spacer()
-                        .frame(width: 1, height: 1)
-                        .id("bottom")
-                }
-            }
-        }
-        .padding()
-        .toolbar {
-            ToolbarItem {
-                Label(
-                    "Memory Usage: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))",
-                    systemImage: "info.circle.fill"
-                )
-                .labelStyle(.titleAndIcon)
-                .padding(.horizontal)
-                .help(
-                    Text(
+                    .labelStyle(.titleAndIcon)
+                    .padding(.horizontal)
+                    .help(
+                        Text(
                         """
                         Active Memory: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))/\(GPU.memoryLimit.formatted(.byteCount(style: .memory)))
                         Cache Memory: \(deviceStat.gpuUsage.cacheMemory.formatted(.byteCount(style: .memory)))/\(GPU.cacheLimit.formatted(.byteCount(style: .memory)))
                         Peak Memory: \(deviceStat.gpuUsage.peakMemory.formatted(.byteCount(style: .memory)))
                         """
+                        )
                     )
-                )
+                }
             }
+            .navigationTitle("Moshi")
+#if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+#endif
         }
     }
 
