@@ -387,70 +387,36 @@ struct MimiModel: Model {
 }
 
 struct AsrModel: Model {
-    let moshi: LM
-    let vocab: [Int: String]
-    let mimi: Mimi
-    var prevTextToken: Int = 0
-    var cnt: Int = 0
-    let sampler: Sampler = Sampler(temp: 0.0)
-    let asrDelayInSteps: Int = 25
+    var asr: ASR
 
     init(_ ev: Evaluator) async throws {
         await ev.setModelInfo("building model")
         let url = Bundle.main.url(
             forResource: "asr-300m-f28fe6d5@450", withExtension: "safetensors")!
         let cfg = LmConfig.asr300m()
-        self.moshi = try await ev.makeMoshi(url, cfg)
-        self.mimi = try await ev.makeMimi(numCodebooks: 32)
+        let moshi = try await ev.makeMoshi(url, cfg)
+        let mimi = try await ev.makeMimi(numCodebooks: 32)
         await ev.setModelInfo("model built")
-        self.vocab = try await ev.loadVocab(cfg)
+        let vocab = try await ev.loadVocab(cfg)
         await ev.setModelInfo("warming up mimi")
-        self.mimi.warmup()
+        mimi.warmup()
         await ev.setModelInfo("warming up moshi")
-        self.moshi.warmup()
+        moshi.warmup()
         await ev.setModelInfo("done warming up")
+        self.asr = ASR(moshi, mimi, vocab: vocab)
     }
 
     mutating func reset() {
-        mimi.resetState()
-        moshi.resetCache()
-        prevTextToken = self.moshi.cfg.textInitToken()
-        cnt = 0
-        let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
-        let audioIds = (0..<16).map { _ in MLXArray([moshi.cfg.audioPaddingToken()]) }
-        let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
-        let (textToken, _) = sampler(logits: textLogits)
-        let textTokenI: Int = textToken[0].item()
-        print("sampled first", textTokenI)
-        prevTextToken = textTokenI
+        asr.reset()
     }
 
     mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
-        let codebooks = moshi.cfg.audioCodebooks
-        let codes = mimi.encodeStep(StreamArray(pcm))
-        if let codes = codes.asArray() {
-            let (_, _, steps) = codes.shape3
-            for step in 0..<steps {
-                var textIds: MLXArray? = nil
-                if asrDelayInSteps < cnt {
-                    textIds = MLXArray([prevTextToken]).reshaped([1, 1])
-                }
-                let audioIds = (0..<codebooks).map { codes[0..., $0, step].reshaped(1, 1) }
-                let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
-                let (textToken, _) = sampler(logits: textLogits)
-                let textTokenI: Int = textToken[0].item()
-                if textTokenI != 0 && textTokenI != 3 && asrDelayInSteps <= cnt {
-                    if var v = vocab[textTokenI] {
-                        v.replace("▁", with: " ")
-                        print(v, terminator: "")
-                        fflush(stdout)
-                        Task { @MainActor in
-                            ev.output += v
-                        }
-                    }
-                }
-                prevTextToken = textTokenI
-                cnt += 1
+        let tokens = asr.onPcmInput(pcm)
+        for v in tokens {
+            print(v, terminator: "")
+            fflush(stdout)
+            Task { @MainActor in
+                ev.output += v
             }
         }
         return true
