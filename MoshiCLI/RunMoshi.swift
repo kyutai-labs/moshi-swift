@@ -7,103 +7,6 @@ import Foundation
 import MLX
 import MLXNN
 import MoshiLib
-import os.signpost
-
-enum EventKind {
-    case beginStep
-    case endStep
-    case beginDepformer
-    case endDepformer
-    case beginDecode
-    case endDecode
-    case beginEncode
-    case endEncode
-}
-
-struct ChromeTraceEvent: Codable {
-    let name: String
-    let cat: String
-    let ph: String
-    let ts: Int
-    let pid: Int
-    let tid: Int
-}
-
-class PerfStats {
-    private let log: OSLog
-    private var events: [(CFAbsoluteTime, EventKind)] = []
-
-    init() {
-        self.log = OSLog(subsystem: "org.kyutai.moshi", category: "Performance")
-    }
-
-    func append(_ kind: EventKind) {
-        events.append((CFAbsoluteTimeGetCurrent(), kind))
-    }
-
-    func beginStep() {
-        os_signpost(.begin, log: log, name: "step")
-        append(.beginStep)
-    }
-
-    func endStep() {
-        os_signpost(.end, log: log, name: "step")
-        append(.endStep)
-    }
-
-    func beginDepformer() {
-        os_signpost(.begin, log: log, name: "depformer")
-        append(.beginDepformer)
-    }
-
-    func endDepformer() {
-        os_signpost(.end, log: log, name: "depformer")
-        append(.endDepformer)
-    }
-
-    func beginEncode() {
-        os_signpost(.begin, log: log, name: "encode")
-        append(.beginEncode)
-    }
-
-    func endEncode() {
-        os_signpost(.end, log: log, name: "encode")
-        append(.endEncode)
-    }
-
-    func beginDecode() {
-        os_signpost(.begin, log: log, name: "decode")
-        append(.beginDecode)
-    }
-
-    func endDecode() {
-        os_signpost(.end, log: log, name: "decode")
-        append(.endDecode)
-    }
-
-    func writeJSONTrace(url: URL) throws {
-        let encoder = JSONEncoder()
-        var traceEvents: [ChromeTraceEvent] = []
-        for (time, kind) in events {
-            let ts = Int((time - events[0].0) * 1e6)
-            let (name, ph) =
-                switch kind {
-                case .beginStep: ("step", "B")
-                case .endStep: ("step", "E")
-                case .beginEncode: ("encode", "B")
-                case .endEncode: ("encode", "E")
-                case .beginDepformer: ("depformer", "B")
-                case .endDepformer: ("depformer", "E")
-                case .beginDecode: ("decode", "B")
-                case .endDecode: ("decode", "E")
-                }
-            traceEvents.append(
-                ChromeTraceEvent(name: name, cat: "", ph: ph, ts: ts, pid: 42, tid: 1))
-        }
-        let jsonData = try encoder.encode(traceEvents)
-        try jsonData.write(to: url)
-    }
-}
 
 func makeMoshi(_ url: URL, _ cfg: LmConfig) throws -> LM {
     let weights = try loadArrays(url: url)
@@ -172,7 +75,7 @@ func runMoshiMic(_ url: URL, cfg: LmConfig) throws {
                 if let audioTokens = gen.lastAudioTokens() {
                     let pcmOut = mimi.decodeStep(StreamArray(audioTokens[0..., 0..., .newAxis]))
                     if let p = pcmOut.asArray() {
-                        player.send(p.asArray(Float.self))
+                        let _ = player.send(p.asArray(Float.self))
                     }
                 }
             }
@@ -204,16 +107,16 @@ func runMoshi(_ url: URL, cfg: LmConfig) throws {
     for start in stride(from: 0, to: pcm.count, by: chunkSize) {
         let end = min(start + chunkSize, pcm.count)
         let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
-        stats.beginEncode()
+        stats.onEvent(.beginEncode)
         let codes = mimi.encodeStep(StreamArray(pcmA))
         if let codes = codes.asArray() {
             eval(codes)
         }
-        stats.endEncode()
+        stats.onEvent(.endEncode)
         if let codes = codes.asArray() {
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
-                stats.beginStep()
+                stats.onEvent(.beginStep)
                 let textToken = gen.step(otherAudioTokens: codes[0..., 0..<8, step])
                 if let textToken = textToken {
                     let textTokenI: Int = textToken[0].item()
@@ -225,20 +128,20 @@ func runMoshi(_ url: URL, cfg: LmConfig) throws {
                         }
                     }
                 }
-                stats.endStep()
-                stats.beginDepformer()
+                stats.onEvent(.endStep)
+                stats.onEvent(.beginDepformer)
                 let audioTokens = gen.lastAudioTokens()
-                stats.endDepformer()
+                stats.onEvent(.endDepformer)
                 if let audioTokens = audioTokens {
                     let audioTokens = audioTokens[0..., 0..., .newAxis]
                     allAudioTokens.append(audioTokens)
-                    stats.beginDecode()
+                    stats.onEvent(.beginDecode)
                     let pcmOut = mimi.decodeStep(StreamArray(audioTokens))
                     if let p = pcmOut.asArray() {
                         let p: [Float] = p[0, 0].asArray(Float.self)
                         pcmOuts.append(p)
                     }
-                    stats.endDecode()
+                    stats.onEvent(.endDecode)
                 }
             }
         }
@@ -270,7 +173,6 @@ func runAsr(_ url: URL, _ cfg: LmConfig, asrDelayInSteps: Int) throws {
     let pcm = readAudioToPCMArray(fileURL: sampleURL)!
     let chunkSize = 1920
     asr.reset()
-    var cnt = 0
     for start in stride(from: 0, to: pcm.count, by: chunkSize) {
         let end = min(start + chunkSize, pcm.count)
         let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
