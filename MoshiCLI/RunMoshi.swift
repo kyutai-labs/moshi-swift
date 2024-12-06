@@ -97,7 +97,7 @@ func runMoshi(_ url: URL, cfg: LmConfig) throws {
     print("done warming up")
 
     let maxSteps = moshi.cfg.transformer.maxSeqLen
-    let gen = LMGen(moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
+    let gen = LMGen(moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler(), cb: stats)
 
     let sampleURL = try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
     let pcm = readAudioToPCMArray(fileURL: sampleURL)!
@@ -116,7 +116,6 @@ func runMoshi(_ url: URL, cfg: LmConfig) throws {
         if let codes = codes.asArray() {
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
-                stats.onEvent(.beginStep)
                 let textToken = gen.step(otherAudioTokens: codes[0..., 0..<8, step])
                 if let textToken = textToken {
                     let textTokenI: Int = textToken[0].item()
@@ -128,10 +127,7 @@ func runMoshi(_ url: URL, cfg: LmConfig) throws {
                         }
                     }
                 }
-                stats.onEvent(.endStep)
-                stats.onEvent(.beginDepformer)
                 let audioTokens = gen.lastAudioTokens()
-                stats.onEvent(.endDepformer)
                 if let audioTokens = audioTokens {
                     let audioTokens = audioTokens[0..., 0..., .newAxis]
                     allAudioTokens.append(audioTokens)
