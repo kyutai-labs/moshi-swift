@@ -31,7 +31,7 @@ struct ContentView: View {
                 Spacer()
                     .frame(height:20.0)
 
-                Picker("Model", selection: $selectedModel) {
+                Picker("Select Model", selection: $selectedModel) {
                     Text("Mimi").tag(ModelSelect.mimi)
                     Text("ASR").tag(ModelSelect.asr)
                     Text("Moshi").tag(ModelSelect.moshi)
@@ -195,13 +195,13 @@ class Evaluator {
         return model
     }
 
-    func makeMimi() async throws -> Mimi {
-        let cfg = MimiConfig.mimi_2024_07()
+    func makeMimi(numCodebooks: Int) async throws -> Mimi {
+        let cfg = MimiConfig.mimi_2024_07(numCodebooks: numCodebooks)
         let model = Mimi(cfg, bSize: 1)
 
         let url = try await downloadFromHub(
-            id: "kyutai/moshiko-mlx-q4",
-            filename: "tokenizer-e351c8d8-checkpoint125.safetensors")
+            id: "lmz/moshi-swift",
+            filename: "tokenizer-dbaa9758-checkpoint125.safetensors")
         let origWeights = try loadArrays(url: url)
         var weights: [String: MLXArray] = [:]
         for (var key, var weight) in origWeights {
@@ -340,7 +340,7 @@ struct MimiModel: Model {
 
     init(_ ev: Evaluator) async throws {
         await ev.setModelInfo("building model")
-        self.mimi = try await ev.makeMimi()
+        self.mimi = try await ev.makeMimi(numCodebooks: 16)
         await ev.setModelInfo("model built")
         let codeURL = try await ev.downloadFromHub(
             id: "lmz/moshi-swift", filename: "bria-codes.safetensors")
@@ -398,10 +398,10 @@ struct AsrModel: Model {
     init(_ ev: Evaluator) async throws {
         await ev.setModelInfo("building model")
         let url = Bundle.main.url(
-            forResource: "asr-300m-f28fe6d5@100", withExtension: "safetensors")!
+            forResource: "asr-300m-f28fe6d5@450", withExtension: "safetensors")!
         let cfg = LmConfig.asr300m()
         self.moshi = try await ev.makeMoshi(url, cfg)
-        self.mimi = try await ev.makeMimi()
+        self.mimi = try await ev.makeMimi(numCodebooks: 32)
         await ev.setModelInfo("model built")
         self.vocab = try await ev.loadVocab(cfg)
         await ev.setModelInfo("warming up mimi")
@@ -469,7 +469,7 @@ struct MoshiModel: Model {
             id: "kyutai/moshiko-mlx-q8", filename: "model.q8.safetensors")
         let cfg = LmConfig.moshi_2024_07()
         self.moshi = try await ev.makeMoshi(url, cfg)
-        self.mimi = try await ev.makeMimi()
+        self.mimi = try await ev.makeMimi(numCodebooks: 16)
         await ev.setModelInfo("model built")
         let maxSteps = cfg.transformer.maxSeqLen
         self.gen = LMGen(
