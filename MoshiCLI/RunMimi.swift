@@ -9,13 +9,13 @@ import MLX
 import MLXNN
 import MoshiLib
 
-func makeMimi() throws -> Mimi {
-    let cfg = MimiConfig.mimi_2024_07()
+func makeMimi(numCodebooks: Int) throws -> Mimi {
+    let cfg = MimiConfig.mimi_2024_07(numCodebooks: numCodebooks)
     let model = Mimi(cfg, bSize: 1)
 
     let url = try downloadFromHub(
-        id: "kyutai/moshiko-mlx-q4",
-        filename: "tokenizer-e351c8d8-checkpoint125.safetensors")
+        id: "lmz/moshi-swift",
+        filename: "tokenizer-dbaa9758-checkpoint125.safetensors")
     let origWeights = try loadArrays(url: url)
     var weights: [String: MLXArray] = [:]
     for (var key, var weight) in origWeights {
@@ -73,7 +73,7 @@ func makeMimi() throws -> Mimi {
 }
 
 func runMimi(streaming: Bool) throws {
-    let model = try makeMimi()
+    let model = try makeMimi(numCodebooks: 16)
     print("using device \(Device.defaultDevice().description)")
     let sampleURL = try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
     let pcm = readAudioToPCMArray(fileURL: sampleURL)!
@@ -139,7 +139,7 @@ func runMimi(streaming: Bool) throws {
 }
 
 public func runCodesToAudio(writeFile: Bool) throws {
-    let model = try makeMimi()
+    let model = try makeMimi(numCodebooks: 16)
     print("using device \(Device.defaultDevice().description)")
 
     let codes = try loadArrays(
@@ -178,7 +178,7 @@ public func runCodesToAudio(writeFile: Bool) throws {
 }
 
 public func runAudioToCodes() throws {
-    let model = try makeMimi()
+    let model = try makeMimi(numCodebooks: 16)
     print("using device \(Device.defaultDevice().description)")
 
     let microphoneCapture = MicrophoneCapture()
