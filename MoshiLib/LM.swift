@@ -258,7 +258,7 @@ public class LM: Module {
         let textLogits = textLinear(mainTransformerOut[0..., -1, 0...])
         let (textToken, _) = textSampler(logits: textLogits)
         textToken.eval()
-        cb.onEvent(.beginStep)
+        cb.onEvent(.endStep)
         if let depformer = self.depformer {
             cb.onEvent(.beginDepformer)
             let audioTokens = depformer.sample(
