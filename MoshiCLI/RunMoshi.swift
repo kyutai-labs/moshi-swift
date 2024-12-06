@@ -293,48 +293,18 @@ func runAsrMic(_ url: URL, _ cfg: LmConfig, asrDelayInSteps: Int) throws {
     print("warming up moshi")
     moshi.warmup()
     print("done warming up")
-
-    let sampler = Sampler(temp: 0.0)
-    let codebooks = moshi.cfg.audioCodebooks
-    var prevTextToken = moshi.cfg.textInitToken()
-    do {
-        let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
-        let audioIds = (0..<16).map { _ in MLXArray([moshi.cfg.audioPaddingToken()]) }
-        let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
-        let (textToken, _) = sampler(logits: textLogits)
-        let textTokenI: Int = textToken[0].item()
-        print("sampled first", textTokenI)
-        prevTextToken = textTokenI
-    }
+    var asr = ASR(moshi, mimi, vocab: vocab, asrDelayInSteps: asrDelayInSteps)
+    asr.reset()
 
     let microphoneCapture = MicrophoneCapture()
     microphoneCapture.startCapturing()
 
-    var cnt = 0
     while let pcm = microphoneCapture.receive() {
         let pcm = MLXArray(pcm)[.newAxis, .newAxis]
-        let codes = mimi.encodeStep(StreamArray(pcm))
-        if let codes = codes.asArray() {
-            let (_, _, steps) = codes.shape3
-            for step in 0..<steps {
-                var textIds: MLXArray? = nil
-                if asrDelayInSteps < cnt {
-                    textIds = MLXArray([prevTextToken]).reshaped([1, 1])
-                }
-                let audioIds = (0..<codebooks).map { codes[0..., $0, step].reshaped(1, 1) }
-                let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
-                let (textToken, _) = sampler(logits: textLogits)
-                let textTokenI: Int = textToken[0].item()
-                if textTokenI != 0 && textTokenI != 3 && asrDelayInSteps <= cnt {
-                    if var v = vocab[textTokenI] {
-                        v.replace("▁", with: " ")
-                        print(v, terminator: "")
-                        fflush(stdout)
-                    }
-                }
-                prevTextToken = textTokenI
-                cnt += 1
-            }
+        let tokens = asr.onPcmInput(pcm)
+        for token in tokens {
+            print(token, terminator: "")
+            fflush(stdout)
         }
     }
     microphoneCapture.stopCapturing()
