@@ -169,8 +169,8 @@ public struct LmConfig {
             textInVocabSize: 8001,
             textOutVocabSize: 8000,
             audioVocabSize: 2049,
-            audioCodebooks: 8,
-            audioDelays: [0, 0, 0, 0, 0, 0, 0, 0]
+            audioCodebooks: 32,
+            audioDelays: Array(repeating: 0, count: 32)
         )
     }
 
@@ -181,8 +181,8 @@ public struct LmConfig {
             textInVocabSize: 48001,
             textOutVocabSize: 48000,
             audioVocabSize: 2049,
-            audioCodebooks: 8,
-            audioDelays: [0, 0, 0, 0, 0, 0, 0, 0]
+            audioCodebooks: 32,
+            audioDelays: Array(repeating: 0, count: 32)
         )
     }
 }
