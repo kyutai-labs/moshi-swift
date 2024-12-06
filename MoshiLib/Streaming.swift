@@ -18,6 +18,10 @@ public class StreamArray {
         self.inner?.dim(dim) ?? 0
     }
 
+    public func eval() {
+        self.inner?.eval()
+    }
+
     public func cat2(_ rhs: StreamArray, axis: Int) -> StreamArray {
         switch (self.inner, rhs.inner) {
         case (.none, .none): StreamArray()

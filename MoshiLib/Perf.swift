@@ -1,7 +1,7 @@
 // Copyright (c) Kyutai, all rights reserved.
 // This source code is licensed under the license found in the
 // LICENSE file in the root directory of this source tree.
-
+import MLX
 import os.signpost
 
 public enum EventKind {
@@ -15,6 +15,23 @@ public enum EventKind {
     case endEncode
 }
 
+public protocol Callbacks {
+    func onReset()
+    func onEvent(_ eventKind: EventKind)
+    func onInputAudioTokens(_ codes: MLXArray)
+    func onOutputTextToken(_ token: Int)
+    func onOutputAudioTokens(_ codes: MLXArray)
+}
+
+public class EmptyCallbacks: Callbacks {
+    public init() {}
+    public func onReset() {}
+    public func onEvent(_ eventKind: EventKind) {}
+    public func onInputAudioTokens(_ codes: MLXArray) {}
+    public func onOutputTextToken(_ token: Int) {}
+    public func onOutputAudioTokens(_ codes: MLXArray) {}
+}
+
 public struct ChromeTraceEvent: Codable {
     let name: String
     let cat: String
@@ -24,7 +41,7 @@ public struct ChromeTraceEvent: Codable {
     let tid: Int
 }
 
-public class PerfStats {
+public class PerfStats: Callbacks {
     private let log: OSLog
     private var events: [(CFAbsoluteTime, EventKind)] = []
 
@@ -32,48 +49,42 @@ public class PerfStats {
         self.log = OSLog(subsystem: "org.kyutai.moshi", category: "Performance")
     }
 
-    public func append(_ kind: EventKind) {
+    func append(_ kind: EventKind) {
         events.append((CFAbsoluteTimeGetCurrent(), kind))
     }
 
-    public func beginStep() {
-        os_signpost(.begin, log: log, name: "step")
-        append(.beginStep)
+    public func onReset() {
     }
 
-    public func endStep() {
-        os_signpost(.end, log: log, name: "step")
-        append(.endStep)
+    public func onInputAudioTokens(_ codes: MLXArray) {
     }
 
-    public func beginDepformer() {
-        os_signpost(.begin, log: log, name: "depformer")
-        append(.beginDepformer)
+    public func onOutputTextToken(_ token: Int) {
     }
 
-    public func endDepformer() {
-        os_signpost(.end, log: log, name: "depformer")
-        append(.endDepformer)
+    public func onOutputAudioTokens(_ codes: MLXArray) {
     }
 
-    public func beginEncode() {
-        os_signpost(.begin, log: log, name: "encode")
-        append(.beginEncode)
-    }
-
-    public func endEncode() {
-        os_signpost(.end, log: log, name: "encode")
-        append(.endEncode)
-    }
-
-    public func beginDecode() {
-        os_signpost(.begin, log: log, name: "decode")
-        append(.beginDecode)
-    }
-
-    public func endDecode() {
-        os_signpost(.end, log: log, name: "decode")
-        append(.endDecode)
+    public func onEvent(_ kind: EventKind) {
+        switch kind {
+        case .beginStep:
+            os_signpost(.begin, log: log, name: "step")
+        case .endStep:
+            os_signpost(.end, log: log, name: "step")
+        case .beginDepformer:
+            os_signpost(.begin, log: log, name: "depformer")
+        case .endDepformer:
+            os_signpost(.end, log: log, name: "depformer")
+        case .beginEncode:
+            os_signpost(.begin, log: log, name: "encode")
+        case .endEncode:
+            os_signpost(.end, log: log, name: "encode")
+        case .beginDecode:
+            os_signpost(.begin, log: log, name: "decode")
+        case .endDecode:
+            os_signpost(.end, log: log, name: "decode")
+        }
+        append(kind)
     }
 
     public func writeJSONTrace(url: URL) throws {

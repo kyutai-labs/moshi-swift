@@ -107,16 +107,16 @@ func runMoshi(_ url: URL, cfg: LmConfig) throws {
     for start in stride(from: 0, to: pcm.count, by: chunkSize) {
         let end = min(start + chunkSize, pcm.count)
         let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
-        stats.beginEncode()
+        stats.onEvent(.beginEncode)
         let codes = mimi.encodeStep(StreamArray(pcmA))
         if let codes = codes.asArray() {
             eval(codes)
         }
-        stats.endEncode()
+        stats.onEvent(.endEncode)
         if let codes = codes.asArray() {
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
-                stats.beginStep()
+                stats.onEvent(.beginStep)
                 let textToken = gen.step(otherAudioTokens: codes[0..., 0..<8, step])
                 if let textToken = textToken {
                     let textTokenI: Int = textToken[0].item()
@@ -128,20 +128,20 @@ func runMoshi(_ url: URL, cfg: LmConfig) throws {
                         }
                     }
                 }
-                stats.endStep()
-                stats.beginDepformer()
+                stats.onEvent(.endStep)
+                stats.onEvent(.beginDepformer)
                 let audioTokens = gen.lastAudioTokens()
-                stats.endDepformer()
+                stats.onEvent(.endDepformer)
                 if let audioTokens = audioTokens {
                     let audioTokens = audioTokens[0..., 0..., .newAxis]
                     allAudioTokens.append(audioTokens)
-                    stats.beginDecode()
+                    stats.onEvent(.beginDecode)
                     let pcmOut = mimi.decodeStep(StreamArray(audioTokens))
                     if let p = pcmOut.asArray() {
                         let p: [Float] = p[0, 0].asArray(Float.self)
                         pcmOuts.append(p)
                     }
-                    stats.endDecode()
+                    stats.onEvent(.endDecode)
                 }
             }
         }
