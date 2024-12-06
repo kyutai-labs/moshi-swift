@@ -11,10 +11,12 @@ import MoshiLib
 import SwiftUI
 import Synchronization
 
-enum ModelSelect {
+enum ModelSelect: String, CaseIterable, Identifiable {
     case mimi
     case asr
     case moshi
+    
+    var id : Self { return self }
 }
 
 struct ContentView: View {
@@ -24,111 +26,22 @@ struct ContentView: View {
     @State private var displayStats = false
 
     var body: some View {
-        NavigationStack {
-            VStack {
-
-                Spacer()
-                    .frame(height: 20.0)
-
-                Picker("Select Model", selection: $selectedModel) {
-                    Text("Mimi").tag(ModelSelect.mimi)
-                    Text("ASR").tag(ModelSelect.asr)
-                    Text("Moshi").tag(ModelSelect.moshi)
-                }
-                .pickerStyle(.segmented)
-                .padding()
-
-                VStack {
-
-                    Text(model.modelInfo)
-                        .font(.system(size: 22.0, weight: .semibold))
-                        .padding()
-
-                    if model.progress != nil {
-                        ProgressView(model.progress!)
-                            .padding()
-                            .transition(.slide)
-                    }
-                    HStack {
-                        Spacer()
-                        Button(
-                            model.running ? "Stop" : "Run",
-                            action: withAnimation { model.running ? stopGenerate : generate }
-                        )
-                        .buttonStyle(BorderedButtonStyle())
-                        .padding()
-                        Spacer()
-                    }
-                }
-                .background(RoundedRectangle(cornerRadius: 15.0).fill(.blue.opacity(0.1)))
-                .padding()
-
-                ScrollView(.vertical) {
-                    ScrollViewReader { sp in
-                        Group {
-                            Text(model.output)
-                                .textSelection(.enabled)
-                        }
-                        .onChange(of: model.output) { _, _ in
-                            sp.scrollTo("bottom")
-                        }
-                        Spacer()
-                            .frame(width: 1, height: 1)
-                            .id("bottom")
-                    }
+        NavigationSplitView(sidebar: {
+            List {
+                ForEach(ModelSelect.allCases) { modelType in
+                    NavigationLink(modelType.rawValue, destination: { ModelView(model: $model, modelType: modelType, displayStats: $displayStats) })
                 }
             }
-            .padding()
-            .toolbar {
-                ToolbarItem {
-                    Button(
-                        action: { displayStats.toggle() },
-                        label: {
-                            Label(
-                                "Stats",
-                                systemImage: "info.circle.fill"
-                            )
-                        }
-                    )
-                    .popover(isPresented: $displayStats) {
-                        VStack {
-                            Text(
-                                "Memory Usage: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))"
-                            )
-                        }
-                        .padding()
-                    }
-                    .labelStyle(.titleAndIcon)
-                    .padding(.horizontal)
-                    .help(
-                        Text(
-                            """
-                            Active Memory: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))/\(GPU.memoryLimit.formatted(.byteCount(style: .memory)))
-                            Cache Memory: \(deviceStat.gpuUsage.cacheMemory.formatted(.byteCount(style: .memory)))/\(GPU.cacheLimit.formatted(.byteCount(style: .memory)))
-                            Peak Memory: \(deviceStat.gpuUsage.peakMemory.formatted(.byteCount(style: .memory)))
-                            """
-                        )
-                    )
-                }
-            }
-            .navigationTitle("Moshi")
-            #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-            #endif
-        }
+            .navigationTitle("Available Models")
+#if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+#endif
+            
+        }, detail: {
+            Text("Please choose a model type")
+        })
     }
 
-    private func generate() {
-        Task {
-            await model.generate(self.selectedModel)
-        }
-    }
-
-    private func stopGenerate() {
-        Task {
-            await model.stopGenerate()
-        }
-    }
 }
 
 #Preview {
