@@ -17,7 +17,6 @@ enum ModelSelect {
     case moshi
 }
 
-
 struct ContentView: View {
     @State var model = Evaluator()
     @State var selectedModel: ModelSelect = .mimi
@@ -29,7 +28,7 @@ struct ContentView: View {
             VStack {
 
                 Spacer()
-                    .frame(height:20.0)
+                    .frame(height: 20.0)
 
                 Picker("Select Model", selection: $selectedModel) {
                     Text("Mimi").tag(ModelSelect.mimi)
@@ -45,7 +44,6 @@ struct ContentView: View {
                         .font(.system(size: 22.0, weight: .semibold))
                         .padding()
 
-
                     if model.progress != nil {
                         ProgressView(model.progress!)
                             .padding()
@@ -53,10 +51,12 @@ struct ContentView: View {
                     }
                     HStack {
                         Spacer()
-                        Button(model.running ? "Stop" : "Run",
-                               action: withAnimation { model.running ? stopGenerate : generate } )
-                            .buttonStyle(BorderedButtonStyle())
-                            .padding()
+                        Button(
+                            model.running ? "Stop" : "Run",
+                            action: withAnimation { model.running ? stopGenerate : generate }
+                        )
+                        .buttonStyle(BorderedButtonStyle())
+                        .padding()
                         Spacer()
                     }
                 }
@@ -81,14 +81,20 @@ struct ContentView: View {
             .padding()
             .toolbar {
                 ToolbarItem {
-                    Button(action: {displayStats.toggle()}, label: {
-                        Label(
-                            "Stats",
-                            systemImage: "info.circle.fill"
-                        )})
+                    Button(
+                        action: { displayStats.toggle() },
+                        label: {
+                            Label(
+                                "Stats",
+                                systemImage: "info.circle.fill"
+                            )
+                        }
+                    )
                     .popover(isPresented: $displayStats) {
                         VStack {
-                            Text("Memory Usage: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))")
+                            Text(
+                                "Memory Usage: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))"
+                            )
                         }
                         .padding()
                     }
@@ -96,19 +102,19 @@ struct ContentView: View {
                     .padding(.horizontal)
                     .help(
                         Text(
-                        """
-                        Active Memory: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))/\(GPU.memoryLimit.formatted(.byteCount(style: .memory)))
-                        Cache Memory: \(deviceStat.gpuUsage.cacheMemory.formatted(.byteCount(style: .memory)))/\(GPU.cacheLimit.formatted(.byteCount(style: .memory)))
-                        Peak Memory: \(deviceStat.gpuUsage.peakMemory.formatted(.byteCount(style: .memory)))
-                        """
+                            """
+                            Active Memory: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))/\(GPU.memoryLimit.formatted(.byteCount(style: .memory)))
+                            Cache Memory: \(deviceStat.gpuUsage.cacheMemory.formatted(.byteCount(style: .memory)))/\(GPU.cacheLimit.formatted(.byteCount(style: .memory)))
+                            Peak Memory: \(deviceStat.gpuUsage.peakMemory.formatted(.byteCount(style: .memory)))
+                            """
                         )
                     )
                 }
             }
             .navigationTitle("Moshi")
-#if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-#endif
+            #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+            #endif
         }
     }
 
@@ -354,7 +360,8 @@ struct MimiModel: Model {
     }
 
     mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
-        let sampleText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+        let sampleText =
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
         let sampleWords = sampleText.components(separatedBy: " ")
         let micCodes = mimi.encodeStep(StreamArray(pcm))
         if let micCodes = micCodes.asArray() {
@@ -403,7 +410,8 @@ struct AsrModel: Model {
         await ev.setModelInfo("warming up moshi")
         moshi.warmup()
         await ev.setModelInfo("done warming up")
-        self.asr = ASR(moshi, mimi, vocab: vocab)
+        let cb = PerfStats()
+        self.asr = ASR(moshi, mimi, vocab: vocab, cb: cb)
     }
 
     mutating func reset() {
@@ -428,6 +436,7 @@ struct MoshiModel: Model {
     let vocab: [Int: String]
     let mimi: Mimi
     let gen: LMGen
+    let cb: Callbacks
 
     init(_ ev: Evaluator) async throws {
         await ev.setModelInfo("building model")
@@ -438,8 +447,9 @@ struct MoshiModel: Model {
         self.mimi = try await ev.makeMimi(numCodebooks: 16)
         await ev.setModelInfo("model built")
         let maxSteps = cfg.transformer.maxSeqLen
+        self.cb = PerfStats()
         self.gen = LMGen(
-            moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
+            moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler(), cb: self.cb)
         self.vocab = try await ev.loadVocab(cfg)
         await ev.setModelInfo("warming up mimi")
         self.mimi.warmup()
@@ -454,7 +464,10 @@ struct MoshiModel: Model {
     }
 
     mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
+        cb.onEvent(.beginEncode)
         let codes = mimi.encodeStep(StreamArray(pcm))
+        codes.eval()
+        cb.onEvent(.endEncode)
         if let codes = codes.asArray() {
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
@@ -474,7 +487,10 @@ struct MoshiModel: Model {
                     }
                 }
                 if let audioTokens = gen.lastAudioTokens() {
+                    cb.onEvent(.beginDecode)
                     let pcmOut = mimi.decodeStep(StreamArray(audioTokens[0..., 0..., .newAxis]))
+                    pcmOut.eval()
+                    cb.onEvent(.endDecode)
                     if let p = pcmOut.asArray() {
                         let _ = ap.send(p.asArray(Float.self))
                     }

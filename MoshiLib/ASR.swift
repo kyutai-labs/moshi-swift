@@ -62,6 +62,7 @@ public class ASR {
                 let audioIds = (0..<codebooks).map { codes[0..., $0, step].reshaped(1, 1) }
                 cb.onEvent(.beginStep)
                 let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
+                eval(textLogits)
                 cb.onEvent(.endStep)
                 let (textToken, _) = sampler(logits: textLogits)
                 let textTokenI: Int = textToken[0].item()
