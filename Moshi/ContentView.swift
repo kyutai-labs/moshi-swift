@@ -436,6 +436,7 @@ struct MoshiModel: Model {
     let vocab: [Int: String]
     let mimi: Mimi
     let gen: LMGen
+    let cb: Callbacks
 
     init(_ ev: Evaluator) async throws {
         await ev.setModelInfo("building model")
@@ -446,8 +447,9 @@ struct MoshiModel: Model {
         self.mimi = try await ev.makeMimi(numCodebooks: 16)
         await ev.setModelInfo("model built")
         let maxSteps = cfg.transformer.maxSeqLen
+        self.cb = PerfStats()
         self.gen = LMGen(
-            moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler())
+            moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler(), cb: self.cb)
         self.vocab = try await ev.loadVocab(cfg)
         await ev.setModelInfo("warming up mimi")
         self.mimi.warmup()
@@ -462,7 +464,10 @@ struct MoshiModel: Model {
     }
 
     mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
+        cb.onEvent(.beginEncode)
         let codes = mimi.encodeStep(StreamArray(pcm))
+        codes.eval()
+        cb.onEvent(.endEncode)
         if let codes = codes.asArray() {
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
@@ -482,7 +487,10 @@ struct MoshiModel: Model {
                     }
                 }
                 if let audioTokens = gen.lastAudioTokens() {
+                    cb.onEvent(.beginDecode)
                     let pcmOut = mimi.decodeStep(StreamArray(audioTokens[0..., 0..., .newAxis]))
+                    pcmOut.eval()
+                    cb.onEvent(.endDecode)
                     if let p = pcmOut.asArray() {
                         let _ = ap.send(p.asArray(Float.self))
                     }

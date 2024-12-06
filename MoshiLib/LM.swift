@@ -245,8 +245,10 @@ public class LM: Module {
         audioIds: [MLXArray],
         stepIdx: Int,
         textSampler: Sampler,
-        audioSampler: Sampler
+        audioSampler: Sampler,
+        cb: Callbacks
     ) -> (MLXArray, MLXArray) {
+        cb.onEvent(.beginStep)
         var x = textIds.flatMap { textEmb($0) }
         for (a, emb) in zip(audioIds, self.audioEmbs) {
             let e = emb(a)
@@ -255,12 +257,17 @@ public class LM: Module {
         let mainTransformerOut = outNorm(transformer(x!, cache: self.transformerCache))
         let textLogits = textLinear(mainTransformerOut[0..., -1, 0...])
         let (textToken, _) = textSampler(logits: textLogits)
+        textToken.eval()
+        cb.onEvent(.beginStep)
         if let depformer = self.depformer {
+            cb.onEvent(.beginDepformer)
             let audioTokens = depformer.sample(
                 mainTransformerOut: mainTransformerOut,
                 stepIdx: stepIdx,
                 sampler: audioSampler,
                 textToken: textToken)
+            audioTokens.eval()
+            cb.onEvent(.endDepformer)
             return (textToken, audioTokens)
         } else {
             return (textToken, MLXArray())
@@ -275,7 +282,7 @@ public class LM: Module {
         }
         let (textToken, audioTokens) = sample(
             textIds: textIds, audioIds: audioIds, stepIdx: 0, textSampler: sampler,
-            audioSampler: sampler)
+            audioSampler: sampler, cb: EmptyCallbacks())
         eval(textToken)
         eval(audioTokens)
         for c in self.transformerCache {
@@ -295,9 +302,10 @@ public class LMGen {
     let numCodebooks: Int
     let genSequence: MLXArray
     let mainCodebooks: Int
+    let cb: Callbacks
     var stepIdx: Int
 
-    public init(_ model: LM, maxSteps: Int, audioSampler: Sampler, textSampler: Sampler) {
+    public init(_ model: LM, maxSteps: Int, audioSampler: Sampler, textSampler: Sampler, cb: Callbacks = EmptyCallbacks()) {
         self.model = model
         self.maxSteps = maxSteps
         self.audioSampler = audioSampler
@@ -307,6 +315,7 @@ public class LMGen {
             [1, self.numCodebooks, maxSteps], values: MLXArray(ungeneratedToken, dtype: .int32))
         self.stepIdx = 0
         self.mainCodebooks = self.model.cfg.depformerSlices()
+        self.cb = cb
     }
 
     public func step(otherAudioTokens: MLXArray) -> MLXArray? {
@@ -344,7 +353,8 @@ public class LMGen {
             audioIds: audioIds,
             stepIdx: self.stepIdx,
             textSampler: self.textSampler,
-            audioSampler: self.audioSampler
+            audioSampler: self.audioSampler,
+            cb: self.cb
         )
         assert(tt.shape == [1])
         assert(at.shape == [self.model.cfg.depformerSlices()])
@@ -381,5 +391,6 @@ public class LMGen {
         self.stepIdx = 0
         self.model.resetCache()
         self.genSequence[0...] = MLXArray(ungeneratedToken)
+        cb.onReset()
     }
 }
