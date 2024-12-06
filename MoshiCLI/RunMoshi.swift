@@ -264,48 +264,20 @@ func runAsr(_ url: URL, _ cfg: LmConfig, asrDelayInSteps: Int) throws {
     print("warming up moshi")
     moshi.warmup()
     print("done warming up")
+    var asr = ASR(moshi, mimi, vocab: vocab, asrDelayInSteps: asrDelayInSteps)
 
     let sampleURL = try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
     let pcm = readAudioToPCMArray(fileURL: sampleURL)!
     let chunkSize = 1920
-    let sampler = Sampler(temp: 0.0)
-    let codebooks = moshi.cfg.audioCodebooks
-    var prevTextToken = moshi.cfg.textInitToken()
-    do {
-        let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
-        let audioIds = (0..<16).map { _ in MLXArray([moshi.cfg.audioPaddingToken()]) }
-        let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
-        let (textToken, _) = sampler(logits: textLogits)
-        let textTokenI: Int = textToken[0].item()
-        print("sampled first", textTokenI)
-        prevTextToken = textTokenI
-    }
+    asr.reset()
     var cnt = 0
     for start in stride(from: 0, to: pcm.count, by: chunkSize) {
         let end = min(start + chunkSize, pcm.count)
         let pcmA = MLXArray(pcm[start..<end])[.newAxis, .newAxis]
-        let codes = mimi.encodeStep(StreamArray(pcmA))
-        if let codes = codes.asArray() {
-            let (_, _, steps) = codes.shape3
-            for step in 0..<steps {
-                var textIds: MLXArray? = nil
-                if asrDelayInSteps < cnt {
-                    textIds = MLXArray([prevTextToken]).reshaped([1, 1])
-                }
-                let audioIds = (0..<codebooks).map { codes[0..., $0, step].reshaped(1, 1) }
-                let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
-                let (textToken, _) = sampler(logits: textLogits)
-                let textTokenI: Int = textToken[0].item()
-                if textTokenI != 0 && textTokenI != 3 && asrDelayInSteps <= cnt {
-                    if var v = vocab[textTokenI] {
-                        v.replace("▁", with: " ")
-                        print(v, terminator: "")
-                        fflush(stdout)
-                    }
-                }
-                prevTextToken = textTokenI
-                cnt += 1
-            }
+        let tokens = asr.onPcmInput(pcmA)
+        for token in tokens {
+            print(token, terminator: "")
+            fflush(stdout)
         }
     }
     print()
