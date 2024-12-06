@@ -134,7 +134,7 @@ func loadVocab(_ cfg: LmConfig) throws -> [Int: String] {
 }
 
 func runMoshiMic(_ url: URL, cfg: LmConfig) throws {
-    let mimi = try makeMimi()
+    let mimi = try makeMimi(numCodebooks: 16)
     let moshi = try makeMoshi(url, cfg)
     let vocab = try loadVocab(cfg)
     print("using device \(Device.defaultDevice().description)")
@@ -184,7 +184,7 @@ func runMoshiMic(_ url: URL, cfg: LmConfig) throws {
 
 func runMoshi(_ url: URL, cfg: LmConfig) throws {
     let stats = PerfStats()
-    let mimi = try makeMimi()
+    let mimi = try makeMimi(numCodebooks: 16)
     let moshi = try makeMoshi(url, cfg)
     let vocab = try loadVocab(cfg)
     print("warming up mimi")
@@ -255,7 +255,7 @@ func runMoshi(_ url: URL, cfg: LmConfig) throws {
 }
 
 func runAsr(_ url: URL, _ cfg: LmConfig, asrDelayInSteps: Int) throws {
-    let mimi = try makeMimi()
+    let mimi = try makeMimi(numCodebooks: 32)
     let moshi = try makeMoshi(url, cfg)
     let vocab = try loadVocab(cfg)
     print("using device \(Device.defaultDevice().description)")
@@ -312,7 +312,7 @@ func runAsr(_ url: URL, _ cfg: LmConfig, asrDelayInSteps: Int) throws {
 }
 
 func runAsrMic(_ url: URL, _ cfg: LmConfig, asrDelayInSteps: Int) throws {
-    let mimi = try makeMimi()
+    let mimi = try makeMimi(numCodebooks: 32)
     let moshi = try makeMoshi(url, cfg)
     let vocab = try loadVocab(cfg)
     print("using device \(Device.defaultDevice().description)")
