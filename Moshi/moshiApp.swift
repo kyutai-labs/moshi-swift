@@ -24,16 +24,16 @@ func requestMicrophoneAccess() {
 }
 
 func setDefaultToSpeaker() {
-#if os(iOS)
-    do {
-        let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
-        try audioSession.setActive(true)
-        try audioSession.overrideOutputAudioPort(.speaker)
-    } catch {
-        print("failed to configure audio session: \(error.localizedDescription)")
-    }
-#endif
+    #if os(iOS)
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
+            try audioSession.setActive(true)
+            try audioSession.overrideOutputAudioPort(.speaker)
+        } catch {
+            print("failed to configure audio session: \(error.localizedDescription)")
+        }
+    #endif
 }
 
 @main

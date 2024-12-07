@@ -97,7 +97,8 @@ func runMoshi(_ url: URL, cfg: LmConfig) throws {
     print("done warming up")
 
     let maxSteps = moshi.cfg.transformer.maxSeqLen
-    let gen = LMGen(moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler(), cb: stats)
+    let gen = LMGen(
+        moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler(), cb: stats)
 
     let sampleURL = try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
     let pcm = readAudioToPCMArray(fileURL: sampleURL)!

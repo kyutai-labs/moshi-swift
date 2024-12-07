@@ -15,8 +15,8 @@ enum ModelSelect: String, CaseIterable, Identifiable {
     case mimi
     case asr
     case moshi
-    
-    var id : Self { return self }
+
+    var id: Self { return self }
 }
 
 struct ContentView: View {
@@ -26,20 +26,28 @@ struct ContentView: View {
     @State private var displayStats = false
 
     var body: some View {
-        NavigationSplitView(sidebar: {
-            List {
-                ForEach(ModelSelect.allCases) { modelType in
-                    NavigationLink(modelType.rawValue, destination: { ModelView(model: $model, modelType: modelType, displayStats: $displayStats) })
+        NavigationSplitView(
+            sidebar: {
+                List {
+                    ForEach(ModelSelect.allCases) { modelType in
+                        NavigationLink(
+                            modelType.rawValue,
+                            destination: {
+                                ModelView(
+                                    model: $model, modelType: modelType, displayStats: $displayStats
+                                )
+                            })
+                    }
                 }
-            }
-            .navigationTitle("Available Models")
-#if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-#endif
-            
-        }, detail: {
-            Text("Please choose a model type")
-        })
+                .navigationTitle("Available Models")
+                #if os(iOS)
+                    .navigationBarTitleDisplayMode(.inline)
+                #endif
+
+            },
+            detail: {
+                Text("Please choose a model type")
+            })
     }
 
 }
@@ -221,7 +229,8 @@ class Evaluator {
                     }
                 }
                 print()
-                let traceURL = FileManager.default.temporaryDirectory.appendingPathComponent("moshi-trace.json")
+                let traceURL = FileManager.default.temporaryDirectory.appendingPathComponent(
+                    "moshi-trace.json")
                 try await self.cb.writeJSONTrace(url: traceURL)
                 microphoneCapture.stopCapturing()
                 return traceURL

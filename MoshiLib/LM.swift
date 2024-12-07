@@ -305,7 +305,10 @@ public class LMGen {
     let cb: Callbacks
     var stepIdx: Int
 
-    public init(_ model: LM, maxSteps: Int, audioSampler: Sampler, textSampler: Sampler, cb: Callbacks = EmptyCallbacks()) {
+    public init(
+        _ model: LM, maxSteps: Int, audioSampler: Sampler, textSampler: Sampler,
+        cb: Callbacks = EmptyCallbacks()
+    ) {
         self.model = model
         self.maxSteps = maxSteps
         self.audioSampler = audioSampler

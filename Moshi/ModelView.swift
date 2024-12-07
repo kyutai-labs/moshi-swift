@@ -5,13 +5,13 @@
 //  Created by Sebastien Mazare on 06/12/2024.
 //
 
-import SwiftUI
 import Hub
 import MLX
 import MLXNN
 import MLXRandom
 import Metal
 import MoshiLib
+import SwiftUI
 import Synchronization
 
 struct ModelView: View {
@@ -19,7 +19,7 @@ struct ModelView: View {
     let modelType: ModelSelect
     @Environment(DeviceStat.self) private var deviceStat
     @Binding var displayStats: Bool
-    
+
     var body: some View {
         let gridRow = { (name: String, ss: StatsSummary.Stats) -> GridRow in
             GridRow {
@@ -40,9 +40,9 @@ struct ModelView: View {
                     Text("cnt")
                 }
                 gridRow("MimiEnc", model.statsSummary.encode)
-                gridRow("MainLM", model.statsSummary.step) 
-                gridRow("DepFormer", model.statsSummary.depformer) 
-                gridRow("MimiDec", model.statsSummary.decode) 
+                gridRow("MainLM", model.statsSummary.step)
+                gridRow("DepFormer", model.statsSummary.depformer)
+                gridRow("MimiDec", model.statsSummary.decode)
             }
         return VStack {
             VStack {
@@ -132,7 +132,7 @@ struct ModelView: View {
                         .font(.callout)
                         .italic()
                     }
-                    .frame(minWidth:200.0)
+                    .frame(minWidth: 200.0)
                     .padding()
                 }
                 .labelStyle(.titleAndIcon)
@@ -144,7 +144,7 @@ struct ModelView: View {
             .navigationBarTitleDisplayMode(.inline)
         #endif
     }
-    
+
     private func generate() {
         Task {
             await model.generate(self.modelType)
