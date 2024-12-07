@@ -122,6 +122,12 @@ class FloatRingBuffer {
         self.buffer = [Float](repeating: 0, count: capacity)
     }
 
+    func currentCount() -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return count
+    }
+
     func write(_ values: [Float]) -> Bool {
         lock.lock()
         defer { lock.unlock() }
@@ -164,6 +170,10 @@ class AudioPlayer {
         audioEngine = AVAudioEngine()
         ringBuffer = FloatRingBuffer(capacity: Int(sampleRate * 4))
         self.sampleRate = sampleRate
+    }
+
+    func bufferedDuration() -> Double {
+        Double(ringBuffer.currentCount()) / sampleRate
     }
 
     func startPlaying() throws {

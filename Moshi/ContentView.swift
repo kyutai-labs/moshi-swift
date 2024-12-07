@@ -66,6 +66,7 @@ class Evaluator {
     var output = ""
     var progress: Progress? = nil
     var statsSummary: StatsSummary = StatsSummary()
+    var bufferedDuration: Double = 0.0
     let shouldStop: Atomic<Bool> = .init(false)
     let cb: PerfStats = PerfStats()
 
@@ -222,8 +223,11 @@ class Evaluator {
                         break
                     }
                     step += 1
-                    if step % 20 == 0 {
-                        Task { @MainActor in
+                    Task { @MainActor in
+                        if step % 5 == 0 {
+                            self.bufferedDuration = ap.bufferedDuration()
+                        }
+                        if step % 20 == 0 {
                             self.statsSummary = self.cb.getSummary(maxEvents: 100)
                         }
                     }
@@ -240,6 +244,8 @@ class Evaluator {
         } catch {
             self.modelInfo = "failed: \(error)"
         }
+        self.bufferedDuration = 0.0
+        self.statsSummary = StatsSummary()
         running = false
     }
 

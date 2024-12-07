@@ -57,9 +57,16 @@ struct ModelView: View {
                         .transition(.slide)
                 }
                 if model.running {
-                    Image(systemName: "microphone.circle")
-                        .font(.system(size: 40))
-                        .symbolEffect(.breathe)
+                    HStack {
+                        Image(systemName: "microphone.circle")
+                            .font(.system(size: 40))
+                            .symbolEffect(.breathe)
+                        Gauge(value: model.bufferedDuration * 1000.0, in: 0...500) {
+                        } currentValueLabel: {
+                            Text("\(Int(model.bufferedDuration * 1000.0))")
+                        }
+                        .gaugeStyle(.accessoryCircular)
+                    }
                 }
                 HStack {
                     Spacer()
