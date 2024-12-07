@@ -224,15 +224,16 @@ class Evaluator {
             return m
         }
         let m: ModelState
+        let cb = PerfStats()
         switch sm {
         case .moshi:
-            let model = try await MoshiModel(self)
+            let model = try await MoshiModel(self, cb)
             m = ModelState(model)
         case .mimi:
-            let model = try await MimiModel(self)
+            let model = try await MimiModel(self, cb)
             m = ModelState(model)
         case .asr:
-            let model = try await AsrModel(self)
+            let model = try await AsrModel(self, cb)
             m = ModelState(model)
         }
         self.loadState = .loaded(m, sm)
@@ -245,7 +246,7 @@ class Evaluator {
 }
 
 protocol Model {
-    init(_ ev: Evaluator) async throws
+    init(_ ev: Evaluator, _ cb: Callbacks) async throws
     mutating func reset()
     // If onMicrophonePcm returns true continue, otherwise break.
     mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool
@@ -256,8 +257,9 @@ struct MimiModel: Model {
     let codes: MLXArray
     var currentStep: Int
     let totalSteps: Int
+    let cb: Callbacks
 
-    init(_ ev: Evaluator) async throws {
+    init(_ ev: Evaluator, _ cb: Callbacks) async throws {
         await ev.setModelInfo("building model")
         self.mimi = try await ev.makeMimi(numCodebooks: 16)
         await ev.setModelInfo("model built")
@@ -266,6 +268,7 @@ struct MimiModel: Model {
         self.codes = try loadArrays(url: codeURL)["codes"]!
         self.currentStep = 0
         self.totalSteps = codes.dim(-1)
+        self.cb = cb
     }
 
     mutating func reset() {
@@ -276,7 +279,10 @@ struct MimiModel: Model {
         let sampleText =
             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
         let sampleWords = sampleText.components(separatedBy: " ")
+        self.cb.onEvent(.beginEncode)
         let micCodes = mimi.encodeStep(StreamArray(pcm))
+        micCodes.eval()
+        self.cb.onEvent(.endEncode)
         if let micCodes = micCodes.asArray() {
             // As of 2024-12-04, there is a memory leak if this eval is removed, this is
             // triggered even without the decoding and audio playing, only the line
@@ -289,7 +295,10 @@ struct MimiModel: Model {
                     break
                 }
                 let audioTokens = codes[.ellipsis, currentStep...currentStep]
+                self.cb.onEvent(.beginDecode)
                 let pcmOut = mimi.decodeStep(StreamArray(audioTokens))
+                pcmOut.eval()
+                self.cb.onEvent(.endDecode)
                 if let p = pcmOut.asArray() {
                     let _ = ap.send(p.asArray(Float.self))
                 }
@@ -309,7 +318,7 @@ struct MimiModel: Model {
 struct AsrModel: Model {
     var asr: ASR
 
-    init(_ ev: Evaluator) async throws {
+    init(_ ev: Evaluator, _ cb: Callbacks) async throws {
         await ev.setModelInfo("building model")
         let url = Bundle.main.url(
             forResource: "asr-300m-f28fe6d5@450", withExtension: "safetensors")!
@@ -323,7 +332,6 @@ struct AsrModel: Model {
         await ev.setModelInfo("warming up moshi")
         moshi.warmup()
         await ev.setModelInfo("done warming up")
-        let cb = PerfStats()
         self.asr = ASR(moshi, mimi, vocab: vocab, cb: cb)
     }
 
@@ -351,7 +359,7 @@ struct MoshiModel: Model {
     let gen: LMGen
     let cb: Callbacks
 
-    init(_ ev: Evaluator) async throws {
+    init(_ ev: Evaluator, _ cb: Callbacks) async throws {
         await ev.setModelInfo("building model")
         let url = try await ev.downloadFromHub(
             id: "kyutai/moshiko-mlx-q8", filename: "model.q8.safetensors")
@@ -360,7 +368,7 @@ struct MoshiModel: Model {
         self.mimi = try await ev.makeMimi(numCodebooks: 16)
         await ev.setModelInfo("model built")
         let maxSteps = cfg.transformer.maxSeqLen
-        self.cb = PerfStats()
+        self.cb = cb
         self.gen = LMGen(
             moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler(), cb: self.cb)
         self.vocab = try await ev.loadVocab(cfg)
