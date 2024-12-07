@@ -367,9 +367,18 @@ struct MoshiModel: Model {
 
     init(_ ev: Evaluator, _ cb: Callbacks) async throws {
         await ev.setModelInfo("building model")
-        let url = try await ev.downloadFromHub(
-            id: "kyutai/moshiko-mlx-q8", filename: "model.q8.safetensors")
-        let cfg = LmConfig.moshi_2024_07()
+        let url: URL
+        let cfg: LmConfig
+        let localURL = Bundle.main.url(
+            forResource: "moshi-1b-299feac8@50.q8", withExtension: "safetensors")
+        if localURL == nil {
+            url = try await ev.downloadFromHub(
+                id: "kyutai/moshiko-mlx-q8", filename: "model.q8.safetensors")
+            cfg = LmConfig.moshi_2024_07()
+        } else {
+            url = localURL!
+            cfg = LmConfig.moshi1b()
+        }
         self.moshi = try await ev.makeMoshi(url, cfg)
         self.mimi = try await ev.makeMimi(numCodebooks: 16)
         await ev.setModelInfo("model built")
