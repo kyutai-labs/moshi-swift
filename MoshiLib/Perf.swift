@@ -54,6 +54,7 @@ public class PerfStats: Callbacks {
     }
 
     public func onReset() {
+        events.removeAll()
     }
 
     public func onInputAudioTokens(_ codes: MLXArray) {

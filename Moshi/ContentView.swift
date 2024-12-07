@@ -53,10 +53,12 @@ struct ContentView: View {
 class Evaluator {
     var running = false
     var modelInfo = "...moshi..."
+    var traceURL: URL? = nil
     var stat = ""
     var output = ""
     var progress: Progress? = nil
     let shouldStop: Atomic<Bool> = .init(false)
+    let cb: PerfStats = PerfStats()
 
     enum LoadState {
         case idle
@@ -191,8 +193,9 @@ class Evaluator {
         running = true
         do {
             let model = try await load(sm)
-            try await model.perform { model in
+            let traceURL = try await model.perform { model in
                 model.reset()
+                await self.cb.onReset()
                 // TODO: Do not create a fresh audio input/output on each session.
                 let microphoneCapture = MicrophoneCapture()
                 microphoneCapture.startCapturing()
@@ -210,8 +213,12 @@ class Evaluator {
                     }
                 }
                 print()
+                let traceURL = FileManager.default.temporaryDirectory.appendingPathComponent("moshi-trace.json")
+                try await self.cb.writeJSONTrace(url: traceURL)
                 microphoneCapture.stopCapturing()
+                return traceURL
             }
+            self.traceURL = traceURL
             self.modelInfo = "finished generating"
         } catch {
             self.modelInfo = "failed: \(error)"
@@ -224,16 +231,15 @@ class Evaluator {
             return m
         }
         let m: ModelState
-        let cb = PerfStats()
         switch sm {
         case .moshi:
-            let model = try await MoshiModel(self, cb)
+            let model = try await MoshiModel(self, self.cb)
             m = ModelState(model)
         case .mimi:
-            let model = try await MimiModel(self, cb)
+            let model = try await MimiModel(self, self.cb)
             m = ModelState(model)
         case .asr:
-            let model = try await AsrModel(self, cb)
+            let model = try await AsrModel(self, self.cb)
             m = ModelState(model)
         }
         self.loadState = .loaded(m, sm)

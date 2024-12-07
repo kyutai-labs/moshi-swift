@@ -43,6 +43,12 @@ struct ModelView: View {
                     .padding()
                     Spacer()
                 }
+                if let traceURL = model.traceURL {
+                    ShareLink(item: traceURL) {
+                        Label("Share Trace", systemImage: "square.and.arrow.up")
+                    }
+                    .padding()
+                }
             }
             .background(RoundedRectangle(cornerRadius: 15.0).fill(.blue.opacity(0.1)))
             .padding()
