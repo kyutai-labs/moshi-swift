@@ -41,6 +41,31 @@ public struct ChromeTraceEvent: Codable {
     let tid: Int
 }
 
+public struct StatsSummary {
+    public struct Stats: Identifiable {
+        public var min: Float = Float.infinity
+        public var max: Float = 0.0
+        public var sum: Float = 0.0
+        public var cnt: Int = 0
+        public let id = UUID()
+
+        mutating func addValue(_ b: CFAbsoluteTime, _ e: CFAbsoluteTime) {
+            let v = Float(e - b)
+            self.min = Float.minimum(self.min, v)
+            self.max = Float.maximum(self.max, v)
+            self.sum += v
+            self.cnt += 1
+        }
+    }
+    public var encode: Stats = Stats()
+    public var decode: Stats = Stats()
+    public var step: Stats = Stats()
+    public var depformer: Stats = Stats()
+
+    public init() {
+    }
+}
+
 public class PerfStats: Callbacks {
     private let log: OSLog
     private var events: [(CFAbsoluteTime, EventKind)] = []
@@ -64,6 +89,49 @@ public class PerfStats: Callbacks {
     }
 
     public func onOutputAudioTokens(_ codes: MLXArray) {
+    }
+
+    public func getSummary(maxEvents: Int) -> StatsSummary {
+        let startIdx = max(0, self.events.count - maxEvents)
+        var summary = StatsSummary()
+        var lastBeginEncode: CFAbsoluteTime? = nil
+        var lastBeginDecode: CFAbsoluteTime? = nil
+        var lastBeginStep: CFAbsoluteTime? = nil
+        var lastBeginDepformer: CFAbsoluteTime? = nil
+        for event in self.events[startIdx...] {
+            let time = event.0
+            switch event.1 {
+            case .beginStep:
+                lastBeginStep = time
+            case .beginDecode:
+                lastBeginDecode = time
+            case .beginEncode:
+                lastBeginEncode = time
+            case .beginDepformer:
+                lastBeginDepformer = time
+            case .endStep:
+                if let b = lastBeginStep {
+                    lastBeginStep = nil
+                    summary.step.addValue(b, time)
+                }
+            case .endDecode:
+                if let b = lastBeginDecode {
+                    lastBeginDecode = nil
+                    summary.decode.addValue(b, time)
+                }
+            case .endEncode:
+                if let b = lastBeginEncode {
+                    lastBeginEncode = nil
+                    summary.encode.addValue(b, time)
+                }
+            case .endDepformer:
+                if let b = lastBeginDepformer {
+                    lastBeginDepformer = nil
+                    summary.depformer.addValue(b, time)
+                }
+            }
+        }
+        return summary
     }
 
     public func onEvent(_ kind: EventKind) {

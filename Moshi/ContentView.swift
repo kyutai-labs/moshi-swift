@@ -57,6 +57,7 @@ class Evaluator {
     var stat = ""
     var output = ""
     var progress: Progress? = nil
+    var statsSummary: StatsSummary = StatsSummary()
     let shouldStop: Atomic<Bool> = .init(false)
     let cb: PerfStats = PerfStats()
 
@@ -203,6 +204,7 @@ class Evaluator {
                 try ap.startPlaying()
                 print("started the audio loops")
 
+                var step = 0
                 while let pcm = microphoneCapture.receive() {
                     if shouldStop.load(ordering: .relaxed) {
                         break
@@ -210,6 +212,12 @@ class Evaluator {
                     let pcm = MLXArray(pcm)[.newAxis, .newAxis]
                     if !model.onMicrophonePcm(pcm, ap: ap, ev: self) {
                         break
+                    }
+                    step += 1
+                    if step % 20 == 0 {
+                        Task { @MainActor in
+                            self.statsSummary = self.cb.getSummary(maxEvents: 100)
+                        }
                     }
                 }
                 print()
@@ -295,6 +303,7 @@ struct MimiModel: Model {
             // below is needed:
             // let audioTokens = codes[.ellipsis, currentStep...currentStep]
             eval(micCodes)
+            self.cb.onInputAudioTokens(micCodes)
             let (_, _, steps) = micCodes.shape3
             for _ in 0..<steps {
                 if currentStep >= totalSteps {
@@ -302,6 +311,7 @@ struct MimiModel: Model {
                 }
                 let audioTokens = codes[.ellipsis, currentStep...currentStep]
                 self.cb.onEvent(.beginDecode)
+                self.cb.onOutputAudioTokens(audioTokens)
                 let pcmOut = mimi.decodeStep(StreamArray(audioTokens))
                 pcmOut.eval()
                 self.cb.onEvent(.endDecode)
@@ -405,12 +415,14 @@ struct MoshiModel: Model {
         codes.eval()
         cb.onEvent(.endEncode)
         if let codes = codes.asArray() {
+            self.cb.onInputAudioTokens(codes)
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
                 if let textToken = gen.step(
                     otherAudioTokens: codes[0..., 0..<8, step])
                 {
                     let textTokenI: Int = textToken[0].item()
+                    self.cb.onOutputTextToken(textTokenI)
                     if textTokenI != 0 && textTokenI != 3 {
                         if let v = vocab[textTokenI] {
                             let v = v.replacing("▁", with: " ")
@@ -423,6 +435,7 @@ struct MoshiModel: Model {
                     }
                 }
                 if let audioTokens = gen.lastAudioTokens() {
+                    self.cb.onOutputAudioTokens(audioTokens)
                     cb.onEvent(.beginDecode)
                     let pcmOut = mimi.decodeStep(StreamArray(audioTokens[0..., 0..., .newAxis]))
                     pcmOut.eval()

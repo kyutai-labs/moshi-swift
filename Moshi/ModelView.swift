@@ -21,7 +21,30 @@ struct ModelView: View {
     @Binding var displayStats: Bool
     
     var body: some View {
-        VStack {
+        let gridRow = { (name: String, ss: StatsSummary.Stats) -> GridRow in
+            GridRow {
+                Text(name)
+                Text((1000 * ss.sum / Float(ss.cnt)).rounded(), format: .number)
+                Text((1000 * ss.min).rounded(), format: .number)
+                Text((1000 * ss.max).rounded(), format: .number)
+                Text(ss.cnt, format: .number)
+            }
+        }
+        let summaryTable: Grid =
+            Grid {
+                GridRow {
+                    Text("step")
+                    Text("avg (ms)")
+                    Text("min (ms)")
+                    Text("max (ms)")
+                    Text("cnt")
+                }
+                gridRow("MimiEnc", model.statsSummary.encode)
+                gridRow("MainLM", model.statsSummary.step) 
+                gridRow("DepFormer", model.statsSummary.depformer) 
+                gridRow("MimiDec", model.statsSummary.decode) 
+            }
+        return VStack {
             VStack {
 
                 Text(model.modelInfo)
@@ -77,6 +100,7 @@ struct ModelView: View {
             .frame(maxWidth: .infinity)
             .background(RoundedRectangle(cornerRadius: 15.0).fill(.blue.opacity(0.1)))
             .padding()
+            summaryTable
         }
         .toolbar {
             ToolbarItem {
