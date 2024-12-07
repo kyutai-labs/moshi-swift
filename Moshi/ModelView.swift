@@ -33,6 +33,11 @@ struct ModelView: View {
                         .padding()
                         .transition(.slide)
                 }
+                if model.running {
+                    Image(systemName: "microphone.circle")
+                        .font(.system(size: 40))
+                        .symbolEffect(.breathe)
+                }
                 HStack {
                     Spacer()
                     Button(
