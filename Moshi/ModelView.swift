@@ -63,6 +63,8 @@ struct ModelView: View {
                     Group {
                         Text(model.output)
                             .textSelection(.enabled)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .onChange(of: model.output) { _, _ in
                         sp.scrollTo("bottom")
@@ -72,6 +74,8 @@ struct ModelView: View {
                         .id("bottom")
                 }
             }
+            .frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 15.0).fill(.blue.opacity(0.1)))
             .padding()
         }
         .toolbar {
