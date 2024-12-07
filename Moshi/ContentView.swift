@@ -225,7 +225,7 @@ class Evaluator {
                     step += 1
                     Task { @MainActor in
                         if step % 5 == 0 {
-                            self.bufferedDuration = ap.bufferedDuration()
+                            self.bufferedDuration = ap.bufferedDuration() + microphoneCapture.bufferedDuration()
                         }
                         if step % 20 == 0 {
                             self.statsSummary = self.cb.getSummary(maxEvents: 100)

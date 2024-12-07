@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import Synchronization
 
 class ThreadSafeChannel<T> {
     private var buffer: [T] = []
@@ -26,6 +27,7 @@ class ThreadSafeChannel<T> {
 class MicrophoneCapture {
     private let audioEngine: AVAudioEngine
     private let channel: ThreadSafeChannel<[Float]>
+    private let bufferedLen: Atomic<Int> = .init(0)
 
     init() {
         audioEngine = AVAudioEngine()
@@ -94,6 +96,7 @@ class MicrophoneCapture {
         let pcmData = Array(UnsafeBufferPointer(start: channelData[0], count: frameCount)).map {
             $0
         }
+        bufferedLen.add(pcmData.count, ordering: .sequentiallyConsistent)
         channel.send(pcmData)
     }
 
@@ -104,7 +107,15 @@ class MicrophoneCapture {
     }
 
     func receive() -> [Float]? {
-        channel.receive()
+        let data = channel.receive()
+        if let data = data {
+            bufferedLen.subtract(data.count, ordering: .sequentiallyConsistent)
+        }
+        return data
+    }
+
+    func bufferedDuration() -> Double {
+        return Double(bufferedLen.load(ordering: .sequentiallyConsistent)) / 24000.0
     }
 }
 
