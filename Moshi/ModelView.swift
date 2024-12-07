@@ -78,9 +78,14 @@ struct ModelView: View {
                     .padding()
                     Spacer()
                 }
-                if let traceURL = model.traceURL {
-                    ShareLink(item: traceURL) {
-                        Label("Share Trace", systemImage: "square.and.arrow.up")
+                if let (traceURL, codesURL) = model.urls {
+                    HStack {
+                        ShareLink(item: traceURL) {
+                            Label("Trace", systemImage: "square.and.arrow.up")
+                        }
+                        ShareLink(item: codesURL) {
+                            Label("Codes", systemImage: "square.and.arrow.up")
+                        }
                     }
                     .padding()
                 }

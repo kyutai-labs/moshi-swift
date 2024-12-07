@@ -69,6 +69,9 @@ public struct StatsSummary {
 public class PerfStats: Callbacks {
     private let log: OSLog
     private var events: [(CFAbsoluteTime, EventKind)] = []
+    private var inputAudioTokens: [MLXArray] = []
+    private var outputAudioTokens: [MLXArray] = []
+    private var textTokens: [Int] = []
 
     public init() {
         self.log = OSLog(subsystem: "org.kyutai.moshi", category: "Performance")
@@ -80,15 +83,23 @@ public class PerfStats: Callbacks {
 
     public func onReset() {
         events.removeAll()
+        inputAudioTokens.removeAll()
+        outputAudioTokens.removeAll()
+        textTokens.removeAll()
     }
 
     public func onInputAudioTokens(_ codes: MLXArray) {
+        codes.eval()
+        inputAudioTokens.append(codes)
     }
 
     public func onOutputTextToken(_ token: Int) {
+        textTokens.append(token)
     }
 
     public func onOutputAudioTokens(_ codes: MLXArray) {
+        codes.eval()
+        outputAudioTokens.append(codes)
     }
 
     public func getSummary(maxEvents: Int) -> StatsSummary {
@@ -177,5 +188,31 @@ public class PerfStats: Callbacks {
         }
         let jsonData = try encoder.encode(traceEvents)
         try jsonData.write(to: url)
+    }
+
+    public func allInputAudioTokens() -> MLXArray? {
+        inputAudioTokens.isEmpty ? nil : concatenated(inputAudioTokens, axis: 2)
+    }
+
+    public func allOutputAudioTokens() -> MLXArray? {
+        outputAudioTokens.isEmpty ? nil : concatenated(outputAudioTokens, axis: 2)
+    }
+
+    public func allTextTokens() -> MLXArray? {
+        textTokens.isEmpty ? nil : MLXArray(textTokens)
+    }
+
+    public func writeCodes(url: URL) throws {
+        var arrays: [String: MLXArray] = [:]
+        if let a = allInputAudioTokens() {
+            arrays["input_audio_tokens"] = a
+        }
+        if let a = allOutputAudioTokens() {
+            arrays["output_audio_tokens"] = a
+        }
+        if let a = allTextTokens() {
+            arrays["text_tokens"] = a
+        }
+        try save(arrays: arrays, url: url)
     }
 }

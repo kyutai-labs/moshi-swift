@@ -61,7 +61,7 @@ struct ContentView: View {
 class Evaluator {
     var running = false
     var modelInfo = "...moshi..."
-    var traceURL: URL? = nil
+    var urls: (URL, URL)? = nil
     var stat = ""
     var output = ""
     var progress: Progress? = nil
@@ -203,7 +203,7 @@ class Evaluator {
         running = true
         do {
             let model = try await load(sm)
-            let traceURL = try await model.perform { model in
+            let urls = try await model.perform { model in
                 model.reset()
                 await self.cb.onReset()
                 // TODO: Do not create a fresh audio input/output on each session.
@@ -236,10 +236,13 @@ class Evaluator {
                 let traceURL = FileManager.default.temporaryDirectory.appendingPathComponent(
                     "moshi-trace.json")
                 try await self.cb.writeJSONTrace(url: traceURL)
+                let codesURL = FileManager.default.temporaryDirectory.appendingPathComponent(
+                    "moshi-codes.safetensors")
+                try await self.cb.writeCodes(url: codesURL)
                 microphoneCapture.stopCapturing()
-                return traceURL
+                return (traceURL, codesURL)
             }
-            self.traceURL = traceURL
+            self.urls = urls
             self.modelInfo = "finished generating"
         } catch {
             self.modelInfo = "failed: \(error)"
@@ -450,9 +453,10 @@ struct MoshiModel: Model {
                     }
                 }
                 if let audioTokens = gen.lastAudioTokens() {
+                    let audioTokens = audioTokens[0..., 0..., .newAxis]
                     self.cb.onOutputAudioTokens(audioTokens)
                     cb.onEvent(.beginDecode)
-                    let pcmOut = mimi.decodeStep(StreamArray(audioTokens[0..., 0..., .newAxis]))
+                    let pcmOut = mimi.decodeStep(StreamArray(audioTokens))
                     pcmOut.eval()
                     cb.onEvent(.endDecode)
                     if let p = pcmOut.asArray() {
