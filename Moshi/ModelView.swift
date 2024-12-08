@@ -24,25 +24,40 @@ struct ModelView: View {
         let gridRow = { (name: String, ss: StatsSummary.Stats) -> GridRow in
             GridRow {
                 Text(name)
+                    .font(.system(.body, design: .monospaced))
                 Text((1000 * ss.sum / Float(ss.cnt)).rounded(), format: .number)
+                    .font(.system(.body, design: .monospaced))
                 Text((1000 * ss.min).rounded(), format: .number)
+                    .font(.system(.body, design: .monospaced))
                 Text((1000 * ss.max).rounded(), format: .number)
+                    .font(.system(.body, design: .monospaced))
                 Text(ss.cnt, format: .number)
+                    .font(.system(.body, design: .monospaced))
             }
         }
         let summaryTable: Grid =
             Grid {
                 GridRow {
                     Text("step")
-                    Text("avg (ms)")
-                    Text("min (ms)")
-                    Text("max (ms)")
+                        .font(.system(.body, design: .monospaced))
+                        .bold()
+                    Text("avg")
+                        .font(.system(.body, design: .monospaced))
+                        .bold()
+                    Text("min")
+                        .font(.system(.body, design: .monospaced))
+                        .bold()
+                    Text("max")
+                        .font(.system(.body, design: .monospaced))
+                        .bold()
                     Text("cnt")
+                        .font(.system(.body, design: .monospaced))
+                        .bold()
                 }
-                gridRow("MimiEnc", model.statsSummary.encode)
-                gridRow("MainLM", model.statsSummary.step)
-                gridRow("DepFormer", model.statsSummary.depformer)
-                gridRow("MimiDec", model.statsSummary.decode)
+                gridRow("Enc", model.statsSummary.encode)
+                gridRow("Main", model.statsSummary.step)
+                gridRow("DepF", model.statsSummary.depformer)
+                gridRow("Dec", model.statsSummary.decode)
             }
         return VStack {
             VStack {
