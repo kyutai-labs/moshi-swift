@@ -102,9 +102,11 @@ struct ModelView: View {
                         ShareLink(item: traceURL) {
                             Label("Trace", systemImage: "square.and.arrow.up")
                         }
+                        .buttonStyle(BorderedButtonStyle())
                         ShareLink(item: codesURL) {
                             Label("Codes", systemImage: "square.and.arrow.up")
                         }
+                        .buttonStyle(BorderedButtonStyle())
                     }
                     .padding()
                 }
@@ -129,9 +131,12 @@ struct ModelView: View {
                 }
             }
             .frame(maxWidth: .infinity)
+            .padding()
             .background(RoundedRectangle(cornerRadius: 15.0).fill(.blue.opacity(0.1)))
             .padding()
+            
             summaryTable
+                .padding()
         }
         .toolbar {
             ToolbarItem {
