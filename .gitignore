@@ -15,5 +15,6 @@ model*.safetensors
 mimi-*.safetensors
 moshi-*.safetensors
 codes-*.safetensors
+asr-*.safetensors
 moshi-out.wav
 moshi-trace.json

@@ -76,7 +76,7 @@ case "mimi-streaming":
 case "asr-file":
     let url: URL
     if args.count <= 2 {
-        url = URL(fileURLWithPath: "asr-1b-8d2516b9@150.safetensors")
+        url = URL(fileURLWithPath: "asr-300m-f28fe6d5@450.safetensors")
     } else {
         url = URL(fileURLWithPath: args[2])
     }
@@ -92,7 +92,7 @@ case "asr-file":
 case "asr":
     let url: URL
     if args.count <= 2 {
-        url = URL(fileURLWithPath: "asr-1b-8d2516b9@150.safetensors")
+        url = URL(fileURLWithPath: "asr-300m-f28fe6d5@450.safetensors")
     } else {
         url = URL(fileURLWithPath: args[2])
     }
