@@ -11,6 +11,14 @@ import MoshiLib
 import SwiftUI
 import Synchronization
 
+struct CustomError: Error {
+    let message: String
+
+    init(_ s: String) {
+        message = s
+    }
+}
+
 enum ModelSelect: String, CaseIterable, Identifiable {
     case mimi
     case asr
@@ -78,9 +86,13 @@ class Evaluator {
     var loadState = LoadState.idle
 
     func downloadFromHub(id: String, filename: String) async throws -> URL {
-        let downloadDir = FileManager.default.urls(
-            for: .applicationSupportDirectory, in: .userDomainMask
-        ).first!
+        guard
+            let downloadDir = FileManager.default.urls(
+                for: .applicationSupportDirectory, in: .userDomainMask
+            ).first
+        else {
+            throw CustomError("cannot find the app support directory")
+        }
         let api = HubApi(downloadBase: downloadDir)
         let repo = Hub.Repo(id: id)
         let targetURL = api.localRepoLocation(repo).appending(path: filename)
@@ -223,12 +235,13 @@ class Evaluator {
                         break
                     }
                     step += 1
+                    let currentStep = step
                     Task { @MainActor in
-                        if step % 5 == 0 {
+                        if currentStep % 5 == 0 {
                             self.bufferedDuration =
                                 ap.bufferedDuration() + microphoneCapture.bufferedDuration()
                         }
-                        if step % 20 == 0 {
+                        if currentStep % 20 == 0 {
                             self.statsSummary = self.cb.getSummary(maxEvents: 100)
                         }
                     }
@@ -298,7 +311,10 @@ struct MimiModel: Model {
         await ev.setModelInfo("model built")
         let codeURL = try await ev.downloadFromHub(
             id: "lmz/moshi-swift", filename: "bria-codes.safetensors")
-        self.codes = try loadArrays(url: codeURL)["codes"]!
+        guard let codes = try loadArrays(url: codeURL)["codes"] else {
+            throw CustomError("no codes in \(codeURL)")
+        }
+        self.codes = codes
         self.currentStep = 0
         self.totalSteps = codes.dim(-1)
         self.cb = cb
@@ -355,8 +371,12 @@ struct AsrModel: Model {
 
     init(_ ev: Evaluator, _ cb: Callbacks) async throws {
         await ev.setModelInfo("building model")
-        let url = Bundle.main.url(
-            forResource: "asr-300m-f28fe6d5@450", withExtension: "safetensors")!
+        guard
+            let url = Bundle.main.url(
+                forResource: "asr-300m-f28fe6d5@450", withExtension: "safetensors")
+        else {
+            throw CustomError("cannot retrieve local model")
+        }
         let cfg = LmConfig.asr300m()
         let moshi = try await ev.makeMoshi(url, cfg)
         let mimi = try await ev.makeMimi(numCodebooks: 32)
@@ -400,12 +420,13 @@ struct MoshiModel: Model {
         let cfg: LmConfig
         let localURL = Bundle.main.url(
             forResource: "moshi-1b-299feac8@50.q8", withExtension: "safetensors")
-        if localURL == nil {
+        switch localURL {
+        case .none:
             url = try await ev.downloadFromHub(
                 id: "kyutai/moshiko-mlx-q8", filename: "model.q8.safetensors")
             cfg = LmConfig.moshi_2024_07()
-        } else {
-            url = localURL!
+        case .some(let localURL):
+            url = localURL
             cfg = LmConfig.moshi1b()
         }
         self.moshi = try await ev.makeMoshi(url, cfg)
