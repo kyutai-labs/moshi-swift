@@ -70,8 +70,8 @@ struct ModelView: View {
                     .font(.system(size: 22.0, weight: .semibold))
                     .padding()
 
-                if model.progress != nil {
-                    ProgressView(model.progress!)
+                if let progress = model.progress {
+                    ProgressView(progress)
                         .padding()
                         .transition(.slide)
                 }
