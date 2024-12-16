@@ -116,6 +116,7 @@ class Evaluator {
             case 48000: "tokenizer_spm_48k_multi6_2.json"
             case 32000: "tokenizer_spm_32k_3.json"
             case 8000: "tokenizer_spm_8k_0.json"
+            case 4000: "test_en_4000.json"
             case let other: fatalError("unexpected text vocab size \(other)")
             }
         let fileURL = try await downloadFromHub(id: "lmz/moshi-swift", filename: filename)

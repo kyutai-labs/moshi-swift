@@ -185,6 +185,18 @@ public struct LmConfig {
             audioDelays: Array(repeating: 0, count: 32)
         )
     }
+
+    public static func asr2b() -> LmConfig {
+        return LmConfig(
+            transformer: TransformerConfig.v1_2b(),
+            depformer: nil,
+            textInVocabSize: 4001,
+            textOutVocabSize: 4000,
+            audioVocabSize: 2049,
+            audioCodebooks: 32,
+            audioDelays: Array(repeating: 0, count: 32)
+        )
+    }
 }
 
 public class LM: Module {

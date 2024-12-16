@@ -86,6 +86,7 @@ case "asr-file":
         case .none: fatalError("no out_norm.weight tensor in \(url)")
         case .some([1024]): LmConfig.asr300m()
         case .some([2048]): LmConfig.asr1b()
+        case .some([2560]): LmConfig.asr2b()
         case .some(let s): fatalError("unexpected shape for out_norm.weight \(s)")
         }
     try runAsr(url, cfg, asrDelayInSteps: 25)
@@ -102,6 +103,7 @@ case "asr":
         case .none: fatalError("no out_norm.weight tensor in \(url)")
         case .some([1024]): LmConfig.asr300m()
         case .some([2048]): LmConfig.asr1b()
+        case .some([2560]): LmConfig.asr2b()
         case .some(let s): fatalError("unexpected shape for out_norm.weight \(s)")
         }
     try runAsrMic(url, cfg, asrDelayInSteps: 25)
