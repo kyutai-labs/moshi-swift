@@ -127,7 +127,8 @@ public struct LmConfig {
         )
     }
 
-    public static func moshi1b() -> LmConfig {
+    public static func moshi1b(audioDelay: Int) -> LmConfig {
+        let audioDelays = [0] + Array(repeating: audioDelay, count: 7)
         let depformer = DepformerConfig(
             transformer:
                 TransformerConfig(
@@ -158,7 +159,43 @@ public struct LmConfig {
             textOutVocabSize: 48000,
             audioVocabSize: 2049,
             audioCodebooks: 16,
-            audioDelays: [0, 2, 2, 2, 2, 2, 2, 2, 0, 2, 2, 2, 2, 2, 2, 2]
+            audioDelays: audioDelays + audioDelays
+        )
+    }
+
+    public static func moshi2b(audioDelay: Int) -> LmConfig {
+        let audioDelays = [0] + Array(repeating: audioDelay, count: 7)
+        let depformer = DepformerConfig(
+            transformer:
+                TransformerConfig(
+                    dModel: 1024,
+                    numHeads: 16,
+                    numLayers: 6,
+                    causal: true,
+                    normFirst: true,
+                    biasFF: false,
+                    biasAttn: false,
+                    layerScale: nil,
+                    positionalEmbedding: .none,
+                    useConvBias: false,
+                    gating: true,
+                    norm: .rmsNorm,
+                    context: 8,
+                    maxPeriod: 10000,
+                    maxSeqLen: 4096,
+                    kvRepeat: 1,
+                    dimFeedForward: 1024 * 4,
+                    convLayout: false,
+                    useRotatingKVCache: false
+                ), numSlices: 8)
+        return LmConfig(
+            transformer: TransformerConfig.v1_2b(),
+            depformer: depformer,
+            textInVocabSize: 48001,
+            textOutVocabSize: 48000,
+            audioVocabSize: 2049,
+            audioCodebooks: 16,
+            audioDelays: audioDelays + audioDelays
         )
     }
 

@@ -428,7 +428,7 @@ struct MoshiModel: Model {
             cfg = LmConfig.moshi_2024_07()
         case .some(let localURL):
             url = localURL
-            cfg = LmConfig.moshi1b()
+            cfg = LmConfig.moshi1b(audioDelay: 1)
         }
         self.moshi = try await ev.makeMoshi(url, cfg)
         self.mimi = try await ev.makeMimi(numCodebooks: 16)

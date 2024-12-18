@@ -42,7 +42,7 @@ case "moshi-1b":
     } else {
         url = URL(fileURLWithPath: args[2])
     }
-    try runMoshiMic(url, cfg: LmConfig.moshi1b())
+    try runMoshiMic(url, cfg: LmConfig.moshi1b(audioDelay: 1))
 case "moshi-7b":
     let url: URL
     if args.count <= 2 {
@@ -59,7 +59,7 @@ case "moshi-1b-file":
     } else {
         url = URL(fileURLWithPath: args[2])
     }
-    try runMoshi(url, cfg: LmConfig.moshi1b())
+    try runMoshi(url, cfg: LmConfig.moshi1b(audioDelay: 1))
 case "moshi-7b-file":
     let url: URL
     if args.count <= 2 {
