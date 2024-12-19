@@ -9,7 +9,8 @@ import MLXNN
 import MoshiLib
 
 func makeMoshi(_ url: URL, _ cfg: LmConfig) throws -> LM {
-    let weights = try loadArrays(url: url)
+    var weights = try loadArrays(url: url)
+    weights = weights.mapValues { $0.asType(Float.self) }
     let parameters = ModuleParameters.unflattened(weights)
     let model = LM(cfg, bSize: 1)
     if url.lastPathComponent.hasSuffix(".q4.safetensors") {
@@ -86,7 +87,7 @@ func runMoshiMic(_ url: URL, cfg: LmConfig) throws {
     microphoneCapture.stopCapturing()
 }
 
-func runMoshi(_ url: URL, cfg: LmConfig, audioFile: URL?) throws {
+func runMoshi(_ url: URL, cfg: LmConfig, audioFile: URL?, channel: Int = 0) throws {
     let stats = PerfStats()
     let mimi = try makeMimi(numCodebooks: 16)
     let moshi = try makeMoshi(url, cfg)
@@ -106,7 +107,7 @@ func runMoshi(_ url: URL, cfg: LmConfig, audioFile: URL?) throws {
         case .none: try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
         case .some(let url): url
         }
-    let pcm = readAudioToPCMArray(fileURL: sampleURL)!
+    let pcm = readAudioToPCMArray(fileURL: sampleURL, channel: channel)!
     let chunkSize = 1920
     var pcmOuts: [[Float]] = []
     var allAudioTokens: [MLXArray] = []

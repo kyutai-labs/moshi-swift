@@ -63,7 +63,7 @@ case "moshi-1b-file":
     if args.count > 3 {
         audioFile = URL(fileURLWithPath: args[3])
     }
-    try runMoshi(url, cfg: LmConfig.moshi1b(audioDelay: 2), audioFile: audioFile)
+    try runMoshi(url, cfg: LmConfig.moshi1b(audioDelay: 2), audioFile: audioFile, channel: 1)
 case "moshi-7b-file":
     let url: URL
     if args.count <= 2 {
@@ -78,9 +78,21 @@ case "moshi-7b-file":
     }
     try runMoshi(url, cfg: LmConfig.moshi_2024_07(), audioFile: audioFile)
 case "mimi":
-    try runMimi(streaming: false)
+    let audioFile: URL?
+    if args.count <= 2 {
+        audioFile = nil
+    } else {
+        audioFile = URL(fileURLWithPath: args[2])
+    }
+    try runMimi(streaming: false, audioFile: audioFile, channel: 1)
 case "mimi-streaming":
-    try runMimi(streaming: true)
+    let audioFile: URL?
+    if args.count <= 2 {
+        audioFile = nil
+    } else {
+        audioFile = URL(fileURLWithPath: args[2])
+    }
+    try runMimi(streaming: true, audioFile: audioFile, channel: 1)
 case "asr-file":
     let url: URL
     if args.count <= 2 {

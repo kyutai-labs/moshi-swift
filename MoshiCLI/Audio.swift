@@ -5,7 +5,7 @@
 import AVFoundation
 import Foundation
 
-func readAudioToPCMArray(fileURL: URL) -> [Float]? {
+func readAudioToPCMArray(fileURL: URL, channel: Int = 0) -> [Float]? {
     do {
         let audioFile = try AVAudioFile(forReading: fileURL)
         let format = audioFile.processingFormat
@@ -23,7 +23,7 @@ func readAudioToPCMArray(fileURL: URL) -> [Float]? {
         let _ = Int(format.channelCount)
         let frameLength = Int(buffer.frameLength)
         var pcmData: [Float] = []
-        let samples = channelData[0]
+        let samples = channelData[channel]
         pcmData.append(contentsOf: UnsafeBufferPointer(start: samples, count: frameLength))
         return pcmData
     } catch {
