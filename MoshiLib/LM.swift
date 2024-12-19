@@ -247,6 +247,7 @@ public class LM: Module {
     @ModuleInfo(key: "out_norm") var outNorm: UnaryLayer
     @ModuleInfo(key: "text_linear") var textLinear: Linear
     @ModuleInfo(key: "audio_embs") var audioEmbs: [Embedding]
+    let codes: MLXArray
 
     public init(_ cfg: LmConfig, bSize: Int) {
         self.cfg = cfg
@@ -266,6 +267,9 @@ public class LM: Module {
             Embedding(embeddingCount: cfg.audioVocabSize, dimensions: cfg.transformer.dModel)
         }
         self.transformerCache = self._transformer.wrappedValue.makeCache(bSize: bSize)
+        let arr = try! loadArrays(
+            url: URL(fileURLWithPath: "/Users/laurent/tmp/out_0_0.safetensors"))
+        self.codes = arr["codes"]!
     }
 
     public func callAsFunction(_ x: MLXArray) -> MLXArray {
@@ -299,6 +303,11 @@ public class LM: Module {
         audioSampler: Sampler,
         cb: Callbacks
     ) -> (MLXArray, MLXArray) {
+        let textIds: MLXArray? = (stepIdx == 0 ? MLXArray([48000]) : self.codes[0, stepIdx - 1])
+            .reshaped([1, 1])
+        let audioIds = (0..<16).map {
+            (stepIdx == 0 ? MLXArray([2048]) : self.codes[1 + $0, stepIdx - 1]).reshaped([1, 1])
+        }
         cb.onEvent(.beginStep)
         var x = textIds.flatMap { textEmb($0) }
         for (a, emb) in zip(audioIds, self.audioEmbs) {
@@ -311,9 +320,11 @@ public class LM: Module {
         let mainTransformerOut = outNorm(transformer(x!, cache: self.transformerCache))
         let textLogits = textLinear(mainTransformerOut[0..., -1, 0...])
         print("LOGITS", textLogits)
-        let (textToken, _) = textSampler(logits: textLogits)
+        var (textToken, _) = textSampler(logits: textLogits)
         textToken.eval()
         print("TT", textToken)
+        textToken = self.codes[0, stepIdx + 1]
+        print("TF-TT", textToken)
         cb.onEvent(.endStep)
         if let depformer = self.depformer {
             cb.onEvent(.beginDepformer)
