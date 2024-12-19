@@ -423,7 +423,7 @@ struct MoshiModel: Model {
         let url: URL
         let cfg: LmConfig
         let localURL = Bundle.main.url(
-            forResource: "moshi-1b-299feac8@50.q8", withExtension: "safetensors")
+            forResource: "moshi-1b-04a0c213@50.q8", withExtension: "safetensors")
         switch localURL {
         case .none:
             url = try await ev.downloadFromHub(
@@ -431,7 +431,7 @@ struct MoshiModel: Model {
             cfg = LmConfig.moshi_2024_07()
         case .some(let localURL):
             url = localURL
-            cfg = LmConfig.moshi1b(audioDelay: 1)
+            cfg = LmConfig.moshi1b(audioDelay: 2)
         }
         self.moshi = try await ev.makeMoshi(url, cfg)
         self.mimi = try await ev.makeMimi(numCodebooks: 16)
