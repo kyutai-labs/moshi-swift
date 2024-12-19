@@ -46,7 +46,8 @@ class Depformer: Module {
     }
 
     public func sample(
-        mainTransformerOut: MLXArray, stepIdx: Int, sampler: Sampler, textToken: MLXArray
+        mainTransformerOut: MLXArray, stepIdx: Int, sampler: Sampler, textToken: MLXArray,
+        codes: MLXArray
     ) -> MLXArray {
         for c in self.transformerCache {
             c.reset()
@@ -63,8 +64,10 @@ class Depformer: Module {
             let logits = slice.linearOut(xs)
             print("AL", logits)
             (lastToken, _) = sampler(logits: logits[0])
+            lastToken = codes[sliceIdx].reshaped([1])
             tokens.append(lastToken)
         }
+        print(tokens)
         return concatenated(tokens)
     }
 }
@@ -331,7 +334,8 @@ public class LM: Module {
                 mainTransformerOut: mainTransformerOut,
                 stepIdx: stepIdx,
                 sampler: audioSampler,
-                textToken: textToken)
+                textToken: textToken,
+                codes: self.codes[0, 1..., stepIdx + 1])
             audioTokens.eval()
             print("AT", audioTokens)
             cb.onEvent(.endDepformer)
