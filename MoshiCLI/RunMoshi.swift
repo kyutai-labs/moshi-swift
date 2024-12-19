@@ -9,8 +9,7 @@ import MLXNN
 import MoshiLib
 
 func makeMoshi(_ url: URL, _ cfg: LmConfig) throws -> LM {
-    var weights = try loadArrays(url: url)
-    weights = weights.mapValues { $0.asType(Float.self) }
+    let weights = try loadArrays(url: url)
     let parameters = ModuleParameters.unflattened(weights)
     let model = LM(cfg, bSize: 1)
     if url.lastPathComponent.hasSuffix(".q4.safetensors") {
