@@ -268,7 +268,7 @@ public class LM: Module {
         }
         self.transformerCache = self._transformer.wrappedValue.makeCache(bSize: bSize)
         let arr = try! loadArrays(
-            url: URL(fileURLWithPath: "/Users/laurent/tmp/out_0_0.safetensors"))
+            url: URL(fileURLWithPath: "/Users/laurent/tmp/codes.safetensors"))
         self.codes = arr["codes"]!
     }
 
@@ -303,10 +303,9 @@ public class LM: Module {
         audioSampler: Sampler,
         cb: Callbacks
     ) -> (MLXArray, MLXArray) {
-        let textIds: MLXArray? = (stepIdx == 0 ? MLXArray([48000]) : self.codes[0, stepIdx - 1])
-            .reshaped([1, 1])
+        let textIds: MLXArray? = self.codes[0, 0, stepIdx].reshaped([1, 1])
         let audioIds = (0..<16).map {
-            (stepIdx == 0 ? MLXArray([2048]) : self.codes[1 + $0, stepIdx - 1]).reshaped([1, 1])
+            self.codes[0, 1 + $0, stepIdx].reshaped([1, 1])
         }
         cb.onEvent(.beginStep)
         var x = textIds.flatMap { textEmb($0) }
@@ -323,7 +322,7 @@ public class LM: Module {
         var (textToken, _) = textSampler(logits: textLogits)
         textToken.eval()
         print("TT", textToken)
-        textToken = self.codes[0, stepIdx + 1]
+        textToken = self.codes[0, 0, stepIdx + 1]
         print("TF-TT", textToken)
         cb.onEvent(.endStep)
         if let depformer = self.depformer {
