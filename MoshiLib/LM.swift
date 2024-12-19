@@ -57,9 +57,11 @@ class Depformer: Module {
             if sliceIdx != 0 && stepIdx < self.cfg.audioDelays[sliceIdx - 1] {
                 lastToken = MLXArray([self.cfg.audioPaddingToken()])
             }
+            print("LT", lastToken)
             var xs = slice.linearIn(mainTransformerOut) + slice.emb(lastToken)
             xs = slice.transformer(xs, cache: self.transformerCache)
             let logits = slice.linearOut(xs)
+            print("AL", logits)
             (lastToken, _) = sampler(logits: logits[0])
             tokens.append(lastToken)
         }
@@ -303,10 +305,15 @@ public class LM: Module {
             let e = emb(a)
             x = x.map { $0 + e } ?? e
         }
+        print("STEP", stepIdx)
+        print("SEQ", textIds)
+        print("AIDS", audioIds.map { $0.item(Int.self) })
         let mainTransformerOut = outNorm(transformer(x!, cache: self.transformerCache))
         let textLogits = textLinear(mainTransformerOut[0..., -1, 0...])
+        print("LOGITS", textLogits)
         let (textToken, _) = textSampler(logits: textLogits)
         textToken.eval()
+        print("TT", textToken)
         cb.onEvent(.endStep)
         if let depformer = self.depformer {
             cb.onEvent(.beginDepformer)
@@ -316,6 +323,7 @@ public class LM: Module {
                 sampler: audioSampler,
                 textToken: textToken)
             audioTokens.eval()
+            print("AT", audioTokens)
             cb.onEvent(.endDepformer)
             return (textToken, audioTokens)
         } else {
