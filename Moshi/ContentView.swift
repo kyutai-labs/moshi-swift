@@ -271,6 +271,9 @@ class Evaluator {
         if case .loaded(let m, sm) = self.loadState {
             return m
         }
+        // Start by reseting loadState so as to release the memory used
+        // by the currently loaded model if any.
+        self.loadState = .idle
         let m: ModelState
         switch sm {
         case .moshi:
