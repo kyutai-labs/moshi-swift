@@ -7,8 +7,14 @@ import MLXFast
 import MLXNN
 import MLXRandom
 
-func minPSampling(logits: MLXArray, minP: Float, minTokensToKeep: Int, temp: Float) -> MLXArray {
-    fatalError("TODO: min-p sampling is not implemented yet")
+func topKSampling(logits: MLXArray, topK: Int, temp: Float) -> MLXArray {
+    let c = logits.dim(-1)
+    let sortedIndices = argSort(logits, axis: -1)
+    let sortedLogits = logits[0..., sortedIndices.squeezed(axis: 0)]
+    let topLogits = `where`(MLXArray(0..<c) .>= c - topK, sortedLogits, -Float.infinity)
+    let sortedToken = categorical(topLogits / temp)
+    let token = sortedIndices.squeezed(axis: 0)[sortedToken]
+    return token
 }
 
 func topPSampling(logits: MLXArray, topP: Float, temp: Float) -> MLXArray {
@@ -18,7 +24,8 @@ func topPSampling(logits: MLXArray, topP: Float, temp: Float) -> MLXArray {
     let cumulativeProbs = cumsum(sortedProbs, axis: -1)
     let topProbs = `where`(cumulativeProbs .> 1 - topP, sortedProbs, 0)
     let sortedToken = categorical(topProbs.log())
-    return sortedIndices.squeezed(axis: 0)[sortedToken]
+    let token = sortedIndices.squeezed(axis: 0)[sortedToken]
+    return token
 }
 
 func categoricalSampling(logits: MLXArray, temp: Float) -> MLXArray {
@@ -28,8 +35,7 @@ func categoricalSampling(logits: MLXArray, temp: Float) -> MLXArray {
 public class Sampler {
     let temp: Float
     let topP: Float = 0.95
-    let minP: Float = 0.0
-    let minTokensToKeep: Int = 1
+    let topK: Int = 0
 
     public init(temp: Float = 0.8) {
         self.temp = temp
@@ -45,10 +51,8 @@ public class Sampler {
             tokens = logProbs.argMax(axis: -1)
         } else if self.topP > 0.0 && self.topP < 1.0 {
             tokens = topPSampling(logits: logits, topP: self.topP, temp: self.temp)
-        } else if self.minP != 0.0 {
-            tokens = minPSampling(
-                logits: logits, minP: self.minP, minTokensToKeep: self.minTokensToKeep,
-                temp: self.temp)
+        } else if self.topK != 0 {
+            tokens = topKSampling(logits: logits, topK: self.topK, temp: self.temp)
         } else {
             tokens = categoricalSampling(logits: logits, temp: self.temp)
         }
