@@ -6,6 +6,8 @@ final class DeviceStat: @unchecked Sendable {
 
     @MainActor
     var gpuUsage = GPU.snapshot()
+    @MainActor
+    var thermalState: ProcessInfo.ThermalState = .nominal
 
     private let initialGPUSnapshot = GPU.snapshot()
     private var timer: Timer?
@@ -22,8 +24,10 @@ final class DeviceStat: @unchecked Sendable {
 
     private func updateGPUUsages() {
         let gpuSnapshotDelta = initialGPUSnapshot.delta(GPU.snapshot())
+        let thermalState = ProcessInfo.processInfo.thermalState
         DispatchQueue.main.async { [weak self] in
             self?.gpuUsage = gpuSnapshotDelta
+            self?.thermalState = thermalState
         }
     }
 

@@ -63,6 +63,13 @@ struct ModelView: View {
                 gridRow("DepF", model.statsSummary.depformer)
                 gridRow("Dec", model.statsSummary.decode)
             }
+        let thermalState = switch deviceStat.thermalState {
+        case .critical: "critical"
+        case .fair: "fair"
+        case .nominal: "nominal"
+        case .serious: "serious"
+        case let other: "\(other)"
+        }
         return VStack {
             VStack {
 
@@ -137,6 +144,7 @@ struct ModelView: View {
             
             summaryTable
                 .padding()
+            Text("thermal: \(thermalState)")
         }
         .toolbar {
             ToolbarItem {
