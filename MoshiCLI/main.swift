@@ -38,11 +38,11 @@ switch args[1] {
 case "moshi-1b":
     let url: URL
     if args.count <= 2 {
-        url = URL(fileURLWithPath: "moshi-1b-299feac8@50.safetensors")
+        url = URL(fileURLWithPath: "moshi-1b-04a0c213@50.safetensors")
     } else {
         url = URL(fileURLWithPath: args[2])
     }
-    try runMoshiMic(url, cfg: LmConfig.moshi1b(audioDelay: 1))
+    try runMoshiMic(url, cfg: LmConfig.moshi1b(audioDelay: 2))
 case "moshi-7b":
     let url: URL
     if args.count <= 2 {
@@ -55,11 +55,15 @@ case "moshi-7b":
 case "moshi-1b-file":
     let url: URL
     if args.count <= 2 {
-        url = URL(fileURLWithPath: "moshi-1b-299feac8@50.safetensors")
+        url = URL(fileURLWithPath: "moshi-1b-04a0c213@50.safetensors")
     } else {
         url = URL(fileURLWithPath: args[2])
     }
-    try runMoshi(url, cfg: LmConfig.moshi1b(audioDelay: 1))
+    var audioFile: URL? = nil
+    if args.count > 3 {
+        audioFile = URL(fileURLWithPath: args[3])
+    }
+    try runMoshi(url, cfg: LmConfig.moshi1b(audioDelay: 2), audioFile: audioFile, channel: 1)
 case "moshi-7b-file":
     let url: URL
     if args.count <= 2 {
@@ -68,11 +72,27 @@ case "moshi-7b-file":
     } else {
         url = URL(fileURLWithPath: args[2])
     }
-    try runMoshi(url, cfg: LmConfig.moshi_2024_07())
+    var audioFile: URL? = nil
+    if args.count > 3 {
+        audioFile = URL(fileURLWithPath: args[3])
+    }
+    try runMoshi(url, cfg: LmConfig.moshi_2024_07(), audioFile: audioFile)
 case "mimi":
-    try runMimi(streaming: false)
+    let audioFile: URL?
+    if args.count <= 2 {
+        audioFile = nil
+    } else {
+        audioFile = URL(fileURLWithPath: args[2])
+    }
+    try runMimi(streaming: false, audioFile: audioFile, channel: 1)
 case "mimi-streaming":
-    try runMimi(streaming: true)
+    let audioFile: URL?
+    if args.count <= 2 {
+        audioFile = nil
+    } else {
+        audioFile = URL(fileURLWithPath: args[2])
+    }
+    try runMimi(streaming: true, audioFile: audioFile, channel: 1)
 case "asr-file":
     let url: URL
     if args.count <= 2 {

@@ -36,13 +36,17 @@ class MicrophoneCapture {
 
     func startCapturing() {
         let inputNode = audioEngine.inputNode
+        do { 
+            try inputNode.setVoiceProcessingEnabled(true)
+        } catch {
+            print("could not set voice processing on the input node")
+        }
 
         // Desired format: 1 channel (mono), 24kHz, Float32
         let desiredSampleRate: Double = 24000.0
         let desiredChannelCount: AVAudioChannelCount = 1
 
         let inputFormat = inputNode.inputFormat(forBus: 0)
-
         // Create a custom audio format with the desired settings
         guard
             let mono24kHzFormat = AVAudioFormat(
@@ -203,6 +207,7 @@ class AudioPlayer {
             }
             return noErr
         }
+
         let af = sourceNode.inputFormat(forBus: 0)
         print("playing audio-format \(af)")
         audioEngine.attach(sourceNode)

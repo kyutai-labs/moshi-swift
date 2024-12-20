@@ -86,7 +86,7 @@ func runMoshiMic(_ url: URL, cfg: LmConfig) throws {
     microphoneCapture.stopCapturing()
 }
 
-func runMoshi(_ url: URL, cfg: LmConfig) throws {
+func runMoshi(_ url: URL, cfg: LmConfig, audioFile: URL?, channel: Int = 0) throws {
     let stats = PerfStats()
     let mimi = try makeMimi(numCodebooks: 16)
     let moshi = try makeMoshi(url, cfg)
@@ -101,8 +101,12 @@ func runMoshi(_ url: URL, cfg: LmConfig) throws {
     let gen = LMGen(
         moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler(), cb: stats)
 
-    let sampleURL = try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
-    let pcm = readAudioToPCMArray(fileURL: sampleURL)!
+    let sampleURL =
+        switch audioFile {
+        case .none: try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
+        case .some(let url): url
+        }
+    let pcm = readAudioToPCMArray(fileURL: sampleURL, channel: channel)!
     let chunkSize = 1920
     var pcmOuts: [[Float]] = []
     var allAudioTokens: [MLXArray] = []
