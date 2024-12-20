@@ -159,7 +159,8 @@ func runMoshi(_ url: URL, cfg: LmConfig, audioFile: URL?, channel: Int = 0) thro
         outputURL: URL(fileURLWithPath: "moshi-out.wav"))
 }
 
-func runAsr(_ url: URL, _ cfg: LmConfig, asrDelayInSteps: Int) throws {
+func runAsr(_ url: URL, _ cfg: LmConfig, audioFile: URL?, channel: Int, asrDelayInSteps: Int) throws
+{
     let mimi = try makeMimi(numCodebooks: 32)
     let moshi = try makeMoshi(url, cfg)
     let vocab = try loadVocab(cfg)
@@ -169,10 +170,15 @@ func runAsr(_ url: URL, _ cfg: LmConfig, asrDelayInSteps: Int) throws {
     print("warming up moshi")
     moshi.warmup()
     print("done warming up")
-    var asr = ASR(moshi, mimi, vocab: vocab, asrDelayInSteps: asrDelayInSteps)
+    let asr = ASR(moshi, mimi, vocab: vocab, asrDelayInSteps: asrDelayInSteps)
+    asr.reset()
 
-    let sampleURL = try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
-    let pcm = readAudioToPCMArray(fileURL: sampleURL)!
+    let sampleURL =
+        switch audioFile {
+        case .none: try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
+        case .some(let url): url
+        }
+    let pcm = readAudioToPCMArray(fileURL: sampleURL, channel: channel)!
     let chunkSize = 1920
     asr.reset()
     for start in stride(from: 0, to: pcm.count, by: chunkSize) {
@@ -197,7 +203,7 @@ func runAsrMic(_ url: URL, _ cfg: LmConfig, asrDelayInSteps: Int) throws {
     print("warming up moshi")
     moshi.warmup()
     print("done warming up")
-    var asr = ASR(moshi, mimi, vocab: vocab, asrDelayInSteps: asrDelayInSteps)
+    let asr = ASR(moshi, mimi, vocab: vocab, asrDelayInSteps: asrDelayInSteps)
     asr.reset()
 
     let microphoneCapture = MicrophoneCapture()
