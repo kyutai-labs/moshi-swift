@@ -36,11 +36,15 @@ class MicrophoneCapture {
 
     func startCapturing() {
         let inputNode = audioEngine.inputNode
-        do { 
-            try inputNode.setVoiceProcessingEnabled(true)
-        } catch {
-            print("could not set voice processing on the input node")
-        }
+        // Setting the voice mode on macos causes weird hangs of the microphone
+        // so we discard it for now.
+        #if os(iOS)
+            do {
+                try inputNode.setVoiceProcessingEnabled(true)
+            } catch {
+                print("could not set voice processing on the input node")
+            }
+        #endif
 
         // Desired format: 1 channel (mono), 24kHz, Float32
         let desiredSampleRate: Double = 24000.0
