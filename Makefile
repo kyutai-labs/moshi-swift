@@ -1,12 +1,16 @@
-.PHONY: format run-1b run-asr
+.PHONY: format run-1b run-asr build
 
 format:
 	swift-format format --in-place --recursive .
 
-run-1b:
-	xcodebuild -scheme moshi-cli -derivedDataPath ./build
-	./build/Build/Products/Release/MoshiCLI moshi-1b-file
+run-1b: build
+	./build/Build/Products/Release/MoshiCLI run
 
-run-asr:
+run-asr: build
+	./build/Build/Products/Release/MoshiCLI run-asr
+
+run-mimi: build
+	./build/Build/Products/Release/MoshiCLI run-mimi
+
+build:
 	xcodebuild -scheme moshi-cli -derivedDataPath ./build
-	./build/Build/Products/Release/MoshiCLI asr-file
