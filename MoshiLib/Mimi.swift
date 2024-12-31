@@ -40,7 +40,7 @@ public struct MimiConfig {
             kvRepeat: 1,
             dimFeedForward: 2048,
             convLayout: true,
-            useRotatingKVCache: false
+            useRotatingKVCache: true
         )
         return MimiConfig(
             channels: 1,
