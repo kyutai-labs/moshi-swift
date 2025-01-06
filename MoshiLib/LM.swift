@@ -203,8 +203,8 @@ public struct LmConfig {
         return LmConfig(
             transformer: TransformerConfig.v1_300m(),
             depformer: nil,
-            textInVocabSize: 8001,
-            textOutVocabSize: 8000,
+            textInVocabSize: 48001,
+            textOutVocabSize: 48000,
             audioVocabSize: 2049,
             audioCodebooks: 32,
             audioDelays: Array(repeating: 0, count: 32)

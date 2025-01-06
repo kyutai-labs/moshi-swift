@@ -377,7 +377,7 @@ struct AsrModel: Model {
         await ev.setModelInfo("building model")
         guard
             let url = Bundle.main.url(
-                forResource: "asr-300m-f28fe6d5@450", withExtension: "safetensors")
+                forResource: "asr-300m-ba46d99f@1000", withExtension: "safetensors")
         else {
             throw CustomError("cannot retrieve local model")
         }
