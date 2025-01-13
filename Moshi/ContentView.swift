@@ -423,7 +423,7 @@ struct MoshiModel: Model {
         let url: URL
         let cfg: LmConfig
         let localURL = Bundle.main.url(
-            forResource: "moshi-1b-04a0c213@50.q8", withExtension: "safetensors")
+            forResource: "moshi-1b-9e90ea6c@6.q8", withExtension: "safetensors")
         switch localURL {
         case .none:
             url = try await ev.downloadFromHub(
