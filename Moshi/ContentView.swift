@@ -23,6 +23,7 @@ enum ModelSelect: String, CaseIterable, Identifiable {
     case mimi
     case asr
     case moshi
+    case helium
 
     var id: Self { return self }
 }
@@ -132,6 +133,20 @@ class Evaluator {
         if url.lastPathComponent.hasSuffix(".q4.safetensors") {
             quantize(model: model, groupSize: 32, bits: 4)
         } else if url.lastPathComponent.hasSuffix(".q8.safetensors") {
+            quantize(model: model, groupSize: 64, bits: 8)
+        }
+        try model.update(parameters: parameters, verify: [.all])
+        eval(model)
+        return model
+    }
+
+    func makeHelium(_ url: URL, _ cfg: LmConfig) throws -> LM {
+        let weights = try loadArrays(url: url)
+        let parameters = ModuleParameters.unflattened(weights)
+        let model = LM(cfg, bSize: 1)
+        if url.lastPathComponent.hasSuffix("q4.safetensors") {
+            quantize(model: model, groupSize: 64, bits: 4)
+        } else if url.lastPathComponent.hasSuffix("q8.safetensors") {
             quantize(model: model, groupSize: 64, bits: 8)
         }
         try model.update(parameters: parameters, verify: [.all])
@@ -285,6 +300,9 @@ class Evaluator {
         case .asr:
             let model = try await AsrModel(self, self.cb)
             m = ModelState(model)
+        case .helium:
+            let model = try await HeliumModel(self, self.cb)
+            m = ModelState(model)
         }
         self.loadState = .loaded(m, sm)
         return m
@@ -367,6 +385,58 @@ struct MimiModel: Model {
             }
         }
         return currentStep < totalSteps
+    }
+}
+
+struct HeliumModel: Model {
+    let helium: LM
+    let vocab: [Int: String]
+    let cb: Callbacks
+
+    init(_ ev: Evaluator, _ cb: Callbacks) async throws {
+        await ev.setModelInfo("building model")
+        let cfg = LmConfig.helium2b()
+        let url = try await downloadFromHub(
+            id: "kyutai/helium-1-preview-2b-mlx", filename: "helium-1-preview-2b-q4.safetensors")
+        helium = try await ev.makeHelium(url, cfg)
+        await ev.setModelInfo("model built")
+        let vocab = try await ev.loadVocab(cfg)
+        await ev.setModelInfo("warming up helium")
+        helium.warmup()
+        await ev.setModelInfo("done warming up")
+    }
+
+    mutating func reset() {
+        helium.reset()
+    }
+
+    mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
+        let maxSteps = helium.cfg.transformer.maxSeqLen
+        let sampler = Sampler()
+
+        var lastToken = MLXArray([1])
+        for stepIdx in 0...maxSteps {
+            let (textToken, _) = helium.sample(
+                textIds: lastToken.reshaped([1, 1]), audioIds: [], stepIdx: stepIdx,
+                textSampler: sampler,
+                audioSampler: sampler, cb: stats)
+            let textTokenI: Int = textToken[0].item()
+            if var v = vocab[textTokenI] {
+                if v == "<0x0A>" {
+                    Task { @MainActor in
+                        ev.output += "\n"
+                    }
+                } else {
+                    v.replace("▁", with: " ")
+                    Task { @MainActor in
+                        ev.output += v
+                    }
+                }
+            }
+            lastToken = textToken
+        }
+
+        return false
     }
 }
 

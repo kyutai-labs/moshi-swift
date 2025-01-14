@@ -75,10 +75,11 @@ func makeMimi(numCodebooks: Int) throws -> Mimi {
 func runMimi(streaming: Bool, audioFile: URL?, channel: Int = 0) throws {
     let model = try makeMimi(numCodebooks: 16)
     print("using device \(Device.defaultDevice().description)")
-    let sampleURL = switch audioFile {
+    let sampleURL =
+        switch audioFile {
         case .none: try downloadFromHub(id: "lmz/moshi-swift", filename: "bria-24khz.mp3")
         case .some(let url): url
-    }
+        }
     let pcm = readAudioToPCMArray(fileURL: sampleURL, channel: channel)!
 
     if streaming {
