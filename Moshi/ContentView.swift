@@ -414,7 +414,9 @@ struct HeliumModel: Model {
         let cb = PerfStats()
 
         var lastToken = MLXArray([1])
-        for stepIdx in 0...min(500, maxSteps) {
+        let steps = min(300, maxSteps)
+        let startTime = CFAbsoluteTimeGetCurrent();
+        for stepIdx in 0...steps {
             let (textToken, _) = helium.sample(
                 textIds: lastToken.reshaped([1, 1]), audioIds: [], stepIdx: stepIdx,
                 textSampler: sampler,
@@ -434,7 +436,10 @@ struct HeliumModel: Model {
             }
             lastToken = textToken
         }
-
+        let tokenPerSecond = Double(steps) / (CFAbsoluteTimeGetCurrent() - startTime)
+        Task { @MainActor in
+            ev.output += "\n\(tokenPerSecond) token/s"
+        }
         return false
     }
 }
