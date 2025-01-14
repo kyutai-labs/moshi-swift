@@ -234,6 +234,18 @@ public struct LmConfig {
             audioDelays: Array(repeating: 0, count: 32)
         )
     }
+
+    public static func helium2b() -> LmConfig {
+        return LmConfig(
+            transformer: TransformerConfig.v1_2b(),
+            depformer: nil,
+            textInVocabSize: 48000,
+            textOutVocabSize: 48000,
+            audioVocabSize: 2049,
+            audioCodebooks: 0,
+            audioDelays: Array(repeating: 0, count: 0)
+        )
+    }
 }
 
 public class LM: Module {

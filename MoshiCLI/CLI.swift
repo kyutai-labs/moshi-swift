@@ -34,7 +34,10 @@ func downloadFromHub(id: String, filename: String) throws -> URL {
 @main
 struct Moshi: ParsableCommand {
     static let configuration = CommandConfiguration(
-        subcommands: [Run.self, RunMimi.self, AudioToCodes.self, CodesToAudio.self, RunAsr.self]
+        subcommands: [
+            Run.self, RunHelium.self, RunMimi.self, AudioToCodes.self, CodesToAudio.self,
+            RunAsr.self,
+        ]
     )
 }
 
@@ -92,6 +95,29 @@ struct RunMimi: ParsableCommand {
     mutating func run() throws {
         let audioFile = input.flatMap { URL(fileURLWithPath: $0) }
         try runMimi(streaming: streaming, audioFile: audioFile, channel: channel)
+    }
+}
+
+public enum HeliumConfig: String, CaseIterable, ExpressibleByArgument {
+    case q4
+    case q8
+    case bf16
+}
+
+struct RunHelium: ParsableCommand {
+    @Option(help: "the config")
+    var config: HeliumConfig = .q4
+
+    mutating func run() throws {
+        let cfg = LmConfig.helium2b()
+        let filename =
+            switch config {
+            case .q4: "helium-1-preview-2b-q4.safetensors"
+            case .q8: "helium-1-preview-2b-q8.safetensors"
+            case .bf16: "helium-1-preview-2b-bf16.safetensors"
+            }
+        let url = try downloadFromHub(id: "kyutai/helium-1-preview-2b-mlx", filename: filename)
+        try runHelium(url, cfg: cfg)
     }
 }
 

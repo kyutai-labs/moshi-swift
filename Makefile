@@ -12,5 +12,8 @@ run-asr: build
 run-mimi: build
 	./build/Build/Products/Release/MoshiCLI run-mimi
 
+run-helium: build
+	./build/Build/Products/Release/MoshiCLI run-helium
+
 build:
 	xcodebuild -scheme moshi-cli -derivedDataPath ./build
