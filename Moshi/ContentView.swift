@@ -414,7 +414,7 @@ struct HeliumModel: Model {
         let cb = PerfStats()
 
         var lastToken = MLXArray([1])
-        for stepIdx in 0...maxSteps {
+        for stepIdx in 0...min(500, maxSteps) {
             let (textToken, _) = helium.sample(
                 textIds: lastToken.reshaped([1, 1]), audioIds: [], stepIdx: stepIdx,
                 textSampler: sampler,
