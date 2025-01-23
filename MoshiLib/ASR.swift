@@ -36,7 +36,9 @@ public class ASR {
         prevTextToken = self.moshi.cfg.textInitToken()
         cnt = 0
         let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
-        let audioIds = (0..<16).map { _ in MLXArray([moshi.cfg.audioPaddingToken()]) }
+        let audioIds = (0..<self.moshi.cfg.audioCodebooks).map { _ in
+            MLXArray([moshi.cfg.audioPaddingToken()])
+        }
         let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
         let (textToken, _) = sampler(logits: textLogits)
         let textTokenI: Int = textToken[0].item()
