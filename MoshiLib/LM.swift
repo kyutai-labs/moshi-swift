@@ -60,6 +60,7 @@ class Depformer: Module {
             var xs = slice.linearIn(mainTransformerOut) + slice.emb(lastToken)
             xs = slice.transformer(xs, cache: self.transformerCache)
             let logits = slice.linearOut(xs)
+            print(logits.shape)
             (lastToken, _) = sampler(logits: logits[0])
             tokens.append(lastToken)
         }
@@ -315,10 +316,15 @@ public class LM: Module {
             let e = emb(a)
             x = x.map { $0 + e } ?? e
         }
-        let mainTransformerOut = outNorm(transformer(x!, cache: self.transformerCache))
-        let textLogits = textLinear(mainTransformerOut[0..., -1, 0...])
+        let xx = concatenated([x!, x!], axis: 0)
+        print(x!.shape, xx.shape)
+        let mainTransformerOut = outNorm(transformer(xx, cache: self.transformerCache))
+        let textLogits2 = textLinear(mainTransformerOut[0..., -1, 0...])
+        print(">", textLogits2.shape)
+        let textLogits = textLogits2[0..<1]
         let (textToken, _) = textSampler(logits: textLogits)
         textToken.eval()
+        print(">", textToken.shape)
         cb.onEvent(.endStep)
         if let depformer = self.depformer {
             cb.onEvent(.beginDepformer)
@@ -328,6 +334,7 @@ public class LM: Module {
                 sampler: audioSampler,
                 textToken: textToken)
             audioTokens.eval()
+            print("<>", audioTokens.shape)
             cb.onEvent(.endDepformer)
             return (textToken, audioTokens)
         } else {
