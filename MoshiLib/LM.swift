@@ -316,9 +316,8 @@ public class LM: Module {
             let e = emb(a)
             x = x.map { $0 + e } ?? e
         }
-        let xx = concatenated([x!, x!], axis: 0)
-        print(x!.shape, xx.shape)
-        let mainTransformerOut = outNorm(transformer(xx, cache: self.transformerCache))
+        print(x!.shape)
+        let mainTransformerOut = outNorm(transformer(x!, cache: self.transformerCache))
         let textLogits2 = textLinear(mainTransformerOut[0..., -1, 0...])
         print(">", textLogits2.shape)
         let textLogits = textLogits2[0..<1]

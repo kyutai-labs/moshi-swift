@@ -11,6 +11,8 @@ import MoshiLib
 import SwiftUI
 import Synchronization
 
+let batchSize = 1
+
 struct CustomError: Error {
     let message: String
 
@@ -156,7 +158,7 @@ class Evaluator {
 
     func makeMimi(numCodebooks: Int) async throws -> Mimi {
         let cfg = MimiConfig.mimi_2024_07(numCodebooks: numCodebooks)
-        let model = Mimi(cfg, bSize: 1)
+        let model = Mimi(cfg, bSize: batchSize)
 
         let url = try await downloadFromHub(
             id: "lmz/moshi-swift",
@@ -242,10 +244,11 @@ class Evaluator {
                 print("started the audio loops")
 
                 var step = 0
-                while let pcm = microphoneCapture.receive() {
+                while microphoneCapture.receive() != nil {
                     if shouldStop.load(ordering: .relaxed) {
                         break
                     }
+                    let pcm = Array(repeating: Float(0), count: batchSize)
                     let pcm = MLXArray(pcm)[.newAxis, .newAxis]
                     if !model.onMicrophonePcm(pcm, ap: ap, ev: self) {
                         break
@@ -522,8 +525,10 @@ struct MoshiModel: Model {
         gen.reset()
     }
 
-    mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
+    mutating func onMicrophonePcm(_ pcm_: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
         cb.onEvent(.beginEncode)
+        let pcms = Array(repeating: pcm_, count: batchSize)
+        let pcm = concatenated(pcms, axis: 0)
         let codes = mimi.encodeStep(StreamArray(pcm))
         codes.eval()
         cb.onEvent(.endEncode)
@@ -549,13 +554,15 @@ struct MoshiModel: Model {
                 }
                 if let audioTokens = gen.lastAudioTokens() {
                     let audioTokens = audioTokens[0..., 0..., .newAxis]
+                    let rep = Array(repeating: batchSize, count: batchSize)
+                    print("AUDIOTOK", audioTokens.shape)
                     self.cb.onOutputAudioTokens(audioTokens)
                     cb.onEvent(.beginDecode)
                     let pcmOut = mimi.decodeStep(StreamArray(audioTokens))
                     pcmOut.eval()
                     cb.onEvent(.endDecode)
                     if let p = pcmOut.asArray() {
-                        let _ = ap.send(p.asArray(Float.self))
+                        let _ = ap.send(p[0...0].asArray(Float.self))
                     }
                 }
             }
