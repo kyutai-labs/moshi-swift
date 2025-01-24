@@ -258,6 +258,9 @@ class Evaluator {
                         break
                     }
                     step += 1
+                    if step % 128 == 0 {
+                        GPU.clearCache()
+                    }
                     let currentStep = step
                     Task { @MainActor in
                         if currentStep % 5 == 0 {
