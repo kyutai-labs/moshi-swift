@@ -85,6 +85,8 @@ struct ModelView: View {
                 }
                 if model.running {
                     HStack {
+                        Text(String(Int(model.totalDuration)) + "s")
+                             .font(.system(size: 16.0, weight: .semibold))
                         Image(systemName: "microphone.circle")
                             .font(.system(size: 40))
                             .symbolEffect(.breathe)

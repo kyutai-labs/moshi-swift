@@ -76,6 +76,7 @@ class Evaluator {
     var progress: Progress? = nil
     var statsSummary: StatsSummary = StatsSummary()
     var bufferedDuration: Double = 0.0
+    var totalDuration: Double = 0.0
     let shouldStop: Atomic<Bool> = .init(false)
     let cb: PerfStats = PerfStats()
 
@@ -228,6 +229,7 @@ class Evaluator {
         self.shouldStop.store(false, ordering: .relaxed)
         self.modelInfo = "starting"
         self.output = ""
+        self.totalDuration = 0.0
         running = true
         do {
             let model = try await load(sm)
@@ -242,6 +244,7 @@ class Evaluator {
                 print("started the audio loops")
 
                 var step = 0
+                let startTime = CFAbsoluteTimeGetCurrent()
                 while let pcm = microphoneCapture.receive() {
                     if shouldStop.load(ordering: .relaxed) {
                         break
@@ -256,6 +259,7 @@ class Evaluator {
                         if currentStep % 5 == 0 {
                             self.bufferedDuration =
                                 ap.bufferedDuration() + microphoneCapture.bufferedDuration()
+                            self.totalDuration =  CFAbsoluteTimeGetCurrent() - startTime
                         }
                         if currentStep % 20 == 0 {
                             self.statsSummary = self.cb.getSummary(maxEvents: 100)
