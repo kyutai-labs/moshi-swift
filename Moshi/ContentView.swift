@@ -133,6 +133,8 @@ class Evaluator {
         let model = LM(cfg, bSize: 1)
         if url.lastPathComponent.hasSuffix(".q4.safetensors") {
             quantize(model: model, groupSize: 32, bits: 4)
+        } else if url.lastPathComponent.hasSuffix(".q6.safetensors") {
+            quantize(model: model, groupSize: 64, bits: 6)
         } else if url.lastPathComponent.hasSuffix(".q8.safetensors") {
             quantize(model: model, groupSize: 64, bits: 8)
         }

@@ -100,6 +100,7 @@ struct RunMimi: ParsableCommand {
 
 public enum HeliumConfig: String, CaseIterable, ExpressibleByArgument {
     case q4
+    case q6
     case q8
     case bf16
 }
@@ -113,6 +114,7 @@ struct RunHelium: ParsableCommand {
         let filename =
             switch config {
             case .q4: "helium-1-preview-2b-q4.safetensors"
+            case .q6: "helium-1-preview-2b-q6.safetensors"
             case .q8: "helium-1-preview-2b-q8.safetensors"
             case .bf16: "helium-1-preview-2b-bf16.safetensors"
             }
