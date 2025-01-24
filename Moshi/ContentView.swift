@@ -149,6 +149,8 @@ class Evaluator {
         let model = LM(cfg, bSize: 1)
         if url.lastPathComponent.hasSuffix("q4.safetensors") {
             quantize(model: model, groupSize: 64, bits: 4)
+        } else if url.lastPathComponent.hasSuffix(".q6.safetensors") {
+            quantize(model: model, groupSize: 64, bits: 6)
         } else if url.lastPathComponent.hasSuffix("q8.safetensors") {
             quantize(model: model, groupSize: 64, bits: 8)
         }
@@ -498,7 +500,7 @@ struct MoshiModel: Model {
         let url: URL
         let cfg: LmConfig
         let localURL = Bundle.main.url(
-            forResource: "moshi-1b-9e90ea6c@6.q8", withExtension: "safetensors")
+            forResource: "moshi-1b-9e90ea6c@6.q6", withExtension: "safetensors")
         switch localURL {
         case .none:
             url = try await ev.downloadFromHub(
