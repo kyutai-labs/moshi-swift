@@ -128,7 +128,7 @@ public struct LmConfig {
     }
 
     public static func moshi1b(audioDelay: Int) -> LmConfig {
-        let audioDelays = [0] + Array(repeating: audioDelay, count: 7)
+        let audioDelays = [0] + Array(repeating: audioDelay, count: 15)
         let depformer = DepformerConfig(
             transformer:
                 TransformerConfig(
@@ -151,14 +151,14 @@ public struct LmConfig {
                     dimFeedForward: 1024 * 4,
                     convLayout: false,
                     useRotatingKVCache: false
-                ), numSlices: 8)
+                ), numSlices: 16)
         return LmConfig(
             transformer: TransformerConfig.v1_1b(),
             depformer: depformer,
             textInVocabSize: 48001,
             textOutVocabSize: 48000,
             audioVocabSize: 2049,
-            audioCodebooks: 16,
+            audioCodebooks: 32,
             audioDelays: audioDelays + audioDelays
         )
     }
@@ -420,6 +420,7 @@ public class LMGen {
             audioSampler: self.audioSampler,
             cb: self.cb
         )
+        print(tt.shape, at.shape)
         assert(tt.shape == [1])
         assert(at.shape == [self.model.cfg.depformerSlices()])
 

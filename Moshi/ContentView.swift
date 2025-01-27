@@ -503,7 +503,7 @@ struct MoshiModel: Model {
         let url: URL
         let cfg: LmConfig
         let localURL = Bundle.main.url(
-            forResource: "moshi-1b-9e90ea6c@6.q6", withExtension: "safetensors")
+            forResource: "m-1b-6aeabb95@100.q6", withExtension: "safetensors")
         switch localURL {
         case .none:
             url = try await ev.downloadFromHub(
@@ -543,7 +543,7 @@ struct MoshiModel: Model {
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
                 if let textToken = gen.step(
-                    otherAudioTokens: codes[0..., 0..<8, step])
+                    otherAudioTokens: codes[0..., 0..<16, step])
                 {
                     let textTokenI: Int = textToken[0].item()
                     self.cb.onOutputTextToken(textTokenI)
