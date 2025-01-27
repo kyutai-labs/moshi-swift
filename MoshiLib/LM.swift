@@ -6,7 +6,7 @@ import MLX
 import MLXFast
 import MLXNN
 
-public let batchSize = 2
+public let batchSize = 4
 
 public struct DepformerConfig {
     var transformer: TransformerConfig
@@ -318,6 +318,7 @@ public class LM: Module {
             let e = emb(a)
             x = x.map { $0 + e } ?? e
         }
+        print("<>>>", x!.shape, textIds?.shape)
         let mainTransformerOut = outNorm(transformer(x!, cache: self.transformerCache))
         print(">>>", mainTransformerOut.shape)
         let textLogits = textLinear(mainTransformerOut[0...0, -1, 0...])
@@ -392,9 +393,9 @@ public class LMGen {
         }
         let textIds: MLXArray
         if self.stepIdx == 0 {
-            textIds = MLXArray([self.model.cfg.textOutVocabSize]).reshaped([1, 1])
+            textIds = MLXArray(Array(repeating: self.model.cfg.textOutVocabSize, count: batchSize)).reshaped([batchSize, 1])
         } else {
-            textIds = self.genSequence[.newAxis, 0..., 0, self.stepIdx - 1]
+            textIds = self.genSequence[0..., .newAxis, 0, self.stepIdx - 1]
         }
         self.genSequence[0..., (1 + self.mainCodebooks)..., self.stepIdx] = otherAudioTokens
         var audioIds: [MLXArray] = []
@@ -402,7 +403,7 @@ public class LMGen {
             let genIdx = self.stepIdx - 1 - delay
             let audioToken: MLXArray
             if genIdx >= 0 {
-                audioToken = self.genSequence[.newAxis, 0..., 1 + cbIdx, genIdx]
+                audioToken = self.genSequence[0..., .newAxis, 1 + cbIdx, genIdx]
             } else {
                 audioToken = MLXArray([self.model.cfg.audioPaddingToken()]).reshaped([1, 1])
             }
@@ -416,6 +417,7 @@ public class LMGen {
             fatalError("ungenerated value in text tokens, step \(stepIdx)")
         }
         assert(textIds.shape == [1, 1])
+        print("H", textIds.shape)
         let (tt, at) = model.sample(
             textIds: textIds,
             audioIds: audioIds,

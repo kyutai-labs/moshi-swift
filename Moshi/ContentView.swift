@@ -542,12 +542,13 @@ struct MoshiModel: Model {
         codes.eval()
         cb.onEvent(.endEncode)
         if let codes = codes.asArray() {
+            print("C", codes.shape)
             self.cb.onInputAudioTokens(codes)
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
                 if let textToken = gen.step(
                     otherAudioTokens: codes[0..., 0..<8, step])
-                {
+                {   
                     let textTokenI: Int = textToken[0, 0].item()
                     self.cb.onOutputTextToken(textTokenI)
                     if textTokenI != 0 && textTokenI != 3 {
