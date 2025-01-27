@@ -130,7 +130,7 @@ class Evaluator {
     func makeMoshi(_ url: URL, _ cfg: LmConfig) throws -> LM {
         let weights = try loadArrays(url: url)
         let parameters = ModuleParameters.unflattened(weights)
-        let model = LM(cfg, bSize: 1)
+        let model = LM(cfg, bSize: batchSize)
         if url.lastPathComponent.hasSuffix(".q4.safetensors") {
             quantize(model: model, groupSize: 32, bits: 4)
         } else if url.lastPathComponent.hasSuffix(".q6.safetensors") {
@@ -161,7 +161,7 @@ class Evaluator {
 
     func makeMimi(numCodebooks: Int) async throws -> Mimi {
         let cfg = MimiConfig.mimi_2024_07(numCodebooks: numCodebooks)
-        let model = Mimi(cfg, bSize: 1)
+        let model = Mimi(cfg, bSize: batchSize)
 
         let url = try await downloadFromHub(
             id: "lmz/moshi-swift",
@@ -522,9 +522,9 @@ struct MoshiModel: Model {
             moshi, maxSteps: maxSteps, audioSampler: Sampler(), textSampler: Sampler(), cb: self.cb)
         self.vocab = try await ev.loadVocab(cfg)
         await ev.setModelInfo("warming up mimi")
-        self.mimi.warmup()
+        // self.mimi.warmup()
         await ev.setModelInfo("warming up moshi")
-        self.moshi.warmup()
+        // self.moshi.warmup()
         await ev.setModelInfo("done warming up")
     }
 
@@ -533,8 +533,11 @@ struct MoshiModel: Model {
         gen.reset()
     }
 
-    mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
+    mutating func onMicrophonePcm(_ pcm_: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
         cb.onEvent(.beginEncode)
+        let pcms = Array(repeating: pcm_, count: batchSize)
+        let pcm = concatenated(pcms, axis: 0)
+        print(pcm.shape)
         let codes = mimi.encodeStep(StreamArray(pcm))
         codes.eval()
         cb.onEvent(.endEncode)
@@ -545,7 +548,7 @@ struct MoshiModel: Model {
                 if let textToken = gen.step(
                     otherAudioTokens: codes[0..., 0..<8, step])
                 {
-                    let textTokenI: Int = textToken[0].item()
+                    let textTokenI: Int = textToken[0, 0].item()
                     self.cb.onOutputTextToken(textTokenI)
                     if textTokenI != 0 && textTokenI != 3 {
                         if let v = vocab[textTokenI] {
@@ -560,13 +563,14 @@ struct MoshiModel: Model {
                 }
                 if let audioTokens = gen.lastAudioTokens() {
                     let audioTokens = audioTokens[0..., 0..., .newAxis]
+                    let rep = Array(repeating: audioTokens, count: batchSize)
                     self.cb.onOutputAudioTokens(audioTokens)
                     cb.onEvent(.beginDecode)
                     let pcmOut = mimi.decodeStep(StreamArray(audioTokens))
                     pcmOut.eval()
                     cb.onEvent(.endDecode)
                     if let p = pcmOut.asArray() {
-                        let _ = ap.send(p.asArray(Float.self))
+                        let _ = ap.send(p[0...0].asArray(Float.self))
                     }
                 }
             }

@@ -6,6 +6,8 @@ import MLX
 import MLXFast
 import MLXNN
 
+public let batchSize = 2
+
 public struct DepformerConfig {
     var transformer: TransformerConfig
     var numSlices: Int
@@ -60,7 +62,7 @@ class Depformer: Module {
             var xs = slice.linearIn(mainTransformerOut) + slice.emb(lastToken)
             xs = slice.transformer(xs, cache: self.transformerCache)
             let logits = slice.linearOut(xs)
-            (lastToken, _) = sampler(logits: logits[0])
+            (lastToken, _) = sampler(logits: logits[0, 0...0])
             tokens.append(lastToken)
         }
         return concatenated(tokens)
@@ -275,6 +277,7 @@ public class LM: Module {
         self._audioEmbs.wrappedValue = (0..<cfg.audioCodebooks).map { _ in
             Embedding(embeddingCount: cfg.audioVocabSize, dimensions: cfg.transformer.dModel)
         }
+        print(">>>", bSize)
         self.transformerCache = self._transformer.wrappedValue.makeCache(bSize: bSize)
     }
 
@@ -316,7 +319,8 @@ public class LM: Module {
             x = x.map { $0 + e } ?? e
         }
         let mainTransformerOut = outNorm(transformer(x!, cache: self.transformerCache))
-        let textLogits = textLinear(mainTransformerOut[0..., -1, 0...])
+        print(">>>", mainTransformerOut.shape)
+        let textLogits = textLinear(mainTransformerOut[0...0, -1, 0...])
         let (textToken, _) = textSampler(logits: textLogits)
         textToken.eval()
         cb.onEvent(.endStep)
@@ -376,7 +380,7 @@ public class LMGen {
         self.textSampler = textSampler
         self.numCodebooks = 1 + model.cfg.audioCodebooks
         self.genSequence = MLXArray.full(
-            [1, self.numCodebooks, maxSteps], values: MLXArray(ungeneratedToken, dtype: .int32))
+            [batchSize, self.numCodebooks, maxSteps], values: MLXArray(ungeneratedToken, dtype: .int32))
         self.stepIdx = 0
         self.mainCodebooks = self.model.cfg.depformerSlices()
         self.cb = cb
