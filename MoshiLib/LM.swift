@@ -98,7 +98,7 @@ public struct LmConfig {
                 TransformerConfig(
                     dModel: 1024,
                     numHeads: 16,
-                    numLayers: 6,
+                    numLayers: 4,
                     causal: true,
                     normFirst: true,
                     biasFF: false,
@@ -112,10 +112,10 @@ public struct LmConfig {
                     maxPeriod: 10000,
                     maxSeqLen: 4096,
                     kvRepeat: 1,
-                    dimFeedForward: 1024 * 4,
+                    dimFeedForward: 1024 * 3,
                     convLayout: false,
                     useRotatingKVCache: false
-                ), numSlices: 8)
+                ), numSlices: 12)
         return LmConfig(
             transformer: TransformerConfig.v1_7b(),
             depformer: depformer,
@@ -128,13 +128,13 @@ public struct LmConfig {
     }
 
     public static func moshi1b(audioDelay: Int) -> LmConfig {
-        let audioDelays = [0] + Array(repeating: audioDelay, count: 7)
+        let audioDelays = [0] + Array(repeating: audioDelay, count: 11)
         let depformer = DepformerConfig(
             transformer:
                 TransformerConfig(
                     dModel: 1024,
                     numHeads: 16,
-                    numLayers: 6,
+                    numLayers: 4,
                     causal: true,
                     normFirst: true,
                     biasFF: false,
@@ -144,21 +144,21 @@ public struct LmConfig {
                     useConvBias: false,
                     gating: true,
                     norm: .rmsNorm,
-                    context: 8,
+                    context: 12,
                     maxPeriod: 10000,
                     maxSeqLen: 4096,
                     kvRepeat: 1,
-                    dimFeedForward: 1024 * 4,
+                    dimFeedForward: 1024 * 3,
                     convLayout: false,
                     useRotatingKVCache: false
-                ), numSlices: 8)
+                ), numSlices: 12)
         return LmConfig(
             transformer: TransformerConfig.v1_1b(),
             depformer: depformer,
             textInVocabSize: 48001,
             textOutVocabSize: 48000,
             audioVocabSize: 2049,
-            audioCodebooks: 16,
+            audioCodebooks: 24,
             audioDelays: audioDelays + audioDelays
         )
     }
@@ -422,6 +422,7 @@ public class LMGen {
         )
         assert(tt.shape == [1])
         assert(at.shape == [self.model.cfg.depformerSlices()])
+        print(tt.shape, at.shape)
 
         self.genSequence[0..., 0, self.stepIdx] = tt
         for cbIdx in 0..<self.model.cfg.depformerSlices() {

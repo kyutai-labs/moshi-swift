@@ -543,7 +543,7 @@ struct MoshiModel: Model {
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
                 if let textToken = gen.step(
-                    otherAudioTokens: codes[0..., 0..<8, step])
+                    otherAudioTokens: codes[0..., 0..<12, step])
                 {
                     let textTokenI: Int = textToken[0].item()
                     self.cb.onOutputTextToken(textTokenI)
