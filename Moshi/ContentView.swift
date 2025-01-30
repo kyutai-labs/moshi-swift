@@ -31,12 +31,14 @@ enum ModelSelect: String, CaseIterable, Identifiable {
 struct ContentView: View {
     @State var model = Evaluator()
     @State var selectedModel: ModelSelect = .mimi
+    @State var sendToSpeaker = true
     @Environment(DeviceStat.self) private var deviceStat
     @State private var displayStats = false
 
     var body: some View {
         NavigationSplitView(
             sidebar: {
+                VStack {
                 List {
                     ForEach(ModelSelect.allCases) { modelType in
                         NavigationLink(
@@ -46,6 +48,17 @@ struct ContentView: View {
                                     model: $model, modelType: modelType, displayStats: $displayStats
                                 )
                             })
+                    }
+                }
+                Toggle("speaker", isOn: $sendToSpeaker)
+                    .toggleStyle(.button)
+                    .padding()
+                    .onChange(of: sendToSpeaker) { newValue in
+                        if newValue {
+                            setDefaultToSpeaker()
+                        } else {
+                            setDefaultToStd()
+                        }
                     }
                 }
                 .navigationTitle("Available Models")

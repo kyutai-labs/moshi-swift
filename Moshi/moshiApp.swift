@@ -23,24 +23,12 @@ func requestMicrophoneAccess() {
     }
 }
 
-func setDefaultToSpeaker() {
-    #if os(iOS)
-        do {
-            let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
-            try audioSession.setActive(true)
-            try audioSession.overrideOutputAudioPort(.speaker)
-        } catch {
-            print("failed to configure audio session: \(error.localizedDescription)")
-        }
-    #endif
-}
-
 @main
 struct moshiApp: App {
+    @Environment(\.scenePhase) var scenePhase
+
     init() {
         requestMicrophoneAccess()
-        setDefaultToSpeaker()
     }
 
     var body: some Scene {
@@ -48,5 +36,17 @@ struct moshiApp: App {
             ContentView()
                 .environment(DeviceStat())
         }
+#if os(iOS)
+        .onChange(of: scenePhase) { (phase) in
+            switch phase {
+            case .active:
+                // In iOS 13+, idle timer needs to be set in scene to override default
+                UIApplication.shared.isIdleTimerDisabled = true
+            case .inactive: break
+            case .background: break
+            @unknown default: print("ScenePhase: unexpected state")
+            }
+        }
+#endif
     }
 }

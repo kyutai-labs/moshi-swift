@@ -40,7 +40,7 @@ class MicrophoneCapture {
         // so we discard it for now.
         #if os(iOS)
             do {
-                try inputNode.setVoiceProcessingEnabled(true)
+            //    try inputNode.setVoiceProcessingEnabled(true)
             } catch {
                 print("could not set voice processing on the input node")
             }
@@ -222,4 +222,30 @@ class AudioPlayer {
     func send(_ values: [Float]) -> Bool {
         ringBuffer.write(values)
     }
+}
+
+func setDefaultToStd() {
+    #if os(iOS)
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.allowAirPlay, .allowBluetooth])
+            try audioSession.setActive(true)
+            try audioSession.overrideOutputAudioPort(.none)
+        } catch {
+            print("failed to configure audio session: \(error.localizedDescription)")
+        }
+    #endif
+}
+
+func setDefaultToSpeaker() {
+    #if os(iOS)
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
+            try audioSession.setActive(true)
+            try audioSession.overrideOutputAudioPort(.speaker)
+        } catch {
+            print("failed to configure audio session: \(error.localizedDescription)")
+        }
+    #endif
 }
