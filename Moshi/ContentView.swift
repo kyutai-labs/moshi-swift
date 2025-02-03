@@ -31,7 +31,7 @@ enum ModelSelect: String, CaseIterable, Identifiable {
 struct ContentView: View {
     @State var model = Evaluator()
     @State var selectedModel: ModelSelect = .mimi
-    @State var sendToSpeaker = true
+    @State var sendToSpeaker = false
     @Environment(DeviceStat.self) private var deviceStat
     @State private var displayStats = false
 
