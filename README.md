@@ -5,18 +5,17 @@ It uses [Mimi][moshi], a state-of-the-art streaming neural audio codec. Mimi pro
 with a bandwidth of 1.1 kbps, in a fully streaming manner (latency of 80ms, the frame size).
 
 
-This repo contains implementations of these models using [MLX
+This repo contains **experimental** implementations of these models using [MLX
 Swift](https://github.com/ml-explore/mlx-swift):
 - Fully streaming implementation of the mimi codec.
 - Support for all moshi variants.
 
-
-
+The main goal of this repo is to make it easy to experiment with these models
+on ios devices. An ios app is included but it's only a proof of concept.
 
 Compile and test using the command line:
 ```bash
-xcodebuild -scheme moshi-cli -derivedDataPath ./build
-./build/Build/Products/Release/MoshiCLI moshi-7b
+make run-1b
 ```
 
 The checkpoints are automatically downloaded from the huggingface hub. So you
