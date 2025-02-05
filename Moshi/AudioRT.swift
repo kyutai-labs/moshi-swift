@@ -228,7 +228,7 @@ func setDefaultToStd() {
     #if os(iOS)
         do {
             let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.allowAirPlay, .allowBluetooth])
+            try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowAirPlay, .allowBluetooth])
             try audioSession.setActive(true)
             try audioSession.overrideOutputAudioPort(.none)
         } catch {
@@ -241,7 +241,7 @@ func setDefaultToSpeaker() {
     #if os(iOS)
         do {
             let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.playAndRecord, mode: .default, options: .defaultToSpeaker)
+            try audioSession.setCategory(.playAndRecord, mode: .voiceChat, options: .defaultToSpeaker)
             try audioSession.setActive(true)
             try audioSession.overrideOutputAudioPort(.speaker)
         } catch {
