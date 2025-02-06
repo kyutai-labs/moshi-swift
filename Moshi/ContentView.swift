@@ -22,7 +22,7 @@ struct CustomError: Error {
 enum ModelSelect: String, CaseIterable, Identifiable {
     case mimi
     case asr
-    case moshi
+    case hibiki
     case helium
 
     var id: Self { return self }
@@ -315,7 +315,7 @@ class Evaluator {
         self.loadState = .idle
         let m: ModelState
         switch sm {
-        case .moshi:
+        case .hibiki:
             let model = try await MoshiModel(self, self.cb)
             m = ModelState(model)
         case .mimi:
@@ -516,7 +516,7 @@ struct MoshiModel: Model {
         let url: URL
         let cfg: LmConfig
         let localURL = Bundle.main.url(
-            forResource: "moshi-1b-e537721e@80.q6", withExtension: "safetensors")
+            forResource: "moshi-ae01f626@100.q6", withExtension: "safetensors")
         switch localURL {
         case .none:
             url = try await ev.downloadFromHub(
