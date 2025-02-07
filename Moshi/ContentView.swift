@@ -26,6 +26,24 @@ enum ModelSelect: String, CaseIterable, Identifiable {
     case helium
 
     var id: Self { return self }
+    
+    var name: String {
+        switch self {
+        case .hibiki:
+            return "Hibiki 1B"
+        default:
+            return rawValue.capitalized
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .hibiki:
+            return "A French to English simultaneous translation model designed for real-time speech translation."
+        default:
+            return ""
+        }
+    }
 }
 
 struct ContentView: View {
@@ -33,7 +51,6 @@ struct ContentView: View {
     @State var selectedModel: ModelSelect = .mimi
     @State var sendToSpeaker = false
     @Environment(DeviceStat.self) private var deviceStat
-    @State private var displayStats = false
     
     // Currently available models
     private let availableModels: [ModelSelect] = [.hibiki]
@@ -43,8 +60,7 @@ struct ContentView: View {
                 // Skip navigation if only one model
                 ModelView(
                     model: $model,
-                    modelType: availableModels[0],
-                    displayStats: $displayStats
+                    modelType: availableModels[0]
                 )
             } else {
                 NavigationSplitView(
@@ -56,8 +72,7 @@ struct ContentView: View {
                                     destination: {
                                         ModelView(
                                             model: $model,
-                                            modelType: modelType,
-                                            displayStats: $displayStats
+                                            modelType: modelType
                                         )
                                     }
                                 )

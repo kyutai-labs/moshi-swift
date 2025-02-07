@@ -28,20 +28,33 @@ struct ModelView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            if model.running || !model.modelInfo.isEmpty {
-                StatusSection(model: model)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+            Group {
+                if deviceStat.gpuUsage.activeMemory > 0 || model.statsSummary.step.cnt > 0 {
+                    CombinedStatsView(summary: model.statsSummary, deviceStat: deviceStat)
+                        .padding()
+                        .background(RoundedRectangle(cornerRadius: 12).fill(.secondary.opacity(0.1)))
+                }
             }
+            .transition(.push(from: .top))
+            .animation(.easeInOut(duration: 0.2), value: deviceStat.gpuUsage.activeMemory > 0 || model.statsSummary.step.cnt > 0)
             
-            OutputSection(output: model.output)
-            
-            if deviceStat.gpuUsage.activeMemory > 0 || model.statsSummary.step.cnt > 0 {
-                CombinedStatsView(summary: model.statsSummary, deviceStat: deviceStat)
-                    .frame(height: 250)
-                    .padding()
-                    .background(RoundedRectangle(cornerRadius: 12).fill(.secondary.opacity(0.1)))
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            Group {
+                if !model.running && model.output.isEmpty {
+                    ModelInfoView(modelType: modelType)
+                } else {
+                    OutputSection(output: model.output)
+                }
             }
+            .transition(.opacity)
+            .animation(.easeInOut(duration: 0.2), value: !model.running && model.output.isEmpty)
+            
+            Group {
+                if model.running || !model.output.isEmpty {
+                    StatusSection(model: model)
+                }
+            }
+            .transition(.push(from: .bottom))
+            .animation(.easeInOut(duration: 0.2), value: model.running || !model.output.isEmpty)
             
             // Bottom controls
             ZStack {
@@ -79,9 +92,7 @@ struct ModelView: View {
             .padding()
         }
         .padding()
-        .animation(.smooth, value: model.running)
-        .animation(.smooth, value: model.statsSummary.encode.cnt)
-        .navigationTitle("Moshi: \(modelType.rawValue)")
+        .navigationTitle("Moshi: \(modelType.name)")
     }
 
     private func generate() {
@@ -176,10 +187,19 @@ struct DeviceStatsView: View {
                 value: deviceStat.gpuUsage.cacheMemory,
                 total: GPU.cacheLimit
             )
-            MemoryStatRow(
-                label: "Peak Memory",
-                value: deviceStat.gpuUsage.peakMemory
-            )
+            HStack {
+                MemoryStatRow(
+                    label: "Peak Memory",
+                    value: deviceStat.gpuUsage.peakMemory
+                )
+                Spacer()
+                VStack(alignment: .leading) {
+                    Text("Thermal State")
+                        .foregroundStyle(.secondary)
+                    Text(deviceStat.thermalState.rawValue)
+                }
+            }
+            
         }
     }
 }
@@ -249,43 +269,104 @@ struct CombinedStatsView: View {
     let summary: StatsSummary
     let deviceStat: DeviceStat
     @State private var currentPage = 0
+    @State private var isExpanded = false
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header with page indicator
-            HStack {
-                Spacer()
-                HStack(spacing: 16) {
-                    ForEach(0..<2) { index in
-                        Button(action: { withAnimation { currentPage = index } }) {
-                            VStack(spacing: 4) {
-                                Text(index == 0 ? "Model Stats" : "Device Stats")
-                                    .font(.subheadline)
-                                    .foregroundStyle(currentPage == index ? .primary : .secondary)
-                                
-                                Rectangle()
-                                    .fill(currentPage == index ? .blue : .clear)
-                                    .frame(height: 2)
+            // Header with page indicator and collapse button
+            ZStack {
+                // Left-aligned content
+                HStack {
+                    if isExpanded {
+                        HStack(spacing: 16) {
+                            ForEach(0..<2) { index in
+                                Button(action: { withAnimation { currentPage = index } }) {
+                                    VStack(spacing: 4) {
+                                        Text(index == 0 ? "Device Stats" : "Model Stats")
+                                            .font(.subheadline)
+                                            .foregroundStyle(currentPage == index ? .primary : .secondary)
+                                        
+                                        Rectangle()
+                                            .fill(currentPage == index ? .blue : .clear)
+                                            .frame(height: 2)
+                                    }
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
-                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity)
+                    } else {
+                        Text("Stats")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                Spacer()
-            }
-            .padding(.bottom, 8)
-            
-            TabView(selection: $currentPage) {
-                StatsView(summary: summary)
-                    .padding(.vertical)
-                    .frame(height: 250)
-                    .tag(0)
                 
-                DeviceStatsView(deviceStat: deviceStat)
-                    .padding(.vertical)
-                    .tag(1)
+                // Right-aligned button (always in the same position)
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        isExpanded.toggle()
+                    }) {
+                        Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
+                            .foregroundStyle(.secondary)
+                            .font(.title3)
+                    }
+                }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            .padding(.bottom, isExpanded ? 8 : 0)
+            // Add tap gesture only when collapsed
+            .contentShape(Rectangle()) // Make entire area tappable
+            .onTapGesture {
+                if !isExpanded {
+                    withAnimation {
+                        isExpanded.toggle()
+                    }
+                }
+            }
+            
+            if isExpanded {
+                TabView(selection: $currentPage) {
+                    DeviceStatsView(deviceStat: deviceStat)
+                        .padding(.vertical)
+                        .tag(0)
+
+                    StatsView(summary: summary)
+                        .padding(.vertical)
+                        .frame(height: 250)
+                        .tag(1)
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+            }
         }
+        .frame(height: isExpanded ? 250 : 44)
+        .animation(.easeInOut(duration: 0.2), value: isExpanded)
+    }
+}
+
+struct ModelInfoView: View {
+    let modelType: ModelSelect
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "waveform.and.mic")
+                .font(.system(size: 64))
+                .foregroundStyle(.blue)
+            
+            VStack(spacing: 12) {
+                Text(modelType.name)
+                    .font(.title)
+                    .bold()
+                
+                Text(modelType.description)
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(RoundedRectangle(cornerRadius: 12).fill(.secondary.opacity(0.1)))
     }
 }
