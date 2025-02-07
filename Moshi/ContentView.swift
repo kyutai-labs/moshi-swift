@@ -34,44 +34,47 @@ struct ContentView: View {
     @State var sendToSpeaker = false
     @Environment(DeviceStat.self) private var deviceStat
     @State private var displayStats = false
-
+    
+    // Currently available models
+    private let availableModels: [ModelSelect] = [.hibiki]
     var body: some View {
-        NavigationSplitView(
-            sidebar: {
-                VStack {
-                List {
-                    ForEach([ModelSelect.hibiki]) { modelType in
-                        NavigationLink(
-                            modelType.rawValue,
-                            destination: {
-                                ModelView(
-                                    model: $model, modelType: modelType, displayStats: $displayStats
+        Group {
+            if availableModels.count == 1 {
+                // Skip navigation if only one model
+                ModelView(
+                    model: $model,
+                    modelType: availableModels[0],
+                    displayStats: $displayStats
+                )
+            } else {
+                NavigationSplitView(
+                    sidebar: {
+                        VStack {
+                            ForEach(availableModels) { modelType in
+                                NavigationLink(
+                                    modelType.rawValue,
+                                    destination: {
+                                        ModelView(
+                                            model: $model,
+                                            modelType: modelType,
+                                            displayStats: $displayStats
+                                        )
+                                    }
                                 )
-                            })
-                    }
-                }
-                Toggle("speaker", isOn: $sendToSpeaker)
-                    .toggleStyle(.button)
-                    .padding()
-                    .onChange(of: sendToSpeaker) { newValue in
-                        if newValue {
-                            setDefaultToSpeaker()
-                        } else {
-                            setDefaultToStd()
+                            }
                         }
+                        .navigationTitle("Available Models")
+                        #if os(iOS)
+                            .navigationBarTitleDisplayMode(.inline)
+                        #endif
+                    },
+                    detail: {
+                        Text("Please choose a model type")
                     }
-                }
-                .navigationTitle("Available Models")
-                #if os(iOS)
-                    .navigationBarTitleDisplayMode(.inline)
-                #endif
-
-            },
-            detail: {
-                Text("Please choose a model type")
-            })
+                )
+            }
+        }
     }
-
 }
 
 #Preview {

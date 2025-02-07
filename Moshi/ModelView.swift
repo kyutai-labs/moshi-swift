@@ -17,179 +17,55 @@ import Metal
 import MoshiLib
 import SwiftUI
 import Synchronization
+import AVFoundation
 
 struct ModelView: View {
     @Binding var model: Evaluator
     let modelType: ModelSelect
     @Environment(DeviceStat.self) private var deviceStat
     @Binding var displayStats: Bool
+    @State var sendToSpeaker = false
 
     var body: some View {
-        let gridRow = { (name: String, ss: StatsSummary.Stats) -> GridRow in
-            GridRow {
-                Text(name)
-                    .font(.system(.body, design: .monospaced))
-                Text((1000 * ss.sum / Float(ss.cnt)).rounded(), format: .number)
-                    .font(.system(.body, design: .monospaced))
-                Text((1000 * ss.min).rounded(), format: .number)
-                    .font(.system(.body, design: .monospaced))
-                Text((1000 * ss.max).rounded(), format: .number)
-                    .font(.system(.body, design: .monospaced))
-                Text(ss.cnt, format: .number)
-                    .font(.system(.body, design: .monospaced))
+        VStack(spacing: 16) {
+            ControlBar(
+                isRunning: model.running,
+                sendToSpeaker: $sendToSpeaker,
+                onStart: generate,
+                onStop: stopGenerate,
+                onSpeakerChange: { newValue in
+                    if newValue {
+                        setDefaultToSpeaker()
+                    } else {
+                        setDefaultToStd()
+                    }
+                }
+            )
+            
+            if model.running || !model.modelInfo.isEmpty {
+                StatusSection(model: model)
+            }
+            
+            OutputSection(output: model.output)
+            
+            if model.statsSummary.encode.cnt > 0 {
+                StatsView(summary: model.statsSummary)
+                    .padding()
+                    .background(RoundedRectangle(cornerRadius: 12).fill(.secondary.opacity(0.1)))
             }
         }
-        let summaryTable: Grid =
-            Grid {
-                GridRow {
-                    Text("step")
-                        .font(.system(.body, design: .monospaced))
-                        .bold()
-                    Text("avg")
-                        .font(.system(.body, design: .monospaced))
-                        .bold()
-                    Text("min")
-                        .font(.system(.body, design: .monospaced))
-                        .bold()
-                    Text("max")
-                        .font(.system(.body, design: .monospaced))
-                        .bold()
-                    Text("cnt")
-                        .font(.system(.body, design: .monospaced))
-                        .bold()
-                }
-                gridRow("Enc", model.statsSummary.encode)
-                gridRow("Main", model.statsSummary.step)
-                gridRow("DepF", model.statsSummary.depformer)
-                gridRow("Dec", model.statsSummary.decode)
-            }
-        let thermalState =
-            switch deviceStat.thermalState {
-            case .critical: "critical"
-            case .fair: "fair"
-            case .nominal: "nominal"
-            case .serious: "serious"
-            case let other: "\(other)"
-            }
-        return VStack {
-            VStack {
-
-                Text(model.modelInfo)
-                    .font(.system(size: 22.0, weight: .semibold))
-                    .padding()
-
-                if let progress = model.progress {
-                    ProgressView(progress)
-                        .padding()
-                        .transition(.slide)
-                }
-                if model.running {
-                    HStack {
-                        Text(String(Int(model.totalDuration)) + "s")
-                             .font(.system(size: 16.0, weight: .semibold))
-                        Image(systemName: "microphone.circle")
-                            .font(.system(size: 40))
-                            .symbolEffect(.breathe)
-                        Gauge(value: model.bufferedDuration * 1000.0, in: 0...500) {
-                        } currentValueLabel: {
-                            Text("\(Int(model.bufferedDuration * 1000.0))")
-                        }
-                        .gaugeStyle(.accessoryCircular)
-                    }
-                }
-                HStack {
-                    Spacer()
-                    Button(
-                        model.running ? "Stop" : "Run",
-                        action: withAnimation { model.running ? stopGenerate : generate }
-                    )
-                    .buttonStyle(BorderedButtonStyle())
-                    .padding()
-                    Spacer()
-                }
-                if let (traceURL, codesURL) = model.urls {
-                    HStack {
-                        ShareLink(item: traceURL) {
-                            Label("Trace", systemImage: "square.and.arrow.up")
-                        }
-                        .buttonStyle(BorderedButtonStyle())
-                        ShareLink(item: codesURL) {
-                            Label("Codes", systemImage: "square.and.arrow.up")
-                        }
-                        .buttonStyle(BorderedButtonStyle())
-                    }
-                    .padding()
-                }
-            }
-            .background(RoundedRectangle(cornerRadius: 15.0).fill(.blue.opacity(0.1)))
-            .padding()
-
-            ScrollView(.vertical) {
-                ScrollViewReader { sp in
-                    Group {
-                        Text(model.output)
-                            .textSelection(.enabled)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .onChange(of: model.output) { _, _ in
-                        sp.scrollTo("bottom")
-                    }
-                    Spacer()
-                        .frame(width: 1, height: 1)
-                        .id("bottom")
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(RoundedRectangle(cornerRadius: 15.0).fill(.blue.opacity(0.1)))
-            .padding()
-
-            summaryTable
-                .padding()
-            Text("thermal: \(thermalState)")
-        }
+        .padding()
+        .navigationTitle("Moshi: \(modelType.rawValue)")
         .toolbar {
             ToolbarItem {
-                Button(
-                    action: { displayStats.toggle() },
-                    label: {
-                        Label(
-                            "Stats",
-                            systemImage: "info.circle.fill"
-                        )
-                    }
-                )
-                .popover(isPresented: $displayStats) {
-                    VStack {
-                        HStack {
-                            Text(
-                                "Memory Usage: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))"
-                            )
-                            .bold()
-                            Spacer()
-                        }
-                        Text(
-                            """
-                            Active Memory: \(deviceStat.gpuUsage.activeMemory.formatted(.byteCount(style: .memory)))/\(GPU.memoryLimit.formatted(.byteCount(style: .memory)))
-                            Cache Memory: \(deviceStat.gpuUsage.cacheMemory.formatted(.byteCount(style: .memory)))/\(GPU.cacheLimit.formatted(.byteCount(style: .memory)))
-                            Peak Memory: \(deviceStat.gpuUsage.peakMemory.formatted(.byteCount(style: .memory)))
-                            """
-                        )
-                        .font(.callout)
-                        .italic()
-                    }
-                    .frame(minWidth: 200.0)
-                    .padding()
+                Button(action: { displayStats.toggle() }) {
+                    Label("Stats", systemImage: "chart.bar.fill")
                 }
-                .labelStyle(.titleAndIcon)
-                .padding(.horizontal)
+                .popover(isPresented: $displayStats) {
+                    DeviceStatsView(deviceStat: deviceStat)
+                }
             }
         }
-        .navigationTitle("Moshi : \(modelType.rawValue)")
-        #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-        #endif
     }
 
     private func generate() {
@@ -201,6 +77,193 @@ struct ModelView: View {
     private func stopGenerate() {
         Task {
             await model.stopGenerate()
+        }
+    }
+}
+
+struct ControlBar: View {
+    let isRunning: Bool
+    @Binding var sendToSpeaker: Bool
+    let onStart: () -> Void
+    let onStop: () -> Void
+    let onSpeakerChange: (Bool) -> Void
+    
+    var body: some View {
+        HStack {
+            Button(action: isRunning ? onStop : onStart) {
+                Label(isRunning ? "Stop" : "Start", 
+                      systemImage: isRunning ? "stop.circle.fill" : "play.circle.fill")
+                    .font(.title2)
+            }
+            .buttonStyle(.borderedProminent)
+            
+            Spacer()
+            
+            HStack {
+                Image(systemName: "speaker.wave.2")
+                Toggle("Use External Speaker", isOn: $sendToSpeaker)
+                    .toggleStyle(.switch)
+            }
+            .onChange(of: sendToSpeaker) { newValue in
+                onSpeakerChange(newValue)
+            }
+        }
+        .padding()
+    }
+}
+
+struct StatusSection: View {
+    let model: Evaluator
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            if let progress = model.progress {
+                ProgressView(progress)
+                    .transition(.slide)
+            }
+            
+            if model.running {
+                HStack(spacing: 12) {
+                    Label("\(Int(model.totalDuration))s", systemImage: "clock")
+                    
+                    Image(systemName: "microphone.circle.fill")
+                        .foregroundStyle(.blue)
+                        .font(.title2)
+                        .symbolEffect(.bounce, options: .repeating)
+                    
+                    VStack(alignment: .leading) {
+                        Text("Buffer")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Gauge(value: model.bufferedDuration * 1000.0, in: 0...500) {
+                            EmptyView()
+                        } currentValueLabel: {
+                            Text("\(Int(model.bufferedDuration * 1000.0))ms")
+                        }
+                        .tint(.blue)
+                    }
+                }
+                .padding()
+                .background(RoundedRectangle(cornerRadius: 10).fill(.blue.opacity(0.1)))
+            }
+        }
+    }
+}
+
+struct OutputSection: View {
+    let output: String
+    
+    var body: some View {
+        ScrollView(.vertical) {
+            ScrollViewReader { proxy in
+                Text(output)
+                    .textSelection(.enabled)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .onChange(of: output) { _, _ in
+                        withAnimation {
+                            proxy.scrollTo("bottom", anchor: .bottom)
+                        }
+                    }
+                
+                Color.clear
+                    .frame(height: 1)
+                    .id("bottom")
+            }
+        }
+        .background(RoundedRectangle(cornerRadius: 12).fill(.secondary.opacity(0.1)))
+    }
+}
+
+// Move these to separate files
+struct DeviceStatsView: View {
+    let deviceStat: DeviceStat
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Device Statistics")
+                .font(.headline)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                MemoryStatRow(
+                    label: "Active Memory",
+                    value: deviceStat.gpuUsage.activeMemory,
+                    total: GPU.memoryLimit
+                )
+                MemoryStatRow(
+                    label: "Cache Memory",
+                    value: deviceStat.gpuUsage.cacheMemory,
+                    total: GPU.cacheLimit
+                )
+                MemoryStatRow(
+                    label: "Peak Memory",
+                    value: deviceStat.gpuUsage.peakMemory
+                )
+            }
+        }
+        .padding()
+        .frame(minWidth: 300)
+    }
+}
+
+struct MemoryStatRow: View {
+    let label: String
+    let value: Int
+    var total: Int?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .foregroundStyle(.secondary)
+            if let total = total {
+                Gauge(value: Double(value), in: 0...Double(total)) {
+                    Text(value.formatted(.byteCount(style: .memory)))
+                }
+                .tint(.blue)
+            } else {
+                Text(value.formatted(.byteCount(style: .memory)))
+            }
+        }
+    }
+}
+
+struct StatsView: View {
+    let summary: StatsSummary
+    
+    var body: some View {
+        Grid(alignment: .leading) {
+            GridRow {
+                Text("Step")
+                Text("Avg (ms)")
+                Text("Min (ms)")
+                Text("Max (ms)")
+                Text("Count")
+            }
+            .bold()
+            
+            Divider()
+            
+            StatRow(label: "Encode", stats: summary.encode)
+            StatRow(label: "Main", stats: summary.step)
+            StatRow(label: "Depformer", stats: summary.depformer)
+            StatRow(label: "Decode", stats: summary.decode)
+        }
+        .font(.system(.body, design: .monospaced))
+    }
+}
+
+struct StatRow: View {
+    let label: String
+    let stats: StatsSummary.Stats
+    
+    var body: some View {
+        GridRow {
+            Text(label)
+            Text((1000 * stats.sum / Float(stats.cnt)).rounded(), format: .number)
+            Text((1000 * stats.min).rounded(), format: .number)
+            Text((1000 * stats.max).rounded(), format: .number)
+            Text(stats.cnt, format: .number)
         }
     }
 }
