@@ -269,7 +269,7 @@ struct CombinedStatsView: View {
     let summary: StatsSummary
     let deviceStat: DeviceStat
     @State private var currentPage = 0
-    @State private var isExpanded = false
+    @State private var isExpanded = true
     
     var body: some View {
         VStack(spacing: 0) {
