@@ -23,49 +23,65 @@ struct ModelView: View {
     @Binding var model: Evaluator
     let modelType: ModelSelect
     @Environment(DeviceStat.self) private var deviceStat
-    @Binding var displayStats: Bool
     @State var sendToSpeaker = false
+    @State private var showSettings = false
 
     var body: some View {
         VStack(spacing: 16) {
-            ControlBar(
-                isRunning: model.running,
-                sendToSpeaker: $sendToSpeaker,
-                onStart: generate,
-                onStop: stopGenerate,
-                onSpeakerChange: { newValue in
-                    if newValue {
-                        setDefaultToSpeaker()
-                    } else {
-                        setDefaultToStd()
-                    }
-                }
-            )
-            
             if model.running || !model.modelInfo.isEmpty {
                 StatusSection(model: model)
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
             
             OutputSection(output: model.output)
             
-            if model.statsSummary.encode.cnt > 0 {
-                StatsView(summary: model.statsSummary)
+            if deviceStat.gpuUsage.activeMemory > 0 || model.statsSummary.step.cnt > 0 {
+                CombinedStatsView(summary: model.statsSummary, deviceStat: deviceStat)
+                    .frame(height: 250)
                     .padding()
                     .background(RoundedRectangle(cornerRadius: 12).fill(.secondary.opacity(0.1)))
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+            
+            // Bottom controls
+            ZStack {
+                // Centered Start/Stop button
+                Button(action: model.running ? stopGenerate : generate) {
+                    Label(model.running ? "Stop" : "Start", 
+                          systemImage: model.running ? "stop.circle.fill" : "play.circle.fill")
+                        .font(.title2)
+                }
+                .buttonStyle(.borderedProminent)
+                
+                // Right-aligned settings button
+                HStack {
+                    Spacer()
+                    Button(action: { showSettings.toggle() }) {
+                        Image(systemName: "gear")
+                            .font(.title2)
+                    }
+                    .popover(isPresented: $showSettings, arrowEdge: .bottom) {
+                        Toggle(isOn: $sendToSpeaker) {
+                            Label("Use External Speaker", systemImage: "speaker.wave.2")
+                        }
+                        .padding()
+                        .onChange(of: sendToSpeaker) { (_, newValue) in
+                            if newValue {
+                                setDefaultToSpeaker()
+                            } else {
+                                setDefaultToStd()
+                            }
+                        }
+                        .presentationCompactAdaptation(.popover)
+                    }
+                }
+            }
+            .padding()
         }
         .padding()
+        .animation(.smooth, value: model.running)
+        .animation(.smooth, value: model.statsSummary.encode.cnt)
         .navigationTitle("Moshi: \(modelType.rawValue)")
-        .toolbar {
-            ToolbarItem {
-                Button(action: { displayStats.toggle() }) {
-                    Label("Stats", systemImage: "chart.bar.fill")
-                }
-                .popover(isPresented: $displayStats) {
-                    DeviceStatsView(deviceStat: deviceStat)
-                }
-            }
-        }
     }
 
     private func generate() {
@@ -78,37 +94,6 @@ struct ModelView: View {
         Task {
             await model.stopGenerate()
         }
-    }
-}
-
-struct ControlBar: View {
-    let isRunning: Bool
-    @Binding var sendToSpeaker: Bool
-    let onStart: () -> Void
-    let onStop: () -> Void
-    let onSpeakerChange: (Bool) -> Void
-    
-    var body: some View {
-        HStack {
-            Button(action: isRunning ? onStop : onStart) {
-                Label(isRunning ? "Stop" : "Start", 
-                      systemImage: isRunning ? "stop.circle.fill" : "play.circle.fill")
-                    .font(.title2)
-            }
-            .buttonStyle(.borderedProminent)
-            
-            Spacer()
-            
-            HStack {
-                Image(systemName: "speaker.wave.2")
-                Toggle("Use External Speaker", isOn: $sendToSpeaker)
-                    .toggleStyle(.switch)
-            }
-            .onChange(of: sendToSpeaker) { newValue in
-                onSpeakerChange(newValue)
-            }
-        }
-        .padding()
     }
 }
 
@@ -176,34 +161,26 @@ struct OutputSection: View {
     }
 }
 
-// Move these to separate files
 struct DeviceStatsView: View {
     let deviceStat: DeviceStat
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Device Statistics")
-                .font(.headline)
-            
-            VStack(alignment: .leading, spacing: 8) {
-                MemoryStatRow(
-                    label: "Active Memory",
-                    value: deviceStat.gpuUsage.activeMemory,
-                    total: GPU.memoryLimit
-                )
-                MemoryStatRow(
-                    label: "Cache Memory",
-                    value: deviceStat.gpuUsage.cacheMemory,
-                    total: GPU.cacheLimit
-                )
-                MemoryStatRow(
-                    label: "Peak Memory",
-                    value: deviceStat.gpuUsage.peakMemory
-                )
-            }
+        VStack(alignment: .leading, spacing: 8) {
+            MemoryStatRow(
+                label: "Active Memory",
+                value: deviceStat.gpuUsage.activeMemory,
+                total: GPU.memoryLimit
+            )
+            MemoryStatRow(
+                label: "Cache Memory",
+                value: deviceStat.gpuUsage.cacheMemory,
+                total: GPU.cacheLimit
+            )
+            MemoryStatRow(
+                label: "Peak Memory",
+                value: deviceStat.gpuUsage.peakMemory
+            )
         }
-        .padding()
-        .frame(minWidth: 300)
     }
 }
 
@@ -264,6 +241,51 @@ struct StatRow: View {
             Text((1000 * stats.min).rounded(), format: .number)
             Text((1000 * stats.max).rounded(), format: .number)
             Text(stats.cnt, format: .number)
+        }
+    }
+}
+
+struct CombinedStatsView: View {
+    let summary: StatsSummary
+    let deviceStat: DeviceStat
+    @State private var currentPage = 0
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header with page indicator
+            HStack {
+                Spacer()
+                HStack(spacing: 16) {
+                    ForEach(0..<2) { index in
+                        Button(action: { withAnimation { currentPage = index } }) {
+                            VStack(spacing: 4) {
+                                Text(index == 0 ? "Model Stats" : "Device Stats")
+                                    .font(.subheadline)
+                                    .foregroundStyle(currentPage == index ? .primary : .secondary)
+                                
+                                Rectangle()
+                                    .fill(currentPage == index ? .blue : .clear)
+                                    .frame(height: 2)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                Spacer()
+            }
+            .padding(.bottom, 8)
+            
+            TabView(selection: $currentPage) {
+                StatsView(summary: summary)
+                    .padding(.vertical)
+                    .frame(height: 250)
+                    .tag(0)
+                
+                DeviceStatsView(deviceStat: deviceStat)
+                    .padding(.vertical)
+                    .tag(1)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
         }
     }
 }
