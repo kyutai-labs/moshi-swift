@@ -40,7 +40,7 @@ struct ContentView: View {
             sidebar: {
                 VStack {
                 List {
-                    ForEach(ModelSelect.allCases) { modelType in
+                    ForEach([ModelSelect.hibiki]) { modelType in
                         NavigationLink(
                             modelType.rawValue,
                             destination: {
@@ -514,17 +514,15 @@ struct MoshiModel: Model {
     init(_ ev: Evaluator, _ cb: Callbacks) async throws {
         await ev.setModelInfo("building model")
         let url: URL
-        let cfg: LmConfig
+        let cfg = LmConfig.moshi1b(audioDelay: 2)
         let localURL = Bundle.main.url(
             forResource: "moshi-ae01f626@100.q6", withExtension: "safetensors")
         switch localURL {
         case .none:
             url = try await ev.downloadFromHub(
-                id: "kyutai/moshiko-mlx-q8", filename: "model.q8.safetensors")
-            cfg = LmConfig.moshi_2024_07()
+                id: "lmz/moshi-swift", filename: "moshi-ae01f626@100.q6.safetensors")
         case .some(let localURL):
             url = localURL
-            cfg = LmConfig.moshi1b(audioDelay: 2)
         }
         self.moshi = try await ev.makeMoshi(url, cfg)
         self.mimi = try await ev.makeMimi(numCodebooks: 16)
