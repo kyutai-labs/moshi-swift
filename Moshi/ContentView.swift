@@ -23,6 +23,7 @@ enum ModelSelect: String, CaseIterable, Identifiable {
     case mimi
     case asr
     case hibiki
+    case hibiki_streaming
     case helium
 
     var id: Self { return self }
@@ -40,7 +41,7 @@ struct ContentView: View {
             sidebar: {
                 VStack {
                 List {
-                    ForEach([ModelSelect.hibiki]) { modelType in
+                    ForEach([ModelSelect.hibiki, ModelSelect.hibiki_streaming]) { modelType in
                         NavigationLink(
                             modelType.rawValue,
                             destination: {
@@ -316,7 +317,10 @@ class Evaluator {
         let m: ModelState
         switch sm {
         case .hibiki:
-            let model = try await MoshiModel(self, self.cb)
+            let model = try await MoshiModel(self, self.cb, false)
+            m = ModelState(model)
+        case .hibiki_streaming:
+            let model = try await MoshiModel(self, self.cb, true)
             m = ModelState(model)
         case .mimi:
             let model = try await MimiModel(self, self.cb)
@@ -338,7 +342,6 @@ class Evaluator {
 }
 
 protocol Model {
-    init(_ ev: Evaluator, _ cb: Callbacks) async throws
     mutating func reset()
     // If onMicrophonePcm returns true continue, otherwise break.
     mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool
@@ -510,9 +513,23 @@ struct MoshiModel: Model {
     let mimi: Mimi
     let gen: LMGen
     let cb: Callbacks
+    let streamSocket: URLSessionWebSocketTask?
 
-    init(_ ev: Evaluator, _ cb: Callbacks) async throws {
+    init(_ ev: Evaluator, _ cb: Callbacks, _ streaming: Bool) async throws {
         await ev.setModelInfo("building model")
+        if streaming {
+            guard let url = URL(string: "wss://example.com/socket") else {
+                throw CustomError("cannot build url")
+            }
+            let session = URLSession(configuration: .default)
+            self.streamSocket = session.webSocketTask(with: url)
+            if self.streamSocket == nil {
+                throw CustomError("cannot connect to \(url)")
+            }
+            self.streamSocket?.resume()
+        } else {
+            self.streamSocket = nil
+        }
         let url: URL
         let cfg = LmConfig.moshi1b(audioDelay: 2)
         let localURL = Bundle.main.url(
@@ -570,14 +587,33 @@ struct MoshiModel: Model {
                     }
                 }
                 if let audioTokens = gen.lastAudioTokens() {
-                    let audioTokens = audioTokens[0..., 0..., .newAxis]
-                    self.cb.onOutputAudioTokens(audioTokens)
-                    cb.onEvent(.beginDecode)
-                    let pcmOut = mimi.decodeStep(StreamArray(audioTokens))
-                    pcmOut.eval()
-                    cb.onEvent(.endDecode)
-                    if let p = pcmOut.asArray() {
-                        let _ = ap.send(p.asArray(Float.self))
+                    switch self.streamSocket {
+                    case .some(let socket):
+                        var bytes = Data([0x09])
+                        let tokenArray: [Int] = audioTokens.asArray(Int.self)
+                        for value in tokenArray {
+                            var littleEndianValue = UInt32(value).littleEndian
+                            bytes.append(Data(bytes: &littleEndianValue, count: MemoryLayout<UInt32>.size))
+                        }
+                        let message = URLSessionWebSocketTask.Message.data(bytes)
+                        socket.send(message) { error in
+                            if let error = error {
+                                Task { @MainActor in
+                                    ev.setModelInfo("\(error)")
+                                }
+                                print("Failed to send message: \(error)")
+                            }
+                        }
+                    case .none:
+                        let audioTokens = audioTokens[0..., 0..., .newAxis]
+                        self.cb.onOutputAudioTokens(audioTokens)
+                        cb.onEvent(.beginDecode)
+                        let pcmOut = mimi.decodeStep(StreamArray(audioTokens))
+                        pcmOut.eval()
+                        cb.onEvent(.endDecode)
+                        if let p = pcmOut.asArray() {
+                            let _ = ap.send(p.asArray(Float.self))
+                        }
                     }
                 }
             }
