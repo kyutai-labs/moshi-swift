@@ -288,6 +288,7 @@ class Evaluator {
                     }
                 }
                 print()
+                model.close()
                 let traceURL = FileManager.default.temporaryDirectory.appendingPathComponent(
                     "moshi-trace.json")
                 try await self.cb.writeJSONTrace(url: traceURL)
@@ -317,10 +318,10 @@ class Evaluator {
         let m: ModelState
         switch sm {
         case .hibiki:
-            let model = try await MoshiModel(self, self.cb, false)
+            let model = try await MoshiModel(self, self.cb, streaming: false)
             m = ModelState(model)
         case .hibiki_streaming:
-            let model = try await MoshiModel(self, self.cb, true)
+            let model = try await MoshiModel(self, self.cb, streaming: true)
             m = ModelState(model)
         case .mimi:
             let model = try await MimiModel(self, self.cb)
@@ -345,6 +346,7 @@ protocol Model {
     mutating func reset()
     // If onMicrophonePcm returns true continue, otherwise break.
     mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool
+    mutating func close()
 }
 
 struct MimiModel: Model {
@@ -371,6 +373,9 @@ struct MimiModel: Model {
 
     mutating func reset() {
         mimi.resetState()
+    }
+
+    mutating func close() {
     }
 
     mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
@@ -435,6 +440,9 @@ struct HeliumModel: Model {
     mutating func reset() {
     }
 
+    mutating func close() {
+    }
+
     mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
         let maxSteps = helium.cfg.transformer.maxSeqLen
         let sampler = Sampler()
@@ -494,6 +502,9 @@ struct AsrModel: Model {
         asr.reset()
     }
 
+    mutating func close() {
+    }
+
     mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
         let tokens = asr.onPcmInput(pcm)
         for v in tokens {
@@ -513,22 +524,18 @@ struct MoshiModel: Model {
     let mimi: Mimi
     let gen: LMGen
     let cb: Callbacks
-    let streamSocket: URLSessionWebSocketTask?
+    let streamURL: URL?
+    var streamSocket: URLSessionWebSocketTask? = nil
 
-    init(_ ev: Evaluator, _ cb: Callbacks, _ streaming: Bool) async throws {
+    init(_ ev: Evaluator, _ cb: Callbacks, streaming: Bool) async throws {
         await ev.setModelInfo("building model")
         if streaming {
-            guard let url = URL(string: "wss://example.com/socket") else {
+            guard let url = URL(string: "wss://example.com") else {
                 throw CustomError("cannot build url")
             }
-            let session = URLSession(configuration: .default)
-            self.streamSocket = session.webSocketTask(with: url)
-            if self.streamSocket == nil {
-                throw CustomError("cannot connect to \(url)")
-            }
-            self.streamSocket?.resume()
+            self.streamURL = url
         } else {
-            self.streamSocket = nil
+            self.streamURL = nil
         }
         let url: URL
         let cfg = LmConfig.moshi1b(audioDelay: 2)
@@ -559,6 +566,16 @@ struct MoshiModel: Model {
     mutating func reset() {
         mimi.resetState()
         gen.reset()
+        let session = URLSession(configuration: .default)
+        if let url = self.streamURL {
+            self.streamSocket = session.webSocketTask(with: url)
+            self.streamSocket?.resume()
+        }
+    }
+
+    mutating func close() {
+        streamSocket?.cancel(with: .normalClosure, reason: "Closing connection".data(using: .utf8))
+        streamSocket = nil
     }
 
     mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
