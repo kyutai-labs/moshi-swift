@@ -530,7 +530,7 @@ struct MoshiModel: Model {
     init(_ ev: Evaluator, _ cb: Callbacks, streaming: Bool) async throws {
         await ev.setModelInfo("building model")
         if streaming {
-            guard let url = URL(string: "wss://example.com") else {
+            guard let url = URL(string: "wss://example.com/") else {
                 throw CustomError("cannot build url")
             }
             self.streamURL = url
@@ -587,6 +587,7 @@ struct MoshiModel: Model {
             self.cb.onInputAudioTokens(codes)
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
+                var text = ""
                 if let textToken = gen.step(
                     otherAudioTokens: codes[0..., 0..<8, step])
                 {
@@ -594,11 +595,11 @@ struct MoshiModel: Model {
                     self.cb.onOutputTextToken(textTokenI)
                     if textTokenI != 0 && textTokenI != 3 {
                         if let v = vocab[textTokenI] {
-                            let v = v.replacing("▁", with: " ")
-                            print(v, terminator: "")
+                            text = v.replacing("▁", with: " ")
+                            print(text, terminator: "")
                             fflush(stdout)
                             Task { @MainActor in
-                                ev.output += v
+                                ev.output += text
                             }
                         }
                     }
@@ -619,6 +620,18 @@ struct MoshiModel: Model {
                                     ev.setModelInfo("\(error)")
                                 }
                                 print("Failed to send message: \(error)")
+                            }
+                        }
+                        if !text.isEmpty {
+                            let bytes = Data([UInt8(2)] + Array(text.utf8))
+                            let message = URLSessionWebSocketTask.Message.data(bytes)
+                            socket.send(message) { error in
+                                if let error = error {
+                                    Task { @MainActor in
+                                        ev.setModelInfo("\(error)")
+                                    }
+                                    print("Failed to send message: \(error)")
+                                }
                             }
                         }
                     case .none:
