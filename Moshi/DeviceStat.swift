@@ -1,13 +1,21 @@
 import Foundation
 import MLX
 
+enum ThermalState: String {
+    case nominal = "Nominal"
+    case fair = "Fair"
+    case serious = "Serious"
+    case critical = "Critical"
+    case unknown = "Unknown"
+}
+
 @Observable
 final class DeviceStat: @unchecked Sendable {
 
     @MainActor
     var gpuUsage = GPU.snapshot()
     @MainActor
-    var thermalState: ProcessInfo.ThermalState = .nominal
+    var thermalState: ThermalState = .nominal
 
     private let initialGPUSnapshot = GPU.snapshot()
     private var timer: Timer?
@@ -27,7 +35,18 @@ final class DeviceStat: @unchecked Sendable {
         let thermalState = ProcessInfo.processInfo.thermalState
         DispatchQueue.main.async { [weak self] in
             self?.gpuUsage = gpuSnapshotDelta
-            self?.thermalState = thermalState
+            switch thermalState {
+                case .nominal:
+                    self?.thermalState = .nominal
+                case .fair:
+                    self?.thermalState = .fair
+                case .serious:
+                    self?.thermalState = .serious
+                case .critical:
+                    self?.thermalState = .critical
+                default:
+                    self?.thermalState = .unknown
+            }
         }
     }
 
