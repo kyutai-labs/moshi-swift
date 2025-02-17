@@ -124,6 +124,7 @@ struct StatusSection: View {
             }
 
             if model.running {
+                let tint = model.totalDuration > 0 ? Color.blue : Color.red
                 HStack(spacing: 12) {
                     Label("\(Int(model.totalDuration))s", systemImage: "clock")
 
@@ -145,7 +146,7 @@ struct StatusSection: View {
                     }
                 }
                 .padding()
-                .background(RoundedRectangle(cornerRadius: 10).fill(.blue.opacity(0.1)))
+                .background(RoundedRectangle(cornerRadius: 10).fill(tint.opacity(0.1)))
             }
         }
     }
