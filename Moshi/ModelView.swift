@@ -34,7 +34,8 @@ struct ModelView: View {
                         summary: model.statsSummary,
                         deviceStat: deviceStat,
                         modelInfo: model.modelInfo,
-                        modelName: model.modelName
+                        modelName: model.modelName,
+                        urls: model.urls
                     )
                         .padding()
                         .background(RoundedRectangle(cornerRadius: 12).fill(.secondary.opacity(0.1)))
@@ -212,6 +213,7 @@ struct DeviceStatsView: View {
 struct DebugView: View {
     let modelInfo: String
     let modelName: String
+    let urls: (URL, URL)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -219,6 +221,19 @@ struct DebugView: View {
             Text(modelInfo)
             Text("Model Name").bold()
             Text(modelName)
+            if let (traceURL, codesURL) = urls {
+                HStack {
+                    ShareLink(item: traceURL) {
+                        Label("Trace", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(BorderedButtonStyle())
+                        ShareLink(item: codesURL) {
+                            Label("Codes", systemImage: "square.and.arrow.up")
+                        }
+                    .buttonStyle(BorderedButtonStyle())
+                }
+                .padding()
+            }
         }
     }
 }
@@ -289,6 +304,7 @@ struct CombinedStatsView: View {
     let deviceStat: DeviceStat
     let modelInfo: String
     let modelName: String
+    let urls: (URL, URL)?
     @State private var currentPage = 0
     @State private var isExpanded = true
 
@@ -361,7 +377,7 @@ struct CombinedStatsView: View {
                     DeviceStatsView(deviceStat: deviceStat)
                         .padding(.vertical)
                         .tag(1)
-                    DebugView(modelInfo: modelInfo, modelName: modelName)
+                    DebugView(modelInfo: modelInfo, modelName: modelName, urls: urls)
                         .padding(.vertical)
                         .tag(2)
                 }
