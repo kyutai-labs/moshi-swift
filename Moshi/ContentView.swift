@@ -101,6 +101,7 @@ struct ContentView: View {
 class Evaluator {
     var running = false
     var modelInfo = "...moshi..."
+    var modelName = ""
     var urls: (URL, URL)? = nil
     var stat = ""
     var output = ""
@@ -350,6 +351,9 @@ class Evaluator {
         return m
     }
 
+    func setModelName(_ s: String) {
+        modelName = s
+    }
     func setModelInfo(_ s: String) {
         modelInfo = s
     }
@@ -543,6 +547,7 @@ struct MoshiModel: Model {
             url = localURL
         }
         self.moshi = try await ev.makeMoshi(url, cfg)
+        await ev.setModelName(url.lastPathComponent)
         self.mimi = try await ev.makeMimi(numCodebooks: 16)
         await ev.setModelInfo("model built")
         let maxSteps = cfg.transformer.maxSeqLen

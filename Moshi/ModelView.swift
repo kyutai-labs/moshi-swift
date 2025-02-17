@@ -30,14 +30,19 @@ struct ModelView: View {
         VStack(spacing: 16) {
             Group {
                 if deviceStat.gpuUsage.activeMemory > 0 || model.statsSummary.step.cnt > 0 {
-                    CombinedStatsView(summary: model.statsSummary, deviceStat: deviceStat)
+                    CombinedStatsView(
+                        summary: model.statsSummary,
+                        deviceStat: deviceStat,
+                        modelInfo: model.modelInfo,
+                        modelName: model.modelName
+                    )
                         .padding()
                         .background(RoundedRectangle(cornerRadius: 12).fill(.secondary.opacity(0.1)))
                 }
             }
             .transition(.push(from: .top))
             .animation(.easeInOut(duration: 0.2), value: deviceStat.gpuUsage.activeMemory > 0 || model.statsSummary.step.cnt > 0)
-            
+
             Group {
                 if !model.running && model.output.isEmpty {
                     ModelInfoView(modelType: modelType)
@@ -47,7 +52,7 @@ struct ModelView: View {
             }
             .transition(.opacity)
             .animation(.easeInOut(duration: 0.2), value: !model.running && model.output.isEmpty)
-            
+
             Group {
                 if model.running || !model.output.isEmpty {
                     StatusSection(model: model)
@@ -55,17 +60,17 @@ struct ModelView: View {
             }
             .transition(.push(from: .bottom))
             .animation(.easeInOut(duration: 0.2), value: model.running || !model.output.isEmpty)
-            
+
             // Bottom controls
             ZStack {
                 // Centered Start/Stop button
                 Button(action: model.running ? stopGenerate : generate) {
-                    Label(model.running ? "Stop" : "Start", 
+                    Label(model.running ? "Stop" : "Start",
                           systemImage: model.running ? "stop.circle.fill" : "play.circle.fill")
                         .font(.title2)
                 }
                 .buttonStyle(.borderedProminent)
-                
+
                 // Right-aligned settings button
                 HStack {
                     Spacer()
@@ -110,23 +115,23 @@ struct ModelView: View {
 
 struct StatusSection: View {
     let model: Evaluator
-    
+
     var body: some View {
         VStack(spacing: 8) {
             if let progress = model.progress {
                 ProgressView(progress)
                     .transition(.slide)
             }
-            
+
             if model.running {
                 HStack(spacing: 12) {
                     Label("\(Int(model.totalDuration))s", systemImage: "clock")
-                    
+
                     Image(systemName: "microphone.circle.fill")
                         .foregroundStyle(.blue)
                         .font(.title2)
                         .symbolEffect(.bounce, options: .repeating)
-                    
+
                     VStack(alignment: .leading) {
                         Text("Buffer")
                             .font(.caption)
@@ -148,7 +153,7 @@ struct StatusSection: View {
 
 struct OutputSection: View {
     let output: String
-    
+
     var body: some View {
         ScrollView(.vertical) {
             ScrollViewReader { proxy in
@@ -162,7 +167,6 @@ struct OutputSection: View {
                             proxy.scrollTo("bottom", anchor: .bottom)
                         }
                     }
-                
                 Color.clear
                     .frame(height: 1)
                     .id("bottom")
@@ -174,7 +178,7 @@ struct OutputSection: View {
 
 struct DeviceStatsView: View {
     let deviceStat: DeviceStat
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             MemoryStatRow(
@@ -199,7 +203,21 @@ struct DeviceStatsView: View {
                     Text(deviceStat.thermalState.rawValue)
                 }
             }
-            
+
+        }
+    }
+}
+
+struct DebugView: View {
+    let modelInfo: String
+    let modelName: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Last Info").bold()
+            Text(modelInfo)
+            Text("Model Name").bold()
+            Text(modelName)
         }
     }
 }
@@ -208,7 +226,7 @@ struct MemoryStatRow: View {
     let label: String
     let value: Int
     var total: Int?
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
@@ -227,7 +245,7 @@ struct MemoryStatRow: View {
 
 struct StatsView: View {
     let summary: StatsSummary
-    
+
     var body: some View {
         Grid(alignment: .leading) {
             GridRow {
@@ -238,9 +256,9 @@ struct StatsView: View {
                 Text("Count")
             }
             .bold()
-            
+
             Divider()
-            
+
             StatRow(label: "Encode", stats: summary.encode)
             StatRow(label: "Main", stats: summary.step)
             StatRow(label: "Depformer", stats: summary.depformer)
@@ -253,7 +271,7 @@ struct StatsView: View {
 struct StatRow: View {
     let label: String
     let stats: StatsSummary.Stats
-    
+
     var body: some View {
         GridRow {
             Text(label)
@@ -268,9 +286,11 @@ struct StatRow: View {
 struct CombinedStatsView: View {
     let summary: StatsSummary
     let deviceStat: DeviceStat
+    let modelInfo: String
+    let modelName: String
     @State private var currentPage = 0
     @State private var isExpanded = true
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Header with page indicator and collapse button
@@ -279,13 +299,18 @@ struct CombinedStatsView: View {
                 HStack {
                     if isExpanded {
                         HStack(spacing: 16) {
-                            ForEach(0..<2) { index in
+                            ForEach(0..<3) { index in
                                 Button(action: { withAnimation { currentPage = index } }) {
+                                    let text = switch index {
+                                    case 0: "Model"
+                                    case 1: "Device"
+                                    case 2: "Details"
+                                    case _: "unk"
+                                    }
                                     VStack(spacing: 4) {
-                                        Text(index == 0 ? "Device Stats" : "Model Stats")
+                                        Text(text)
                                             .font(.subheadline)
                                             .foregroundStyle(currentPage == index ? .primary : .secondary)
-                                        
                                         Rectangle()
                                             .fill(currentPage == index ? .blue : .clear)
                                             .frame(height: 2)
@@ -296,13 +321,13 @@ struct CombinedStatsView: View {
                         }
                         .frame(maxWidth: .infinity)
                     } else {
-                        Text("Stats")
+                        Text("Details")
                             .font(.headline)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                
+
                 // Right-aligned button (always in the same position)
                 HStack {
                     Spacer()
@@ -325,17 +350,19 @@ struct CombinedStatsView: View {
                     }
                 }
             }
-            
+
             if isExpanded {
                 TabView(selection: $currentPage) {
-                    DeviceStatsView(deviceStat: deviceStat)
-                        .padding(.vertical)
-                        .tag(0)
-
                     StatsView(summary: summary)
                         .padding(.vertical)
                         .frame(height: 250)
+                        .tag(0)
+                    DeviceStatsView(deviceStat: deviceStat)
+                        .padding(.vertical)
                         .tag(1)
+                    DebugView(modelInfo: modelInfo, modelName: modelName)
+                        .padding(.vertical)
+                        .tag(2)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
             }
@@ -347,18 +374,18 @@ struct CombinedStatsView: View {
 
 struct ModelInfoView: View {
     let modelType: ModelSelect
-    
+
     var body: some View {
         VStack(spacing: 24) {
             Image(systemName: "waveform.and.mic")
                 .font(.system(size: 64))
                 .foregroundStyle(.blue)
-            
+
             VStack(spacing: 12) {
                 Text(modelType.name)
                     .font(.title)
                     .bold()
-                
+
                 Text(modelType.description)
                     .font(.body)
                     .multilineTextAlignment(.center)
