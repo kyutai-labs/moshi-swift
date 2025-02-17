@@ -311,6 +311,18 @@ class Evaluator {
                 try await self.cb.writeJSONTrace(url: traceURL)
                 let codesURL = FileManager.default.temporaryDirectory.appendingPathComponent(
                     "moshi-codes.safetensors")
+                do {
+                    let timestamp = Int(Date().timeIntervalSince1970)
+                    guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+                        throw NSError(domain: "FileManagerError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Documents directory not found"])
+                    }
+                    let docURL = documentsDirectory.appendingPathComponent(
+                        "moshi-codes-\(timestamp).safetensors")
+                    let fileManager = FileManager.default
+                        try fileManager.copyItem(at: codesURL, to: docURL)
+                } catch {
+                    print("Error copying file: \(error)")
+                }
                 try await self.cb.writeCodes(url: codesURL)
                 microphoneCapture.stopCapturing()
                 return (traceURL, codesURL)
