@@ -550,7 +550,7 @@ struct MoshiModel: Model {
         let url: URL
         let cfg = LmConfig.moshi1b(audioDelay: 2)
         let localURL = Bundle.main.url(
-            forResource: "moshi-ae01f626@100.q6", withExtension: "safetensors")
+            forResource: "moshi-37c6cfd6@200.q6", withExtension: "safetensors")
         switch localURL {
         case .none:
             url = try await ev.downloadFromHub(
