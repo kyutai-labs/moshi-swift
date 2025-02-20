@@ -554,7 +554,7 @@ struct MoshiModel: Model {
         switch localURL {
         case .none:
             url = try await ev.downloadFromHub(
-                id: "lmz/moshi-swift", filename: "moshi-ae01f626@100.q6.safetensors")
+                id: "lmz/moshi-swift", filename: "moshi-37c6cfd6@200.q6.safetensors")
         case .some(let localURL):
             url = localURL
         }
