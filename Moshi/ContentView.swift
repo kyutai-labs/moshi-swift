@@ -66,16 +66,18 @@ struct ContentView: View {
                 NavigationSplitView(
                     sidebar: {
                         VStack {
-                            ForEach(availableModels) { modelType in
-                                NavigationLink(
-                                    modelType.rawValue,
-                                    destination: {
-                                        ModelView(
-                                            model: $model,
-                                            modelType: modelType
-                                        )
-                                    }
-                                )
+                            List {
+                                ForEach(availableModels) { modelType in
+                                    NavigationLink(
+                                        modelType.rawValue,
+                                        destination: {
+                                            ModelView(
+                                                model: $model,
+                                                modelType: modelType
+                                            )
+                                        }
+                                    )
+                                }
                             }
                         }
                         .navigationTitle("Available Models")
