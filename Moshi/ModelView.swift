@@ -381,7 +381,9 @@ struct CombinedStatsView: View {
                         .padding(.vertical)
                         .tag(2)
                 }
+                #if os(iOS)
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                #endif
             }
         }
         .frame(height: isExpanded ? 250 : 44)
