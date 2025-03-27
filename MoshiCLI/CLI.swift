@@ -131,6 +131,15 @@ struct RunQwen: ParsableCommand {
         let model = QwenModel(config)
         try model.update(parameters: parameters, verify: [.all])
         eval(model)
+        let cache = model.makeCache(bSize: 1)
+        let sampler = Sampler()
+        var lastToken = 0
+        for _ in 0...100 {
+            let logits = model(MLXArray([lastToken]).reshaped(1, 1), cache: cache)
+            let (tok, _) = sampler(logits: logits[0])
+            lastToken = tok.item<Int>()
+            print("sampled \(lastToken)")
+        }
     }
 }
 
