@@ -36,7 +36,7 @@ struct Moshi: ParsableCommand {
     static let configuration = CommandConfiguration(
         subcommands: [
             Run.self, RunHelium.self, RunMimi.self, AudioToCodes.self, CodesToAudio.self,
-            RunAsr.self,
+            RunAsr.self, RunQwen.self,
         ]
     )
 }
@@ -103,6 +103,44 @@ public enum HeliumConfig: String, CaseIterable, ExpressibleByArgument {
     case q6
     case q8
     case bf16
+}
+
+struct RunQwen: ParsableCommand {
+    @Option(help: "the config")
+    var hfRepo: String = "Qwen/Qwen2.5-0.5B"
+
+    mutating func run() throws {
+        let configUrl = try downloadFromHub(id: hfRepo, filename: "config.json")
+        let configData = try Data(contentsOf: configUrl)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let config = try decoder.decode(QwenConfig.self, from: configData)
+        print("config \(config)")
+        let modelUrl = try downloadFromHub(id: hfRepo, filename: "model.safetensors")
+        print("model \(modelUrl)")
+        let weights = try loadArrays(url: modelUrl)
+        guard let modelItem = ModuleParameters.unflattened(weights)["model"] else {
+            fatalError("no model key in {configUrl}")
+        }
+        let parameters =
+            switch modelItem {
+            case .dictionary(let d): NestedDictionary(values: d)
+            default: fatalError("model key in {configUrl} is not a dict")
+            }
+
+        let model = QwenModel(config)
+        try model.update(parameters: parameters, verify: [.all])
+        eval(model)
+        let cache = model.makeCache(bSize: 1)
+        let sampler = Sampler()
+        var lastToken = 0
+        for _ in 0...100 {
+            let logits = model(MLXArray([lastToken]).reshaped(1, 1), cache: cache)
+            let (tok, _) = sampler(logits: logits[0])
+            lastToken = tok.item<Int>()
+            print("sampled \(lastToken)")
+        }
+    }
 }
 
 struct RunHelium: ParsableCommand {
