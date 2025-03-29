@@ -131,6 +131,8 @@ struct RunQwen: ParsableCommand {
 
     mutating func run() throws {
         let tokenizer = try makeTokenizer(hfRepo: hfRepo)
+        let messages = [["role": "user", "content": "Describe the Swift programming language."]]
+        let encodedPrompt = try tokenizer.applyChatTemplate(messages: messages)
         let configUrl = try downloadFromHub(id: hfRepo, filename: "config.json")
         let configData = try Data(contentsOf: configUrl)
         let decoder = JSONDecoder()
@@ -154,11 +156,15 @@ struct RunQwen: ParsableCommand {
         eval(model)
         let cache = model.makeCache(bSize: 1)
         let sampler = Sampler()
-        var lastToken = 0
-        for _ in 0...100 {
+        var lastToken = config.bosTokenId
+        for index in 0...100 {
             let logits = model(MLXArray([lastToken]).reshaped(1, 1), cache: cache)
-            let (tok, _) = sampler(logits: logits[0])
-            lastToken = tok.item<Int>()
+            if index < encodedPrompt.count {
+                lastToken = encodedPrompt[index]
+            } else {
+                let (tok, _) = sampler(logits: logits[0])
+                lastToken = tok.item<Int>()
+            }
             let s = tokenizer.decode(tokens: [lastToken])
             print("sampled \(lastToken) \(s)")
         }
