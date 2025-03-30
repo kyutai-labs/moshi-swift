@@ -26,7 +26,7 @@ enum ModelSelect: String, CaseIterable, Identifiable {
     case helium
 
     var id: Self { return self }
-    
+
     var name: String {
         switch self {
         case .hibiki:
@@ -35,11 +35,12 @@ enum ModelSelect: String, CaseIterable, Identifiable {
             return rawValue.capitalized
         }
     }
-    
+
     var description: String {
         switch self {
         case .hibiki:
-            return "A French to English simultaneous translation model designed for real-time speech translation."
+            return
+                "A French to English simultaneous translation model designed for real-time speech translation."
         default:
             return ""
         }
@@ -51,7 +52,7 @@ struct ContentView: View {
     @State var selectedModel: ModelSelect = .mimi
     @State var sendToSpeaker = false
     @Environment(DeviceStat.self) private var deviceStat
-    
+
     // Currently available models
     private let availableModels: [ModelSelect] = [.hibiki]
     var body: some View {
@@ -300,7 +301,7 @@ class Evaluator {
                         if currentStep % 5 == 0 {
                             self.bufferedDuration =
                                 ap.bufferedDuration() + microphoneCapture.bufferedDuration()
-                            self.totalDuration =  CFAbsoluteTimeGetCurrent() - startTime
+                            self.totalDuration = CFAbsoluteTimeGetCurrent() - startTime
                         }
                         if currentStep % 20 == 0 {
                             self.statsSummary = self.cb.getSummary(maxEvents: 100)
@@ -315,13 +316,19 @@ class Evaluator {
                     "moshi-codes.safetensors")
                 do {
                     let timestamp = Int(Date().timeIntervalSince1970)
-                    guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-                        throw NSError(domain: "FileManagerError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Documents directory not found"])
+                    guard
+                        let documentsDirectory = FileManager.default.urls(
+                            for: .documentDirectory, in: .userDomainMask
+                        ).first
+                    else {
+                        throw NSError(
+                            domain: "FileManagerError", code: 1,
+                            userInfo: [NSLocalizedDescriptionKey: "Documents directory not found"])
                     }
                     let docURL = documentsDirectory.appendingPathComponent(
                         "moshi-codes-\(timestamp).safetensors")
                     let fileManager = FileManager.default
-                        try fileManager.copyItem(at: codesURL, to: docURL)
+                    try fileManager.copyItem(at: codesURL, to: docURL)
                 } catch {
                     print("Error copying file: \(error)")
                 }
