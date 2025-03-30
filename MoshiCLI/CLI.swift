@@ -158,6 +158,9 @@ struct RunQwen: ParsableCommand {
             }
 
         let model = QwenModel(config)
+        if let q = config.quantization {
+            quantize(model: model, groupSize: q.groupSize, bits: q.bits)
+        }
         try model.update(parameters: parameters, verify: [.all])
         eval(model)
         let cache = model.makeCache(bSize: 1)

@@ -6,6 +6,11 @@ import MLX
 import MLXFast
 import MLXNN
 
+public struct QwenQuantization: Codable {
+    public var groupSize: Int
+    public var bits: Int
+}
+
 public struct QwenConfig: Codable {
     public var bosTokenId: Int
     public var eosTokenId: Int
@@ -21,6 +26,7 @@ public struct QwenConfig: Codable {
     public var tieWordEmbeddings: Bool
     public var useSlidingWindow: Bool
     public var vocabSize: Int
+    public var quantization: QwenQuantization? = nil
 
     public func headDim() -> Int {
         self.hiddenSize / self.numAttentionHeads
