@@ -9,6 +9,7 @@ import Hub
 import MLX
 import MLXNN
 import MoshiLib
+import Tokenizers
 
 func downloadFromHub(id: String, filename: String) throws -> URL {
     let targetURL = HubApi().localRepoLocation(Hub.Repo(id: id)).appending(path: filename)
@@ -20,15 +21,34 @@ func downloadFromHub(id: String, filename: String) throws -> URL {
     let semaphore = DispatchSemaphore(value: 0)
     Task {
         let repo = Hub.Repo(id: id)
-        url = try await Hub.snapshot(from: repo, matching: filename) { progress in
-            let pct = Int(progress.fractionCompleted * 100)
-            print("\rretrieving \(filename): \(pct)%", terminator: "")
+        do {
+            url = try await Hub.snapshot(from: repo, matching: filename) { progress in
+                let pct = Int(progress.fractionCompleted * 100)
+                print("\rretrieving \(filename): \(pct)%", terminator: "")
+            }
+        } catch {
+            fatalError("cannot fetch \(id) \(filename): \(error)")
         }
         semaphore.signal()
     }
     semaphore.wait()
     print("\rretrieved \(filename)")
     return url!.appending(path: filename)
+}
+
+func makeTokenizer(hfRepo: String) throws -> any Tokenizer {
+    var tokenizer: (any Tokenizer)? = nil
+    let semaphore = DispatchSemaphore(value: 0)
+    Task {
+        do {
+            tokenizer = try await AutoTokenizer.from(pretrained: hfRepo)
+        } catch {
+            fatalError("cannot build tokenizer \(error)")
+        }
+        semaphore.signal()
+    }
+    semaphore.wait()
+    return tokenizer!
 }
 
 @main
@@ -107,9 +127,18 @@ public enum HeliumConfig: String, CaseIterable, ExpressibleByArgument {
 
 struct RunQwen: ParsableCommand {
     @Option(help: "the config")
-    var hfRepo: String = "Qwen/Qwen2.5-0.5B"
+    var hfRepo: String = "Qwen/Qwen2.5-0.5B-Instruct"
+
+    @Option(help: "the prompt to be used")
+    var prompt: String = "Describe the swift programming language."
+
+    @Option(help: "the number of tokens to generate")
+    var n: Int = 256
 
     mutating func run() throws {
+        let tokenizer = try makeTokenizer(hfRepo: hfRepo)
+        let messages = [["role": "user", "content": prompt]]
+        let encodedPrompt = try tokenizer.applyChatTemplate(messages: messages)
         let configUrl = try downloadFromHub(id: hfRepo, filename: "config.json")
         let configData = try Data(contentsOf: configUrl)
         let decoder = JSONDecoder()
@@ -133,13 +162,25 @@ struct RunQwen: ParsableCommand {
         eval(model)
         let cache = model.makeCache(bSize: 1)
         let sampler = Sampler()
-        var lastToken = 0
-        for _ in 0...100 {
+        var lastToken = config.bosTokenId
+        let startTime = CFAbsoluteTimeGetCurrent()
+        var nTokens = 0
+        for index in 0...(n + prompt.count) {
             let logits = model(MLXArray([lastToken]).reshaped(1, 1), cache: cache)
-            let (tok, _) = sampler(logits: logits[0])
-            lastToken = tok.item<Int>()
-            print("sampled \(lastToken)")
+            if index < encodedPrompt.count {
+                lastToken = encodedPrompt[index]
+            } else {
+                let (tok, _) = sampler(logits: logits[0])
+                lastToken = tok.item<Int>()
+            }
+            let s = tokenizer.decode(tokens: [lastToken])
+            print("\(s)", terminator: "")
+            fflush(stdout)
+            nTokens += 1
         }
+        print()
+        let elapsedTime = CFAbsoluteTimeGetCurrent() - startTime
+        print("\(nTokens) tokens generated, \(Double(nTokens) / elapsedTime) tok/s")
     }
 }
 

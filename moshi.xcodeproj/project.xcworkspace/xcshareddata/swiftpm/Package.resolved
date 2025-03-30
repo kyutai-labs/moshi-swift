@@ -1,13 +1,13 @@
 {
-  "originHash" : "47fb16e03d86cc46081af3e80276563c10468ecb72047252392fb87a5230f3c5",
+  "originHash" : "982acab5e54d309f8a98a66985086b61e82a869bc8ebd717682e681f43aac314",
   "pins" : [
     {
       "identity" : "jinja",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/maiqingqiang/Jinja",
+      "location" : "https://github.com/johnmai-dev/Jinja",
       "state" : {
-        "revision" : "6dbe4c449469fb586d0f7339f900f0dd4d78b167",
-        "version" : "1.0.6"
+        "revision" : "bbddb92fc51ae420b87300298370fd1dfc308f73",
+        "version" : "1.1.1"
       }
     },
     {
@@ -29,6 +29,15 @@
       }
     },
     {
+      "identity" : "swift-collections",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-collections.git",
+      "state" : {
+        "revision" : "671108c96644956dddcd89dd59c203dcdb36cec7",
+        "version" : "1.1.4"
+      }
+    },
+    {
       "identity" : "swift-numerics",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-numerics",
@@ -42,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/huggingface/swift-transformers",
       "state" : {
-        "revision" : "d42fdae473c49ea216671da8caae58e102d28709",
-        "version" : "0.1.14"
+        "revision" : "8a83416cc00ab07a5de9991e6ad817a9b8588d20",
+        "version" : "0.1.15"
       }
     }
   ],
