@@ -127,11 +127,17 @@ public enum HeliumConfig: String, CaseIterable, ExpressibleByArgument {
 
 struct RunQwen: ParsableCommand {
     @Option(help: "the config")
-    var hfRepo: String = "Qwen/Qwen2.5-0.5B"
+    var hfRepo: String = "Qwen/Qwen2.5-0.5B-Instruct"
+
+    @Option(help: "the prompt to be used")
+    var prompt: String = "Describe the swift programming language."
+
+    @Option(help: "the number of tokens to generate")
+    var n: Int = 256
 
     mutating func run() throws {
         let tokenizer = try makeTokenizer(hfRepo: hfRepo)
-        let messages = [["role": "user", "content": "Describe the Swift programming language."]]
+        let messages = [["role": "user", "content": prompt]]
         let encodedPrompt = try tokenizer.applyChatTemplate(messages: messages)
         let configUrl = try downloadFromHub(id: hfRepo, filename: "config.json")
         let configData = try Data(contentsOf: configUrl)
@@ -157,7 +163,9 @@ struct RunQwen: ParsableCommand {
         let cache = model.makeCache(bSize: 1)
         let sampler = Sampler()
         var lastToken = config.bosTokenId
-        for index in 0...100 {
+        let startTime = CFAbsoluteTimeGetCurrent()
+        var nTokens = 0
+        for index in 0...(n + prompt.count) {
             let logits = model(MLXArray([lastToken]).reshaped(1, 1), cache: cache)
             if index < encodedPrompt.count {
                 lastToken = encodedPrompt[index]
@@ -166,8 +174,13 @@ struct RunQwen: ParsableCommand {
                 lastToken = tok.item<Int>()
             }
             let s = tokenizer.decode(tokens: [lastToken])
-            print("sampled \(lastToken) \(s)")
+            print("\(s)", terminator: "")
+            fflush(stdout)
+            nTokens += 1
         }
+        print()
+        let elapsedTime = CFAbsoluteTimeGetCurrent() - startTime
+        print("\(nTokens) tokens generated, \(Double(nTokens) / elapsedTime) tok/s")
     }
 }
 
