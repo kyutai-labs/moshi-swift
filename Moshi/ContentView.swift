@@ -10,6 +10,7 @@ import Metal
 import MoshiLib
 import SwiftUI
 import Synchronization
+import Tokenizers
 
 struct CustomError: Error {
     let message: String
@@ -24,6 +25,7 @@ enum ModelSelect: String, CaseIterable, Identifiable {
     case asr
     case hibiki
     case helium
+    case qwen
 
     var id: Self { return self }
 
@@ -188,6 +190,18 @@ class Evaluator {
             quantize(model: model, groupSize: 64, bits: 6)
         } else if url.lastPathComponent.hasSuffix("q8.safetensors") {
             quantize(model: model, groupSize: 64, bits: 8)
+        }
+        try model.update(parameters: parameters, verify: [.all])
+        eval(model)
+        return model
+    }
+
+    func makeQwen(_ url: URL, _ cfg: QwenConfig) throws -> QwenModel {
+        let weights = try loadArrays(url: url)
+        let parameters = ModuleParameters.unflattened(weights)
+        let model = QwenModel(cfg)
+        if let q = cfg.quantization {
+            quantize(model: model, groupSize: q.groupSize, bits: q.bits)
         }
         try model.update(parameters: parameters, verify: [.all])
         eval(model)
@@ -367,6 +381,9 @@ class Evaluator {
         case .helium:
             let model = try await HeliumModel(self, self.cb)
             m = ModelState(model)
+        case .qwen:
+            let model = try await QwenModel_(self, self.cb)
+            m = ModelState(model)
         }
         self.loadState = .loaded(m, sm)
         return m
@@ -452,6 +469,48 @@ struct MimiModel: Model {
             }
         }
         return currentStep < totalSteps
+    }
+}
+
+struct QwenModel_: Model {
+    let qwen: QwenModel
+    let tokenizer: any Tokenizer
+
+    init(_ ev: Evaluator, _ cb: Callbacks) async throws {
+        let hfRepo = "Qwen/Qwen2.5-0.5B-Instruct"
+        await ev.setModelInfo("building model")
+
+        let configUrl = try await ev.downloadFromHub(id: hfRepo, filename: "config.json")
+        let configData = try Data(contentsOf: configUrl)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let cfg = try decoder.decode(QwenConfig.self, from: configData)
+
+        let url = try await ev.downloadFromHub(id: hfRepo, filename: "model.safetensors")
+        qwen = try await ev.makeQwen(url, cfg)
+        await ev.setModelInfo("model built")
+        tokenizer = try await AutoTokenizer.from(pretrained: hfRepo)
+    }
+
+    mutating func reset() {
+    }
+
+    mutating func onMicrophonePcm(_ pcm: MLXArray, ap: AudioPlayer, ev: Evaluator) -> Bool {
+        let sampler = Sampler()
+        let cache = qwen.makeCache(bSize: 1)
+
+        var lastToken = 151643
+        for stepIdx in 0...500 {
+            let logits = qwen(MLXArray([lastToken]).reshaped(1, 1), cache: cache)
+            let (tok, _) = sampler(logits: logits[0])
+            lastToken = tok.item<Int>()
+            let s = tokenizer.decode(tokens: [lastToken])
+            Task { @MainActor in
+                ev.output += s
+            }
+        }
+
+        return false
     }
 }
 
