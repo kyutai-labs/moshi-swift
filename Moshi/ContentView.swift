@@ -572,7 +572,7 @@ struct AsrModel: Model {
         await ev.setModelInfo("building model")
         guard
             let url = Bundle.main.url(
-                forResource: "asr-300m-ba46d99f@1000", withExtension: "safetensors")
+                forResource: "asr-300m-7b8d3416@150.mlx", withExtension: "safetensors")
         else {
             throw CustomError("cannot retrieve local model")
         }
@@ -586,7 +586,7 @@ struct AsrModel: Model {
         await ev.setModelInfo("warming up moshi")
         moshi.warmup()
         await ev.setModelInfo("done warming up")
-        self.asr = ASR(moshi, mimi, vocab: vocab, cb: cb)
+        self.asr = ASR(moshi, mimi, vocab: vocab, asrDelayInSteps: 0, cb: cb)
     }
 
     mutating func reset() {
