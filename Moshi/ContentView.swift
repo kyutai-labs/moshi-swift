@@ -586,7 +586,7 @@ struct AsrModel: Model {
         await ev.setModelInfo("warming up moshi")
         moshi.warmup()
         await ev.setModelInfo("done warming up")
-        self.asr = ASR(moshi, mimi, vocab: vocab, asrDelayInSteps: 0, cb: cb)
+        self.asr = ASR(moshi, mimi, vocab: vocab, cb: cb)
     }
 
     mutating func reset() {
