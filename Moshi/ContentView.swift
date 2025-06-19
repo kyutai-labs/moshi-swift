@@ -579,7 +579,7 @@ struct AsrModel: Model {
         case .some(let localURL):
             url = localURL
         }
-        let cfg = LmConfig.asr300m()
+        let cfg = LmConfig.asr1b()
         let moshi = try await ev.makeMoshi(url, cfg)
         let mimi = try await ev.makeMimi(numCodebooks: 32)
         await ev.setModelInfo("model built")
