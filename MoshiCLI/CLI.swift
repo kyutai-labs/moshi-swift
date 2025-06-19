@@ -36,6 +36,20 @@ func downloadFromHub(id: String, filename: String) throws -> URL {
     return url!.appending(path: filename)
 }
 
+func maybeDownloadFromHub(filename: String) throws -> URL {
+    // dowloadFromHub(id: id, filename: filename)
+    let prefix = "hf://"
+    if filename.hasPrefix(prefix) {
+        let rest = filename.dropFirst(prefix.count)
+        let components = rest.split(separator: "/", omittingEmptySubsequences: false)
+        let id = components[0..<components.count - 1].joined(separator: "/")
+        let filename = String(components.last!)
+        return try downloadFromHub(id: id, filename: filename)
+    } else {
+        return URL(string: filename)!
+    }
+}
+
 func makeTokenizer(hfRepo: String) throws -> any Tokenizer {
     var tokenizer: (any Tokenizer)? = nil
     let semaphore = DispatchSemaphore(value: 0)
@@ -234,7 +248,7 @@ struct RunAsr: ParsableCommand {
     var channel: Int = 0
 
     mutating func run() throws {
-        let model = URL(fileURLWithPath: model)
+        let model = try maybeDownloadFromHub(filename: model)
         let weights = try loadArrays(url: model)
         let cfg =
             switch weights["out_norm.weight"]?.shape {
@@ -246,12 +260,11 @@ struct RunAsr: ParsableCommand {
             }
         switch input {
         case .none:
-            try runAsr(model, cfg, audioFile: nil, channel: channel, asrDelayInSteps: 25)
-        case .some("mic"): try runAsrMic(model, cfg, asrDelayInSteps: 25)
+            try runAsr(model, cfg, audioFile: nil, channel: channel)
+        case .some("mic"): try runAsrMic(model, cfg)
         case .some(let input):
             let audioFile = URL(fileURLWithPath: input)
-            try runAsr(
-                model, cfg, audioFile: audioFile, channel: channel, asrDelayInSteps: 25)
+            try runAsr(model, cfg, audioFile: audioFile, channel: channel)
         }
     }
 }

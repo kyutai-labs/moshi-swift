@@ -161,8 +161,7 @@ func runMoshi(_ url: URL, cfg: LmConfig, audioFile: URL?, channel: Int = 0) thro
         outputURL: URL(fileURLWithPath: "moshi-out.wav"))
 }
 
-func runAsr(_ url: URL, _ cfg: LmConfig, audioFile: URL?, channel: Int, asrDelayInSteps: Int) throws
-{
+func runAsr(_ url: URL, _ cfg: LmConfig, audioFile: URL?, channel: Int) throws {
     let mimi = try makeMimi(numCodebooks: 32)
     let moshi = try makeMoshi(url, cfg)
     let vocab = try loadVocab(cfg)
@@ -172,7 +171,7 @@ func runAsr(_ url: URL, _ cfg: LmConfig, audioFile: URL?, channel: Int, asrDelay
     print("warming up moshi")
     moshi.warmup()
     print("done warming up")
-    let asr = ASR(moshi, mimi, vocab: vocab, asrDelayInSteps: asrDelayInSteps)
+    let asr = ASR(moshi, mimi, vocab: vocab)
     asr.reset()
 
     let sampleURL =
@@ -195,7 +194,7 @@ func runAsr(_ url: URL, _ cfg: LmConfig, audioFile: URL?, channel: Int, asrDelay
     print()
 }
 
-func runAsrMic(_ url: URL, _ cfg: LmConfig, asrDelayInSteps: Int) throws {
+func runAsrMic(_ url: URL, _ cfg: LmConfig) throws {
     let mimi = try makeMimi(numCodebooks: 32)
     let moshi = try makeMoshi(url, cfg)
     let vocab = try loadVocab(cfg)
@@ -205,7 +204,7 @@ func runAsrMic(_ url: URL, _ cfg: LmConfig, asrDelayInSteps: Int) throws {
     print("warming up moshi")
     moshi.warmup()
     print("done warming up")
-    let asr = ASR(moshi, mimi, vocab: vocab, asrDelayInSteps: asrDelayInSteps)
+    let asr = ASR(moshi, mimi, vocab: vocab)
     asr.reset()
 
     let microphoneCapture = MicrophoneCapture()

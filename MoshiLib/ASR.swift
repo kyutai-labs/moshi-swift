@@ -14,19 +14,15 @@ public class ASR {
     let vocab: [Int: String]
     let mimi: Mimi
     var prevTextToken: Int = 0
-    var cnt: Int = 0
     let sampler: Sampler = Sampler(temp: 0.0)
-    let asrDelayInSteps: Int
     let cb: Callbacks
 
     public init(
-        _ moshi: LM, _ mimi: Mimi, vocab: [Int: String], asrDelayInSteps: Int = 25,
-        cb: Callbacks = EmptyCallbacks()
+        _ moshi: LM, _ mimi: Mimi, vocab: [Int: String], cb: Callbacks = EmptyCallbacks()
     ) {
         self.moshi = moshi
         self.mimi = mimi
         self.vocab = vocab
-        self.asrDelayInSteps = asrDelayInSteps
         self.cb = cb
     }
 
@@ -34,7 +30,6 @@ public class ASR {
         mimi.resetState()
         moshi.resetCache()
         prevTextToken = self.moshi.cfg.textInitToken()
-        cnt = 0
         let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
         let audioIds = (0..<self.moshi.cfg.audioCodebooks).map { _ in
             MLXArray([moshi.cfg.audioPaddingToken()])
@@ -57,10 +52,7 @@ public class ASR {
             cb.onInputAudioTokens(codes)
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
-                var textIds: MLXArray? = nil
-                if asrDelayInSteps < cnt {
-                    textIds = MLXArray([prevTextToken]).reshaped([1, 1])
-                }
+                let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
                 let audioIds = (0..<codebooks).map { codes[0..., $0, step].reshaped(1, 1) }
                 cb.onEvent(.beginStep)
                 let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
@@ -69,14 +61,13 @@ public class ASR {
                 let (textToken, _) = sampler(logits: textLogits)
                 let textTokenI: Int = textToken[0].item()
                 cb.onOutputTextToken(textTokenI)
-                if textTokenI != 0 && textTokenI != 3 && asrDelayInSteps <= cnt {
+                if textTokenI != 0 && textTokenI != 3 {
                     if var v = vocab[textTokenI] {
                         v.replace("▁", with: " ")
                         tokens.append(v)
                     }
                 }
                 prevTextToken = textTokenI
-                cnt += 1
             }
         }
         return tokens
