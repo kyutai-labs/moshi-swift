@@ -56,7 +56,7 @@ struct ContentView: View {
     @Environment(DeviceStat.self) private var deviceStat
 
     // Currently available models
-    private let availableModels: [ModelSelect] = [.hibiki]
+    private let availableModels: [ModelSelect] = [.hibiki, .asr]
     var body: some View {
         Group {
             if availableModels.count == 1 {
@@ -570,11 +570,14 @@ struct AsrModel: Model {
 
     init(_ ev: Evaluator, _ cb: Callbacks) async throws {
         await ev.setModelInfo("building model")
-        guard
-            let url = Bundle.main.url(
-                forResource: "asr-300m-7b8d3416@150.mlx", withExtension: "safetensors")
-        else {
-            throw CustomError("cannot retrieve local model")
+        let url: URL
+        let localURL = Bundle.main.url(forResource: "stt-model", withExtension: "safetensors")
+        switch localURL {
+        case .none:
+            url = try await ev.downloadFromHub(
+                id: "kyutai/stt-1b-en_fr-mlx", filename: "model.safetensors")
+        case .some(let localURL):
+            url = localURL
         }
         let cfg = LmConfig.asr300m()
         let moshi = try await ev.makeMoshi(url, cfg)
