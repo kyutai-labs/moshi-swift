@@ -52,7 +52,7 @@ public class ASR {
             cb.onInputAudioTokens(codes)
             let (_, _, steps) = codes.shape3
             for step in 0..<steps {
-                var textIds: MLXArray? = nil
+                let textIds = MLXArray([prevTextToken]).reshaped([1, 1])
                 let audioIds = (0..<codebooks).map { codes[0..., $0, step].reshaped(1, 1) }
                 cb.onEvent(.beginStep)
                 let (_, textLogits) = moshi.stepMain(textIds: textIds, audioIds: audioIds)
