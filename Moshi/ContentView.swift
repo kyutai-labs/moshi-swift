@@ -575,7 +575,7 @@ struct AsrModel: Model {
         switch localURL {
         case .none:
             url = try await ev.downloadFromHub(
-                id: "kyutai/stt-1b-en_fr-mlx", filename: "model.safetensors")
+                id: "lmz/moshi-swift", filename: "moshi-70f8f0ea@500.q8.safetensors")
         case .some(let localURL):
             url = localURL
         }
