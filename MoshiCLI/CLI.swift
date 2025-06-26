@@ -46,7 +46,7 @@ func maybeDownloadFromHub(filename: String) throws -> URL {
         let filename = String(components.last!)
         return try downloadFromHub(id: id, filename: filename)
     } else {
-        return URL(string: filename)!
+        return URL(fileURLWithPath: filename)
     }
 }
 
@@ -255,6 +255,7 @@ struct RunAsr: ParsableCommand {
             case .some([2560]): LmConfig.asr2b()
             case .some(let s): fatalError("unexpected shape for out_norm.weight \(s)")
             }
+        print("here2")
         switch input {
         case .none:
             try runAsr(model, cfg, audioFile: nil, channel: channel)
