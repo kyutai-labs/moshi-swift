@@ -241,9 +241,6 @@ struct RunAsr: ParsableCommand {
     @Option(help: "the file to process, use 'mic' for the microphone")
     var input: String?
 
-    @Option(help: "the audio delay to apply")
-    var audioDelay: Int = 2
-
     @Option(help: "the audio channel from the input file to be used")
     var channel: Int = 0
 
